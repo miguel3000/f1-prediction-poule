@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserPredictions } from '../services/api';
+import { getUserPredictions, getUserSprintPredictions } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
 interface Driver {
@@ -18,6 +18,7 @@ interface Prediction {
   status: 'upcoming' | 'in_progress' | 'completed';
   positions: Driver[];
   points?: number;
+  race_type?: 'sprint' | 'main';
 }
 
 const MyPredictions = () => {
@@ -37,8 +38,22 @@ const MyPredictions = () => {
 
   const fetchPredictions = async () => {
     try {
-      const response = await getUserPredictions();
-      setPredictions(response.data);
+      // Fetch both main and sprint predictions
+      const [mainResponse, sprintResponse] = await Promise.all([
+        getUserPredictions(),
+        getUserSprintPredictions()
+      ]);
+
+      // Add race_type to each prediction
+      const mainPredictions = mainResponse.data.map((p: Prediction) => ({ ...p, race_type: 'main' as const }));
+      const sprintPredictions = sprintResponse.data.map((p: Prediction) => ({ ...p, race_type: 'sprint' as const }));
+
+      // Combine and sort by date (newest first)
+      const allPredictions = [...mainPredictions, ...sprintPredictions].sort(
+        (a, b) => new Date(b.race_date).getTime() - new Date(a.race_date).getTime()
+      );
+
+      setPredictions(allPredictions);
     } catch (error: any) {
       console.error('Failed to fetch predictions:', error);
       setError('Failed to load your predictions');
@@ -136,76 +151,95 @@ const MyPredictions = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8 flex justify-between items-center">
+      <div className="mb-8">
         <h1 className="text-4xl md:text-display-xl font-bold text-gradient-red">
           My Predictions
         </h1>
-        <button
-          onClick={() => navigate('/')}
-          className="btn-f1-secondary"
-        >
-          Back to Homepage
-        </button>
       </div>
 
       <div className="space-y-6">
-        {predictions.map((prediction) => (
-          <div key={prediction.id} className="card-f1 p-6 hover:shadow-f1-glow transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-f1-red-500 mb-2">
-                  {prediction.race_name}
-                </h2>
-                <p className="text-f1-gray">
-                  {new Date(prediction.race_date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                {getStatusBadge(prediction.status)}
-                {prediction.points !== undefined && (
-                  <div className="text-2xl font-bold text-f1-red-500">
-                    {prediction.points} pts
+        {predictions.map((prediction) => {
+          const isSprint = prediction.race_type === 'sprint';
+          return (
+            <div
+              key={`${prediction.race_type}-${prediction.id}`}
+              className={`p-6 rounded-lg transition-all ${
+                isSprint
+                  ? 'bg-orange-900/20 border border-orange-500/50 hover:bg-orange-900/30'
+                  : 'card-f1 hover:shadow-f1-glow'
+              }`}
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                      {prediction.race_name}
+                    </h2>
+                    {isSprint && (
+                      <span className="text-xs px-2 py-1 rounded bg-orange-600 text-white font-bold">
+                        SPRINT
+                      </span>
+                    )}
                   </div>
-                )}
+                  <p className="text-f1-gray">
+                    {new Date(prediction.race_date).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  {getStatusBadge(prediction.status)}
+                  {prediction.points !== undefined && (
+                    <div className={`text-2xl font-bold ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                      {prediction.points} pts
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {prediction.positions.map((driver, index) => (
-                <div
-                  key={index}
-                  className="bg-f1-neutral-800 p-3 rounded border border-f1-neutral-700"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-f1-red-500 text-sm">
-                      P{index + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{driver.name}</p>
-                      <p className="text-xs text-f1-gray truncate">{driver.team}</p>
+              <div className={`grid gap-3 ${isSprint ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-5'}`}>
+                {prediction.positions.map((driver, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded border ${
+                      isSprint
+                        ? 'bg-orange-900/30 border-orange-500/30'
+                        : 'bg-f1-neutral-800 border-f1-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`font-bold text-sm ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                        P{index + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{driver.name}</p>
+                        <p className="text-xs text-f1-gray truncate">{driver.team}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {prediction.status === 'upcoming' && (
-              <div className="mt-4 pt-4 border-t border-f1-neutral-700">
-                <button
-                  onClick={() => navigate('/')}
-                  className="btn-f1-primary w-full"
-                >
-                  Edit Prediction
-                </button>
+                ))}
               </div>
-            )}
-          </div>
-        ))}
+
+              {prediction.status === 'upcoming' && (
+                <div className="mt-4 pt-4 border-t border-f1-neutral-700">
+                  <button
+                    onClick={() => navigate('/')}
+                    className={`w-full py-3 rounded-lg font-bold transition-colors ${
+                      isSprint
+                        ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                        : 'btn-f1-primary'
+                    }`}
+                  >
+                    Edit {isSprint ? 'Sprint ' : ''}Prediction
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

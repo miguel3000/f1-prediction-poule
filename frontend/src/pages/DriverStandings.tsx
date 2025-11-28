@@ -132,29 +132,12 @@ const DriverStandings = () => {
         2025 Driver's Championship
       </h1>
 
-      {/* Update Information */}
-      <div className="max-w-4xl mx-auto mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-f1-neutral-850 border border-f1-neutral-800 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <svg className="w-5 h-5 text-f1-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="text-sm font-semibold text-f1-gray">Last Updated</h3>
-            </div>
-            <p className="text-white font-bold">{formatDateTime(lastUpdated)}</p>
-          </div>
-
-          <div className="bg-f1-neutral-850 border border-f1-neutral-800 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <h3 className="text-sm font-semibold text-f1-gray">Next Update</h3>
-            </div>
-            <p className="text-white font-bold">{formatNextUpdate()}</p>
-            <p className="text-xs text-f1-gray mt-1">Updates: Mon & Thu at 9:00 AM UTC</p>
-          </div>
+      {/* Update Information - Compact */}
+      <div className="max-w-4xl mx-auto mb-4">
+        <div className="text-center text-sm text-f1-gray">
+          Updated: <span className="text-white">{formatDateTime(lastUpdated)}</span>
+          <span className="mx-2">•</span>
+          Next: <span className="text-white">{formatNextUpdate()}</span>
         </div>
       </div>
 
