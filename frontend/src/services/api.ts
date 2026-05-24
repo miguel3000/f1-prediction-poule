@@ -95,6 +95,9 @@ export const getTopThree = () =>
 export const getUserRank = () =>
   api.get('/api/leaderboard/rank');
 
+export const getSeasonHistory = () =>
+  api.get('/api/leaderboard/season-history');
+
 // Upload
 export const uploadAvatar = (file: File) => {
   const formData = new FormData();
@@ -146,5 +149,6 @@ export const triggerRaceResultsSync = () =>
 
 export const sendBroadcastEmail = (subject: string, message: string) =>
   api.post('/api/admin/broadcast', { subject, message });
+
 
 export default api;

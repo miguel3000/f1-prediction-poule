@@ -16,7 +16,8 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dnd-touch-backend": "^16.0.1",
     "axios": "^1.6.2",
-    "clsx": "^2.0.0"
+    "clsx": "^2.0.0",
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

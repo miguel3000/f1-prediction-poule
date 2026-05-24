@@ -3,7 +3,8 @@ import bcrypt from 'bcrypt';
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
 import { calculateRacePoints } from './leaderboardController';
-import { sendBroadcastEmail } from '../services/emailService';
+import { sendBroadcastEmail, sendPersonalRaceResults } from '../services/emailService';
+import { f1Cache } from '../utils/cache';
 
 const SALT_ROUNDS = 10;
 
@@ -266,24 +267,19 @@ export const triggerDriverStandingsSync = async (req: Request, res: Response) =>
   }
 };
 
-// Manually trigger race results sync
-export const triggerRaceResultsSync = async (req: Request, res: Response) => {
-  if (cronJobStatus.syncRaceResults.isRunning) {
-    return res.status(409).json({ error: 'Sync is already running' });
-  }
+// Return lightweight sync status (for frontend polling)
+export const getSyncStatus = async (req: Request, res: Response) => {
+  res.json(cronJobStatus);
+};
 
-  cronJobStatus.syncRaceResults.isRunning = true;
-  cronJobStatus.syncRaceResults.lastStatus = 'running';
-
-  // Run async but respond immediately
-  res.json({ message: 'Race results sync started', status: 'running' });
-
+// Diagnostic endpoint: shows races needing sync and tests Jolpi API connectivity
+export const getSyncDiagnosis = async (req: Request, res: Response) => {
   try {
     const season = 2026;
 
-    // Find ALL races that have passed but don't have results yet (both main and sprint)
-    const racesResult = await query(
-      `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
+    // Races that have passed and have NO results yet
+    const pendingResult = await query(
+      `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type, r.status
        FROM races r
        WHERE r.season = $1
          AND r.race_date < NOW()
@@ -296,22 +292,130 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
       [season]
     );
 
+    // Races that have results already
+    const syncedResult = await query(
+      `SELECT r.id, r.round, r.race_name, r.race_type, r.status,
+              (SELECT COUNT(*) FROM race_results WHERE race_id = r.id) as main_result_count,
+              (SELECT COUNT(*) FROM sprint_results WHERE race_id = r.id) as sprint_result_count
+       FROM races r
+       WHERE r.season = $1
+         AND r.race_date < NOW()
+       ORDER BY r.race_date DESC`,
+      [season]
+    );
+
+    // Test Jolpi API availability for the most recent pending round
+    const apiTests: any[] = [];
+    const testRaces = pendingResult.rows.slice(0, 3);
+    for (const race of testRaces) {
+      try {
+        const isSprint = race.race_type === 'sprint';
+        const results = isSprint
+          ? await jolpiService.getSprintResults(race.season, race.round)
+          : await jolpiService.getRaceResults(race.season, race.round);
+        apiTests.push({
+          race: race.race_name,
+          round: race.round,
+          type: race.race_type,
+          apiReturned: results.length,
+          status: results.length > 0 ? 'available' : 'no_data'
+        });
+      } catch (err: any) {
+        apiTests.push({
+          race: race.race_name,
+          round: race.round,
+          type: race.race_type,
+          apiReturned: 0,
+          status: 'error',
+          error: err.message
+        });
+      }
+    }
+
+    // Cache stats
+    const cacheStats = f1Cache.stats();
+
+    res.json({
+      pendingSync: pendingResult.rows,
+      syncedRaces: syncedResult.rows,
+      apiTests,
+      cacheStats,
+      lastSyncStatus: cronJobStatus.syncRaceResults
+    });
+  } catch (error: any) {
+    console.error('[ADMIN] Sync diagnosis error:', error);
+    res.status(500).json({ error: error.message || 'Diagnosis failed' });
+  }
+};
+
+// Manually trigger race results sync
+// Pass ?force=true to re-sync races that already have results (recalculates points)
+export const triggerRaceResultsSync = async (req: Request, res: Response) => {
+  if (cronJobStatus.syncRaceResults.isRunning) {
+    return res.status(409).json({ error: 'Sync is already running' });
+  }
+
+  const force = req.query.force === 'true';
+
+  cronJobStatus.syncRaceResults.isRunning = true;
+  cronJobStatus.syncRaceResults.lastStatus = 'running';
+
+  // Respond immediately; sync runs in background
+  res.json({ message: 'Race results sync started', status: 'running', force });
+
+  try {
+    const season = 2026;
+
+    let racesResult;
+    if (force) {
+      // Force: grab ALL past races regardless of existing results
+      racesResult = await query(
+        `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
+         FROM races r
+         WHERE r.season = $1 AND r.race_date < NOW()
+         ORDER BY r.race_date DESC`,
+        [season]
+      );
+    } else {
+      // Normal: only races with no results yet
+      racesResult = await query(
+        `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
+         FROM races r
+         WHERE r.season = $1
+           AND r.race_date < NOW()
+           AND (
+             (r.race_type = 'main' AND NOT EXISTS (SELECT 1 FROM race_results WHERE race_id = r.id))
+             OR
+             (r.race_type = 'sprint' AND NOT EXISTS (SELECT 1 FROM sprint_results WHERE race_id = r.id))
+           )
+         ORDER BY r.race_date DESC`,
+        [season]
+      );
+    }
+
     const races = racesResult.rows;
 
     if (races.length === 0) {
       cronJobStatus.syncRaceResults.lastRun = new Date();
       cronJobStatus.syncRaceResults.lastStatus = 'success';
-      cronJobStatus.syncRaceResults.lastMessage = 'No races need syncing';
+      cronJobStatus.syncRaceResults.lastMessage = 'No races found to sync. All past races already have results. Use Force Re-sync to recalculate points.';
       cronJobStatus.syncRaceResults.isRunning = false;
       return;
     }
 
     let totalInserted = 0;
     let racesProcessed = 0;
+    let racesSkipped = 0;
+    const raceLog: string[] = [];
 
     for (const race of races) {
       try {
         const isSprint = race.race_type === 'sprint';
+        const resultsTable = isSprint ? 'sprint_results' : 'race_results';
+        const predictionTable = isSprint ? 'sprint_predictions' : 'predictions';
+
+        // Clear cache so we always get fresh data from Jolpi
+        jolpiService.clearRaceCache(race.season, race.round);
 
         // Fetch appropriate results from Jolpi API
         const jolpiResults = isSprint
@@ -319,12 +423,28 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
           : await jolpiService.getRaceResults(race.season, race.round);
 
         if (jolpiResults.length === 0) {
-          console.log(`[ADMIN] No results found for ${race.race_name}`);
+          console.log(`[ADMIN] No results available yet for ${race.race_name} (Round ${race.round})`);
+          raceLog.push(`⚠ ${race.race_name}: no API data yet`);
+          racesSkipped++;
           continue;
         }
 
-        // Clear existing results
-        const resultsTable = isSprint ? 'sprint_results' : 'race_results';
+        // When force-syncing, subtract existing prediction points before recalculation
+        if (force) {
+          const existingPoints = await query(
+            `SELECT user_id, points_earned FROM ${predictionTable} WHERE race_id = $1 AND points_earned > 0`,
+            [race.id]
+          );
+          for (const p of existingPoints.rows) {
+            await query(
+              'UPDATE users SET total_points = GREATEST(0, total_points - $1) WHERE id = $2',
+              [p.points_earned, p.user_id]
+            );
+          }
+          await query(`UPDATE ${predictionTable} SET points_earned = 0 WHERE race_id = $1`, [race.id]);
+        }
+
+        // Clear and re-insert results
         await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
 
         // Batch fetch drivers
@@ -335,7 +455,7 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         );
         const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
 
-        // Batch insert
+        // Batch insert results
         const insertValues: string[] = [];
         const insertParams: any[] = [];
         let paramIndex = 1;
@@ -359,26 +479,31 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         }
 
         // Update race status
-        await query('UPDATE races SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', ['completed', race.id]);
+        await query(
+          'UPDATE races SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+          ['completed', race.id]
+        );
 
-        // Calculate points for predictions
-        if (isSprint) {
-          await calculateSprintPoints(race.id);
-        } else {
-          await calculateRacePoints(race.id);
-        }
+        // Calculate points using the unified function (handles both main and sprint)
+        await calculateRacePoints(race.id);
         racesProcessed++;
 
+        const topThree = jolpiResults.slice(0, 3).map((r: any) => `P${r.position}:#${r.number}`).join(', ');
+        raceLog.push(`✓ ${race.race_name} (${isSprint ? 'Sprint' : 'Main'}): ${insertValues.length} results — ${topThree}`);
         console.log(`[ADMIN] Synced ${race.race_name}: ${insertValues.length} results`);
 
-      } catch (error) {
+      } catch (error: any) {
+        raceLog.push(`✗ ${race.race_name}: ${error.message}`);
         console.error(`[ADMIN] Error syncing race ${race.race_name}:`, error);
       }
     }
 
     cronJobStatus.syncRaceResults.lastRun = new Date();
     cronJobStatus.syncRaceResults.lastStatus = 'success';
-    cronJobStatus.syncRaceResults.lastMessage = `Processed ${racesProcessed} race(s), inserted ${totalInserted} results`;
+    cronJobStatus.syncRaceResults.lastMessage = [
+      `Processed ${racesProcessed} race(s), inserted ${totalInserted} results, skipped ${racesSkipped}`,
+      ...raceLog
+    ].join('\n');
     cronJobStatus.syncRaceResults.isRunning = false;
 
     console.log(`[ADMIN] Race results sync completed: ${racesProcessed} races, ${totalInserted} results`);
@@ -391,64 +516,6 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
     console.error('[ADMIN] Race results sync error:', error);
   }
 };
-
-// Calculate sprint prediction points
-async function calculateSprintPoints(raceId: number) {
-  // Sprint points: 8-7-6-5-4-3-2-1 for positions 1-8
-  const SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1];
-
-  // Get sprint results
-  const resultsQuery = await query(
-    'SELECT driver_id, position FROM sprint_results WHERE race_id = $1 ORDER BY position',
-    [raceId]
-  );
-  const results = resultsQuery.rows;
-
-  if (results.length === 0) return;
-
-  // Build a map of driver_id -> position
-  const resultMap = new Map(results.map((r: any) => [r.driver_id, r.position]));
-
-  // Get all predictions for this race
-  const predictionsQuery = await query(
-    `SELECT id, user_id, position_1, position_2, position_3, position_4,
-            position_5, position_6, position_7, position_8
-     FROM sprint_predictions WHERE race_id = $1`,
-    [raceId]
-  );
-
-  for (const prediction of predictionsQuery.rows) {
-    let totalPoints = 0;
-
-    for (let i = 1; i <= 8; i++) {
-      const predictedDriverId = prediction[`position_${i}`];
-      if (!predictedDriverId) continue;
-
-      const actualPosition = resultMap.get(predictedDriverId);
-      if (actualPosition === i) {
-        // Exact match - full points + 50% bonus
-        totalPoints += Math.floor(SPRINT_POINTS[i - 1] * 1.5);
-      } else if (actualPosition && Math.abs(actualPosition - i) === 1) {
-        // Off by 1 - full points
-        totalPoints += SPRINT_POINTS[i - 1];
-      }
-    }
-
-    // Update prediction points
-    await query(
-      'UPDATE sprint_predictions SET points_earned = $1 WHERE id = $2',
-      [totalPoints, prediction.id]
-    );
-
-    // Update user total points
-    await query(
-      'UPDATE users SET total_points = total_points + $1 WHERE id = $2',
-      [totalPoints, prediction.user_id]
-    );
-  }
-
-  console.log(`[ADMIN] Calculated sprint points for race ${raceId}`);
-}
 
 // Send broadcast email to all users
 export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
@@ -501,6 +568,113 @@ export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Send broadcast error:', error);
     res.status(500).json({ error: 'Failed to send broadcast' });
+  }
+};
+
+// Send personal prediction results email for the last completed race to all players
+export const sendLastRaceResults = async (req: Request, res: Response) => {
+  try {
+    const season = new Date().getFullYear();
+
+    // Find the most recently completed race
+    const raceResult = await query(
+      `SELECT * FROM races
+       WHERE status IN ('completed', 'provisional')
+         AND season = $1
+       ORDER BY race_date DESC LIMIT 1`,
+      [season]
+    );
+
+    if (raceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No completed races found for this season' });
+    }
+
+    const race = raceResult.rows[0];
+    const isSprint = race.race_type === 'sprint';
+    const maxPositions = isSprint ? 8 : 10;
+    const resultsTable = isSprint ? 'sprint_results' : 'race_results';
+    const predictionsTable = isSprint ? 'sprint_predictions' : 'predictions';
+
+    // Get actual race results with driver names
+    const actualsResult = await query(
+      `SELECT rr.position, d.name AS driver_name
+       FROM ${resultsTable} rr
+       JOIN drivers d ON rr.driver_id = d.id
+       WHERE rr.race_id = $1
+       ORDER BY rr.position ASC`,
+      [race.id]
+    );
+    const actuals = actualsResult.rows.map((r: any) => ({ position: r.position, driverName: r.driver_name }));
+
+    // Get all users with predictions for this race
+    const posColumns = Array.from({ length: maxPositions }, (_, i) => `p.position_${i + 1}`).join(', ');
+    const predictionsResult = await query(
+      `SELECT u.email, u.nickname, u.total_points, p.points_earned, ${posColumns}
+       FROM ${predictionsTable} p
+       JOIN users u ON p.user_id = u.id
+       WHERE p.race_id = $1`,
+      [race.id]
+    );
+
+    if (predictionsResult.rows.length === 0) {
+      return res.status(404).json({ error: `No predictions found for ${race.race_name}` });
+    }
+
+    // Collect all driver IDs we need to resolve
+    const allDriverIds = new Set<number>();
+    for (const pred of predictionsResult.rows) {
+      for (let i = 1; i <= maxPositions; i++) {
+        const driverId = pred[`position_${i}`];
+        if (driverId) allDriverIds.add(driverId);
+      }
+    }
+
+    const driversResult = await query(
+      `SELECT id, name FROM drivers WHERE id = ANY($1)`,
+      [Array.from(allDriverIds)]
+    );
+    const driverNameMap = new Map<number, string>(driversResult.rows.map((d: any) => [d.id, d.name]));
+
+    // Send email to each user
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const pred of predictionsResult.rows) {
+      const predictions = [];
+      for (let i = 1; i <= maxPositions; i++) {
+        const driverId = pred[`position_${i}`];
+        predictions.push({
+          position: i,
+          driverName: driverId ? (driverNameMap.get(driverId) || 'Unknown') : 'Not set'
+        });
+      }
+
+      const ok = await sendPersonalRaceResults(
+        pred.email,
+        pred.nickname,
+        race.race_name,
+        race.race_type,
+        predictions,
+        actuals,
+        pred.points_earned || 0,
+        pred.total_points
+      );
+
+      if (ok) successCount++; else failCount++;
+    }
+
+    console.log(`[ADMIN] Personal race results emails sent for ${race.race_name}: ${successCount} success, ${failCount} failed`);
+
+    res.json({
+      message: `Emails sent for ${race.race_name}`,
+      raceName: race.race_name,
+      sent: successCount,
+      failed: failCount,
+      total: predictionsResult.rows.length
+    });
+  } catch (error) {
+    console.error('Send last race results error:', error);
+    res.status(500).json({ error: 'Failed to send race results emails' });
   }
 };
 

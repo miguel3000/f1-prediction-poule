@@ -79,6 +79,7 @@ export const syncDrivers = async (req: Request, res: Response) => {
         nameAcronym: d.name_acronym,
         team: d.team_name,
         nationality: d.country_code,
+        image_url: d.headshot_url || null,
       }));
     } catch {
       // Fallback to Jolpi
@@ -89,20 +90,22 @@ export const syncDrivers = async (req: Request, res: Response) => {
         nameAcronym: d.code || d.familyName.substring(0, 3).toUpperCase(),
         team: 'Unknown', // Jolpi doesn't provide team in drivers endpoint
         nationality: d.nationality,
+        image_url: null,
       }));
     }
 
     // Insert/update basic driver info
     for (const driver of drivers) {
       await query(
-        `INSERT INTO drivers (driver_number, name, name_acronym, team, nationality, season)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO drivers (driver_number, name, name_acronym, team, nationality, image_url, season)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (driver_number, season) DO UPDATE SET
            name = EXCLUDED.name,
            name_acronym = EXCLUDED.name_acronym,
            team = EXCLUDED.team,
-           nationality = EXCLUDED.nationality`,
-        [driver.number, driver.name, driver.nameAcronym, driver.team, driver.nationality, season]
+           nationality = EXCLUDED.nationality,
+           image_url = COALESCE(EXCLUDED.image_url, drivers.image_url)`,
+        [driver.number, driver.name, driver.nameAcronym, driver.team, driver.nationality, driver.image_url ?? null, season]
       );
     }
 

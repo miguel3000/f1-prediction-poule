@@ -1,18 +1,60 @@
-# Development override for docker-compose.yml
-# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Standalone development compose — run with:
+#   docker compose -f docker-compose.dev.yml up
+#
+# Frontend served by Vite on :3000, backend API on :5000, postgres on :5432.
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: f1-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: f1_predictions
+      POSTGRES_USER: f1user
+      POSTGRES_PASSWORD: f1password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U f1user -d f1_predictions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
-    command: npm run dev
+    image: node:18-alpine
+    container_name: f1-backend-dev
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    env_file:
+      - ./backend/.env
     environment:
       NODE_ENV: development
+      DATABASE_URL: postgresql://f1user:f1password@postgres:5432/f1_predictions
+    ports:
+      - "5000:5000"
     volumes:
       - ./backend:/app
       - /app/node_modules
       - ./backend/uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
-    command: npm run dev
+    image: node:18-alpine
+    container_name: f1-frontend-dev
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_dev_data:

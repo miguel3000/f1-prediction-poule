@@ -34,9 +34,9 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: [
+    'https://f1.miguelm.nl',
     'http://localhost:5000',
-    'http://10.40.100.101:5000',
-    'http://localhost:3000', // For development
+    'http://localhost:3000',
     process.env.FRONTEND_URL || 'http://localhost:5000'
   ],
   credentials: true

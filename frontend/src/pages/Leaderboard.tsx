@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { getLeaderboard } from '../services/api';
+import { getLeaderboard, getSeasonHistory } from '../services/api';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
 interface LeaderboardEntry {
   id: number;
@@ -14,6 +17,26 @@ interface LeaderboardEntry {
   diff_to_leader: number;
 }
 
+interface SeasonRace {
+  id: number;
+  name: string;
+  country: string;
+  date: string;
+  race_type: string;
+}
+
+interface SeasonUser {
+  id: number;
+  nickname: string;
+  avatar_url: string | null;
+  points_per_race: number[];
+}
+
+const CHART_COLORS = [
+  '#E10600', '#3B82F6', '#22C55E', '#F59E0B', '#A855F7',
+  '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#6366F1'
+];
+
 const ordinal = (n: number) => {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
@@ -22,10 +45,14 @@ const ordinal = (n: number) => {
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [seasonRaces, setSeasonRaces] = useState<SeasonRace[]>([]);
+  const [seasonUsers, setSeasonUsers] = useState<SeasonUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
     fetchLeaderboard();
+    fetchSeasonHistory();
   }, []);
 
   const fetchLeaderboard = async () => {
@@ -39,6 +66,31 @@ const Leaderboard = () => {
     }
   };
 
+  const fetchSeasonHistory = async () => {
+    try {
+      const response = await getSeasonHistory();
+      setSeasonRaces(response.data.races);
+      setSeasonUsers(response.data.users);
+    } catch (error) {
+      console.error('Failed to fetch season history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Build recharts data: one object per race with cumulative points per user
+  const chartData = seasonRaces.map((race, raceIdx) => {
+    const point: Record<string, string | number> = {
+      race: race.country.length > 8 ? race.country.substring(0, 8) + '.' : race.country,
+      fullName: race.name,
+    };
+    seasonUsers.forEach(user => {
+      const cumulative = user.points_per_race.slice(0, raceIdx + 1).reduce((a, b) => a + b, 0);
+      point[user.nickname] = cumulative;
+    });
+    return point;
+  });
+
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -51,6 +103,64 @@ const Leaderboard = () => {
   return (
     <div>
       <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-red">Championship</h1>
+
+      {/* Season Points Chart */}
+      <div className="max-w-5xl mx-auto mb-10">
+        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">Season Progression</h2>
+
+        {historyLoading ? (
+          <div className="bg-gray-900 rounded-lg p-8 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-red-500"></div>
+          </div>
+        ) : seasonRaces.length === 0 ? (
+          <div className="bg-gray-900 rounded-lg p-8 text-center text-f1-gray">
+            Season data available after the first race is completed.
+          </div>
+        ) : (
+          <div className="bg-gray-900 rounded-lg p-4 pt-6 border border-gray-800">
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2d2d3a" />
+                <XAxis
+                  dataKey="race"
+                  tick={{ fill: '#949498', fontSize: 11 }}
+                  axisLine={{ stroke: '#444' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: '#949498', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={36}
+                />
+                <Tooltip
+                  contentStyle={{ background: '#15151E', border: '1px solid #333', borderRadius: 8 }}
+                  labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: 4 }}
+                  itemStyle={{ color: '#ccc', fontSize: 12 }}
+                  formatter={(value: number, name: string) => [`${value} pts`, name]}
+                  labelFormatter={(_label, payload) => payload?.[0]?.payload?.fullName ?? _label}
+                />
+                <Legend
+                  wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
+                  iconType="circle"
+                  iconSize={8}
+                />
+                {seasonUsers.map((user, i) => (
+                  <Line
+                    key={user.id}
+                    type="monotone"
+                    dataKey={user.nickname}
+                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: CHART_COLORS[i % CHART_COLORS.length] }}
+                    activeDot={{ r: 5 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
 
       {/* Full Leaderboard Table */}
       <div className="max-w-5xl mx-auto">

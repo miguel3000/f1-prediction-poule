@@ -280,6 +280,105 @@ export const sendResultsAreInEmail = async (
   }
 };
 
+export interface PersonalPredictionPosition {
+  position: number;
+  driverName: string;
+}
+
+export const sendPersonalRaceResults = async (
+  email: string,
+  nickname: string,
+  raceName: string,
+  raceType: string,
+  predictions: PersonalPredictionPosition[],
+  actuals: PersonalPredictionPosition[],
+  pointsEarned: number,
+  totalSeasonPoints: number
+): Promise<boolean> => {
+  const isSprint = raceType === 'sprint';
+  const accentColor = isSprint ? '#F97316' : '#E10600';
+  const label = isSprint ? 'Sprint Race' : 'Race';
+
+  // Build a map: driverName -> actual position (for quick lookup)
+  const actualPosByName = new Map<string, number>(actuals.map(a => [a.driverName, a.position]));
+
+  const rows = predictions.map((pred) => {
+    const actualPos = actualPosByName.get(pred.driverName);
+    const diff = actualPos !== undefined ? Math.abs(pred.position - actualPos) : null;
+    const isExact = diff === 0;
+    const isNear = diff === 1;
+    const rowBg = isExact ? '#d4edda' : isNear ? '#fff3cd' : '#ffffff';
+    const statusText = diff === null
+      ? 'Not scored'
+      : isExact ? '✓ Exact'
+      : isNear ? '≈ Near miss'
+      : `Finished P${actualPos}`;
+
+    return `
+      <tr style="background-color:${rowBg};">
+        <td style="padding:7px 10px;border-bottom:1px solid #eee;">P${pred.position}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #eee;font-weight:bold;">${escapeHtml(pred.driverName)}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;">${actualPos != null ? `P${actualPos}` : '—'}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-size:12px;color:${isExact ? '#155724' : isNear ? '#856404' : '#555'};">${statusText}</td>
+      </tr>`;
+  }).join('');
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Your ${label} Predictions — ${raceName}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:${accentColor};">Your ${escapeHtml(label)} Predictions</h2>
+        <p>Hello ${escapeHtml(nickname)}!</p>
+        <p>Here's how your prediction for <strong>${escapeHtml(raceName)}</strong> compared to the actual result:</p>
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;">
+          <thead>
+            <tr style="background-color:${accentColor};color:white;">
+              <th style="padding:8px 10px;text-align:left;">Predicted</th>
+              <th style="padding:8px 10px;text-align:left;">Driver</th>
+              <th style="padding:8px 10px;text-align:center;">Actual Pos</th>
+              <th style="padding:8px 10px;text-align:right;">Result</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <div style="display:flex;gap:12px;margin-bottom:20px;font-size:12px;color:#555;">
+          <span style="background:#d4edda;padding:3px 8px;border-radius:4px;">✓ Exact = correct position</span>
+          <span style="background:#fff3cd;padding:3px 8px;border-radius:4px;">≈ Near miss = ±1 position</span>
+        </div>
+
+        <div style="background-color:${accentColor};color:white;padding:15px;border-radius:5px;text-align:center;margin-bottom:16px;">
+          <strong>Points earned this race: ${pointsEarned}</strong>
+        </div>
+
+        <div style="background-color:#333;color:white;padding:12px;border-radius:5px;text-align:center;margin-bottom:24px;">
+          Season total: <strong>${totalSeasonPoints}</strong> pts
+        </div>
+
+        <p>
+          <a href="${process.env.FRONTEND_URL}/leaderboard"
+             style="display:inline-block;background-color:#333;color:white;padding:12px 24px;text-decoration:none;border-radius:5px;">
+            View Leaderboard
+          </a>
+        </p>
+        <p style="color:#666;font-size:12px;margin-top:30px;">See you at the next race! 🏎️</p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Personal race results email sent to:', email);
+    return true;
+  } catch (error) {
+    console.error('Error sending personal race results email to', email, ':', error);
+    return false;
+  }
+};
+
 // Send broadcast message to a user
 export const sendBroadcastEmail = async (
   email: string,

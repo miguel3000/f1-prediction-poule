@@ -19,25 +19,11 @@ CREATE TABLE IF NOT EXISTS drivers (
   team VARCHAR(255) NOT NULL,
   nationality VARCHAR(100),
   total_points INTEGER DEFAULT 0,
+  image_url VARCHAR(500),
   season INTEGER NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(driver_number, season)
-);
-
--- Qualifying results table
-CREATE TABLE IF NOT EXISTS qualifying_results (
-  id SERIAL PRIMARY KEY,
-  race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
-  driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
-  position INTEGER NOT NULL,
-  q1 VARCHAR(20),
-  q2 VARCHAR(20),
-  q3 VARCHAR(20),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(race_id, position),
-  UNIQUE(race_id, driver_id)
 );
 
 -- Races table
@@ -58,6 +44,21 @@ CREATE TABLE IF NOT EXISTS races (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(season, round, race_type)
+);
+
+-- Qualifying results table
+CREATE TABLE IF NOT EXISTS qualifying_results (
+  id SERIAL PRIMARY KEY,
+  race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+  driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  q1 VARCHAR(20),
+  q2 VARCHAR(20),
+  q3 VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(race_id, position),
+  UNIQUE(race_id, driver_id)
 );
 
 -- Predictions table

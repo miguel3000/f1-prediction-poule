@@ -49,7 +49,7 @@ export default {
       },
       fontFamily: {
         'sans': ['Saira', 'Arial', 'sans-serif'],
-        'f1': ['Saira', 'Arial', 'sans-serif'],
+        'f1': ['"Formula1"', 'Saira', 'Arial', 'sans-serif'],
       },
       fontSize: {
         'display-xl': ['3.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],

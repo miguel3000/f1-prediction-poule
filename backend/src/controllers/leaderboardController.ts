@@ -109,6 +109,79 @@ export const getUserRank = async (req: Request, res: Response) => {
   }
 };
 
+export const getSeasonHistory = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `WITH current_season AS (
+        SELECT EXTRACT(YEAR FROM CURRENT_DATE)::int AS season
+      ),
+      season_races AS (
+        SELECT id, race_name, country, race_date, race_type, round
+        FROM races
+        WHERE season = (SELECT season FROM current_season)
+          AND status IN ('completed', 'provisional')
+        ORDER BY race_date ASC
+      ),
+      all_predictions AS (
+        SELECT p.user_id, p.race_id, p.points_earned
+        FROM predictions p
+        JOIN season_races sr ON p.race_id = sr.id
+        UNION ALL
+        SELECT sp.user_id, sp.race_id, sp.points_earned
+        FROM sprint_predictions sp
+        JOIN season_races sr ON sp.race_id = sr.id
+      )
+      SELECT
+        u.id AS user_id,
+        u.nickname,
+        u.avatar_url,
+        sr.id AS race_id,
+        sr.race_name,
+        sr.country,
+        sr.race_date,
+        sr.race_type,
+        COALESCE(ap.points_earned, 0) AS points_earned
+      FROM users u
+      CROSS JOIN season_races sr
+      LEFT JOIN all_predictions ap ON ap.user_id = u.id AND ap.race_id = sr.id
+      ORDER BY sr.race_date ASC, u.nickname ASC`
+    );
+
+    // Pivot rows into { races[], users[] } structure
+    const racesMap = new Map<number, { id: number; name: string; country: string; date: string; race_type: string }>();
+    const usersMap = new Map<number, { id: number; nickname: string; avatar_url: string | null; points_per_race: number[] }>();
+
+    for (const row of result.rows) {
+      if (!racesMap.has(row.race_id)) {
+        racesMap.set(row.race_id, {
+          id: row.race_id,
+          name: row.race_name,
+          country: row.country,
+          date: row.race_date,
+          race_type: row.race_type
+        });
+      }
+      if (!usersMap.has(row.user_id)) {
+        usersMap.set(row.user_id, {
+          id: row.user_id,
+          nickname: row.nickname,
+          avatar_url: row.avatar_url,
+          points_per_race: []
+        });
+      }
+      usersMap.get(row.user_id)!.points_per_race.push(parseInt(row.points_earned));
+    }
+
+    res.json({
+      races: Array.from(racesMap.values()),
+      users: Array.from(usersMap.values())
+    });
+  } catch (error) {
+    console.error('Get season history error:', error);
+    res.status(500).json({ error: 'Failed to get season history' });
+  }
+};
+
 // F1 points systems
 const mainPointsMap: { [key: number]: number } = {
   1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1
@@ -130,9 +203,10 @@ export const calculateRacePoints = async (raceId: number) => {
     const raceType = raceQuery.rows[0].race_type || 'main';
     const isSprint = raceType === 'sprint';
 
-    // Get race results
+    // Get race results from the correct table
+    const resultsTable = isSprint ? 'sprint_results' : 'race_results';
     const resultsQuery = await query(
-      'SELECT * FROM race_results WHERE race_id = $1 ORDER BY position ASC',
+      `SELECT * FROM ${resultsTable} WHERE race_id = $1 ORDER BY position ASC`,
       [raceId]
     );
 

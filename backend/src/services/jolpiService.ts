@@ -193,6 +193,13 @@ export const hasSprint = async (season: number, round: number): Promise<boolean>
 // F1 2026 sprint race rounds: China, Miami, Canada, Great Britain, Netherlands, Singapore
 export const SPRINT_ROUNDS_2026 = [2, 6, 7, 11, 14, 18];
 
+// Clear cached results for a specific round (use before force-syncing)
+export const clearRaceCache = (season: number, round: number): void => {
+  f1Cache.delete(cacheKey.raceResults(season, round));
+  f1Cache.delete(cacheKey.sprint(season, round));
+  f1Cache.delete(cacheKey.qualifying(season, round));
+};
+
 export interface JolpiPracticeResult {
   number: string;
   position: string;

@@ -12,7 +12,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
 
     // First check if we have stored qualifying results
     const storedQualifying = await query(
-      `SELECT qr.position, qr.q1, qr.q2, qr.q3, d.id, d.driver_number, d.name, d.name_acronym, d.team
+      `SELECT qr.position, qr.q1, qr.q2, qr.q3, d.id, d.driver_number, d.name, d.name_acronym, d.team, d.image_url
        FROM qualifying_results qr
        JOIN drivers d ON qr.driver_id = d.id
        WHERE qr.race_id = $1
@@ -44,7 +44,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
         // Map qualifying results to drivers in our database
         const driverNumbers = qualifyingResults.map(q => parseInt(q.number));
         const driversResult = await query(
-          `SELECT id, driver_number, name, name_acronym, team
+          `SELECT id, driver_number, name, name_acronym, team, image_url
            FROM drivers WHERE driver_number = ANY($1) AND season = $2`,
           [driverNumbers, race.season]
         );
@@ -86,7 +86,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
     if (previousRaceResult.rows.length > 0) {
       const previousRaceId = previousRaceResult.rows[0].id;
       const previousResults = await query(
-        `SELECT rr.position, d.id, d.driver_number, d.name, d.name_acronym, d.team
+        `SELECT rr.position, d.id, d.driver_number, d.name, d.name_acronym, d.team, d.image_url
          FROM race_results rr
          JOIN drivers d ON rr.driver_id = d.id
          WHERE rr.race_id = $1
@@ -105,7 +105,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
 
     // Final fallback: championship order
     const championshipOrder = await query(
-      `SELECT id, driver_number, name, name_acronym, team, total_points
+      `SELECT id, driver_number, name, name_acronym, team, image_url, total_points
        FROM drivers
        WHERE season = $1
        ORDER BY total_points DESC, name ASC`,

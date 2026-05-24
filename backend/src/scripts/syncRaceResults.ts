@@ -45,8 +45,9 @@ async function syncRaceResults() {
           continue;
         }
 
-        // Clear existing results for this race
-        await query('DELETE FROM race_results WHERE race_id = $1', [race.id]);
+        // Clear existing results for this race (correct table per race type)
+        const resultsTable = isSprint ? 'sprint_results' : 'race_results';
+        await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
 
         let inserted = 0;
         let notFound = 0;
@@ -63,7 +64,7 @@ async function syncRaceResults() {
             const driver = driverResult.rows[0];
 
             await query(
-              `INSERT INTO race_results (race_id, driver_id, position, points, status)
+              `INSERT INTO ${resultsTable} (race_id, driver_id, position, points, status)
                VALUES ($1, $2, $3, $4, $5)`,
               [
                 race.id,

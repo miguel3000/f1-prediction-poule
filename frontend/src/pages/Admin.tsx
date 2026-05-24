@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 
 interface User {
@@ -8,6 +8,21 @@ interface User {
   avatar_url?: string;
   total_points: number;
   created_at: string;
+}
+
+interface SyncJobState {
+  lastRun: string | null;
+  lastStatus: 'success' | 'error' | 'running' | null;
+  lastMessage: string | null;
+  isRunning: boolean;
+}
+
+interface DiagnosisResult {
+  pendingSync: Array<{ id: number; round: number; race_name: string; race_type: string; status: string; race_date: string }>;
+  syncedRaces: Array<{ id: number; round: number; race_name: string; race_type: string; status: string; main_result_count: number; sprint_result_count: number }>;
+  apiTests: Array<{ race: string; round: number; type: string; apiReturned: number; status: string; error?: string }>;
+  cacheStats: { size: number; keys: string[] };
+  lastSyncStatus: SyncJobState;
 }
 
 const Admin = () => {
@@ -20,12 +35,28 @@ const Admin = () => {
   const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null);
   const [syncStatus, setSyncStatus] = useState<{ [key: string]: 'idle' | 'loading' | 'success' | 'error' }>({});
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [forceResync, setForceResync] = useState(false);
+  const [showDiagnosis, setShowDiagnosis] = useState(false);
+  const [diagnosis, setDiagnosis] = useState<DiagnosisResult | null>(null);
+  const [diagnosisLoading, setDiagnosisLoading] = useState(false);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
 
   // Broadcast email state
   const [broadcastSubject, setBroadcastSubject] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastStatus, setBroadcastStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
+
+  // Send last race results email state
+  const [raceResultsStatus, setRaceResultsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [raceResultsMessage, setRaceResultsMessage] = useState<string | null>(null);
 
   // Set password state
   const [passwordModal, setPasswordModal] = useState<{ userId: number; nickname: string } | null>(null);
@@ -228,38 +259,114 @@ const Admin = () => {
     }
   };
 
-  const handleSync = async (type: 'standings' | 'results') => {
+  const handleSendLastRaceResults = async () => {
     if (!credentials) return;
 
-    const endpoint = type === 'standings'
-      ? '/api/admin/cronjobs/sync-driver-standings'
-      : '/api/admin/cronjobs/sync-race-results';
+    if (!confirm(`Send personal prediction results for the last completed race to all players with a prediction?`)) {
+      return;
+    }
 
-    setSyncStatus(prev => ({ ...prev, [type]: 'loading' }));
-    setSyncMessage(null);
+    setRaceResultsStatus('loading');
+    setRaceResultsMessage(null);
 
     try {
       const auth = btoa(`${credentials.username}:${credentials.password}`);
-      await axios.post(endpoint, {}, {
+      const response = await axios.post('/api/admin/send-last-race-results', {}, {
         headers: { 'Authorization': `Basic ${auth}` }
       });
 
-      setSyncStatus(prev => ({ ...prev, [type]: 'success' }));
-      setSyncMessage(`${type === 'standings' ? 'Driver standings' : 'Race results'} sync started successfully!`);
+      setRaceResultsStatus('success');
+      setRaceResultsMessage(`Sent to ${response.data.sent} player(s) for "${response.data.raceName}"${response.data.failed > 0 ? `. Failed: ${response.data.failed}` : ''}`);
 
-      // Refresh users to show updated points
-      if (type === 'results') {
-        setTimeout(() => fetchUsers(), 3000);
-      }
-
-      // Reset status after 5 seconds
       setTimeout(() => {
-        setSyncStatus(prev => ({ ...prev, [type]: 'idle' }));
-        setSyncMessage(null);
-      }, 5000);
+        setRaceResultsStatus('idle');
+        setRaceResultsMessage(null);
+      }, 15000);
+    } catch (err: any) {
+      setRaceResultsStatus('error');
+      setRaceResultsMessage(err.response?.data?.error || 'Failed to send emails');
+    }
+  };
+
+  const handleSync = async (type: 'standings' | 'results') => {
+    if (!credentials) return;
+
+    const auth = btoa(`${credentials.username}:${credentials.password}`);
+    const headers = { 'Authorization': `Basic ${auth}` };
+
+    const endpoint = type === 'standings'
+      ? '/api/admin/cronjobs/sync-driver-standings'
+      : `/api/admin/cronjobs/sync-race-results${forceResync ? '?force=true' : ''}`;
+
+    setSyncStatus(prev => ({ ...prev, [type]: 'loading' }));
+    setSyncMessage(type === 'results'
+      ? `Sync started${forceResync ? ' (force mode)' : ''}… polling for result…`
+      : 'Driver standings sync started…');
+
+    try {
+      await axios.post(endpoint, {}, { headers });
     } catch (err: any) {
       setSyncStatus(prev => ({ ...prev, [type]: 'error' }));
-      setSyncMessage(err.response?.data?.error || `Failed to sync ${type}`);
+      setSyncMessage(err.response?.data?.error || `Failed to start sync`);
+      return;
+    }
+
+    if (type !== 'results') {
+      // Driver standings sync: just show a simple success after a short wait
+      setSyncStatus(prev => ({ ...prev, standings: 'success' }));
+      setSyncMessage('Driver standings sync started — check server logs for completion.');
+      setTimeout(() => {
+        setSyncStatus(prev => ({ ...prev, standings: 'idle' }));
+        setSyncMessage(null);
+      }, 8000);
+      return;
+    }
+
+    // For race results: poll GET /api/admin/sync-status every 2s until done
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const statusRes = await axios.get('/api/admin/sync-status', { headers });
+        const job: SyncJobState = statusRes.data.syncRaceResults;
+
+        if (!job.isRunning) {
+          clearInterval(pollIntervalRef.current!);
+          pollIntervalRef.current = null;
+
+          const isError = job.lastStatus === 'error';
+          setSyncStatus(prev => ({ ...prev, results: isError ? 'error' : 'success' }));
+          setSyncMessage(job.lastMessage || (isError ? 'Sync failed' : 'Sync complete'));
+
+          // Refresh users to show updated points
+          if (!isError) setTimeout(() => fetchUsers(), 500);
+
+          // Reset UI after 30 seconds
+          setTimeout(() => {
+            setSyncStatus(prev => ({ ...prev, results: 'idle' }));
+            setSyncMessage(null);
+          }, 30000);
+        }
+      } catch {
+        // Ignore transient poll errors
+      }
+    }, 2000);
+  };
+
+  const handleDiagnosis = async () => {
+    if (!credentials) return;
+    setDiagnosisLoading(true);
+    setShowDiagnosis(true);
+    try {
+      const auth = btoa(`${credentials.username}:${credentials.password}`);
+      const res = await axios.get('/api/admin/sync-diagnosis', {
+        headers: { 'Authorization': `Basic ${auth}` }
+      });
+      setDiagnosis(res.data);
+    } catch (err: any) {
+      setDiagnosis(null);
+    } finally {
+      setDiagnosisLoading(false);
     }
   };
 
@@ -340,16 +447,24 @@ const Admin = () => {
         <h2 className="text-2xl font-bold mb-6">Admin Actions</h2>
 
         {syncMessage && (
-          <div className={`mb-4 px-4 py-3 rounded ${
-            syncStatus.standings === 'success' || syncStatus.results === 'success'
-              ? 'bg-green-900/50 border border-green-500 text-green-200'
-              : 'bg-red-900/50 border border-red-500 text-red-200'
+          <div className={`mb-4 px-4 py-3 rounded whitespace-pre-line text-sm ${
+            syncStatus.standings === 'error' || syncStatus.results === 'error'
+              ? 'bg-red-900/50 border border-red-500 text-red-200'
+              : syncStatus.results === 'loading' || syncStatus.standings === 'loading'
+              ? 'bg-blue-900/50 border border-blue-500 text-blue-200'
+              : 'bg-green-900/50 border border-green-500 text-green-200'
           }`}>
+            {syncStatus.results === 'loading' && (
+              <span className="inline-flex items-center gap-2 mb-1">
+                <span className="animate-spin h-3 w-3 border-2 border-blue-300 border-t-transparent rounded-full"></span>
+                <span className="font-medium">Running sync…</span>
+              </span>
+            )}
             {syncMessage}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Sync Driver Standings */}
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
             <h3 className="font-bold text-blue-400 mb-2">Sync Driver Standings</h3>
@@ -358,7 +473,7 @@ const Admin = () => {
             </p>
             <button
               onClick={() => handleSync('standings')}
-              disabled={syncStatus.standings === 'loading'}
+              disabled={syncStatus.standings === 'loading' || syncStatus.results === 'loading'}
               className={`w-full py-2 px-4 rounded font-medium transition-colors ${
                 syncStatus.standings === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
@@ -373,7 +488,7 @@ const Admin = () => {
                   Syncing...
                 </span>
               ) : syncStatus.standings === 'success' ? (
-                'Synced!'
+                'Started!'
               ) : (
                 'Sync Standings'
               )}
@@ -383,9 +498,24 @@ const Admin = () => {
           {/* Sync Race Results */}
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
             <h3 className="font-bold text-f1-red-500 mb-2">Sync Race Results & Calculate Points</h3>
-            <p className="text-sm text-f1-gray mb-4">
-              Fetch race results, update race statuses, and recalculate prediction points for all users.
+            <p className="text-sm text-f1-gray mb-3">
+              Fetch race &amp; sprint results from Jolpi API, update race statuses, and recalculate prediction points for all users.
             </p>
+
+            {/* Force re-sync toggle */}
+            <label className="flex items-center gap-2 text-sm text-f1-gray mb-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={forceResync}
+                onChange={e => setForceResync(e.target.checked)}
+                className="w-4 h-4 accent-orange-500"
+              />
+              <span>
+                <span className="text-orange-400 font-medium">Force re-sync</span>
+                <span className="text-xs ml-1">(re-calculates points for races already synced)</span>
+              </span>
+            </label>
+
             <button
               onClick={() => handleSync('results')}
               disabled={syncStatus.results === 'loading'}
@@ -394,22 +524,159 @@ const Admin = () => {
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.results === 'success'
                   ? 'bg-green-600 text-white'
+                  : forceResync
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
                   : 'bg-f1-red hover:bg-red-700 text-white'
               }`}
             >
               {syncStatus.results === 'loading' ? (
                 <span className="inline-flex items-center gap-2">
                   <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Syncing...
+                  Syncing… (polling for result)
                 </span>
               ) : syncStatus.results === 'success' ? (
-                'Synced!'
+                'Done!'
               ) : (
-                'Sync Results & Calculate Points'
+                forceResync ? 'Force Re-sync All Races' : 'Sync Results & Calculate Points'
               )}
+            </button>
+
+            {/* Diagnosis button */}
+            <button
+              onClick={handleDiagnosis}
+              disabled={diagnosisLoading}
+              className="w-full mt-2 py-1.5 px-4 rounded text-sm font-medium bg-f1-neutral-700 hover:bg-f1-neutral-600 text-f1-gray transition-colors"
+            >
+              {diagnosisLoading ? 'Running diagnosis…' : 'Run Sync Diagnosis'}
             </button>
           </div>
         </div>
+
+        {/* Diagnosis panel */}
+        {showDiagnosis && (
+          <div className="mt-4 bg-f1-neutral-900 border border-f1-neutral-700 rounded-lg p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-yellow-400">Sync Diagnosis</h3>
+              <button onClick={() => setShowDiagnosis(false)} className="text-f1-gray hover:text-white text-sm">✕ Close</button>
+            </div>
+
+            {diagnosisLoading ? (
+              <div className="text-f1-gray text-sm animate-pulse">Querying DB and Jolpi API…</div>
+            ) : diagnosis ? (
+              <div className="space-y-4 text-sm">
+                {/* Pending races */}
+                <div>
+                  <p className="font-medium text-white mb-2">
+                    Races needing sync: <span className={diagnosis.pendingSync.length > 0 ? 'text-yellow-400' : 'text-green-400'}>{diagnosis.pendingSync.length}</span>
+                  </p>
+                  {diagnosis.pendingSync.length > 0 ? (
+                    <ul className="space-y-1 text-f1-gray font-mono text-xs">
+                      {diagnosis.pendingSync.map(r => (
+                        <li key={`${r.id}`}>• Round {r.round}: {r.race_name} ({r.race_type}) — DB status: {r.status}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-green-400 text-xs">All past races already have results. Use Force Re-sync to recalculate points.</p>
+                  )}
+                </div>
+
+                {/* API tests */}
+                {diagnosis.apiTests.length > 0 && (
+                  <div>
+                    <p className="font-medium text-white mb-2">Jolpi API test (first 3 pending):</p>
+                    <ul className="space-y-1 font-mono text-xs">
+                      {diagnosis.apiTests.map((t, i) => (
+                        <li key={i} className={t.status === 'available' ? 'text-green-400' : t.status === 'error' ? 'text-red-400' : 'text-yellow-400'}>
+                          • {t.race} ({t.type}): {t.status === 'available' ? `✓ ${t.apiReturned} results` : t.status === 'no_data' ? '⚠ no data yet' : `✗ ${t.error}`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Synced races summary */}
+                <div>
+                  <p className="font-medium text-white mb-2">Past races in DB ({diagnosis.syncedRaces.length} total):</p>
+                  <div className="overflow-x-auto">
+                    <table className="text-xs w-full">
+                      <thead>
+                        <tr className="border-b border-f1-neutral-700 text-f1-gray">
+                          <th className="text-left py-1 pr-3">Round</th>
+                          <th className="text-left py-1 pr-3">Race</th>
+                          <th className="text-left py-1 pr-3">Type</th>
+                          <th className="text-left py-1 pr-3">DB Status</th>
+                          <th className="text-left py-1">Results</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {diagnosis.syncedRaces.map(r => {
+                          const count = r.race_type === 'sprint' ? r.sprint_result_count : r.main_result_count;
+                          return (
+                            <tr key={r.id} className="border-b border-f1-neutral-800 text-f1-gray">
+                              <td className="py-1 pr-3">{r.round}</td>
+                              <td className="py-1 pr-3">{r.race_name}</td>
+                              <td className={`py-1 pr-3 ${r.race_type === 'sprint' ? 'text-orange-400' : 'text-blue-400'}`}>{r.race_type}</td>
+                              <td className={`py-1 pr-3 ${r.status === 'completed' ? 'text-green-400' : r.status === 'provisional' ? 'text-yellow-400' : 'text-f1-gray'}`}>{r.status}</td>
+                              <td className={`py-1 ${count > 0 ? 'text-green-400' : 'text-red-400'}`}>{count} rows</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Cache stats */}
+                <div className="text-xs text-f1-gray">
+                  Cache entries: {diagnosis.cacheStats.size} — {diagnosis.cacheStats.keys.join(', ') || 'empty'}
+                </div>
+              </div>
+            ) : (
+              <p className="text-red-400 text-sm">Diagnosis failed.</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Send Last Race Results */}
+      <div className="card-f1 mb-8">
+        <h2 className="text-2xl font-bold mb-2">Send Race Prediction Results</h2>
+        <p className="text-f1-gray text-sm mb-4">
+          Send each player a personalised email showing their predictions vs. the actual result for the most recently completed race.
+        </p>
+
+        {raceResultsMessage && (
+          <div className={`mb-4 px-4 py-3 rounded ${
+            raceResultsStatus === 'success'
+              ? 'bg-green-900/50 border border-green-500 text-green-200'
+              : 'bg-red-900/50 border border-red-500 text-red-200'
+          }`}>
+            {raceResultsMessage}
+          </div>
+        )}
+
+        <button
+          onClick={handleSendLastRaceResults}
+          disabled={raceResultsStatus === 'loading'}
+          className={`py-3 px-6 rounded font-medium transition-colors ${
+            raceResultsStatus === 'loading'
+              ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+              : raceResultsStatus === 'success'
+              ? 'bg-green-600 text-white'
+              : 'bg-f1-red hover:bg-red-700 text-white'
+          }`}
+        >
+          {raceResultsStatus === 'loading' ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+              Sending…
+            </span>
+          ) : raceResultsStatus === 'success' ? (
+            'Emails Sent!'
+          ) : (
+            'Send Last Race Results to All Players'
+          )}
+        </button>
       </div>
 
       {/* Broadcast Email */}
@@ -627,7 +894,6 @@ const Admin = () => {
                 </tr>
               </thead>
               <tbody className="text-f1-gray">
-                <tr className="border-b border-f1-neutral-700/50">
                 <tr className="border-b border-f1-neutral-700/50">
                   <td className="py-2 px-3 font-medium text-white">Prediction Confirmation</td>
                   <td className="py-2 px-3">User saves prediction</td>

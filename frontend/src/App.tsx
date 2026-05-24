@@ -70,7 +70,7 @@ function App() {
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/rules" element={<Rules />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/pitlane" element={<Admin />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/predictions" element={<MyPredictions />} />
               <Route path="/stats" element={<Stats />} />

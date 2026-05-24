@@ -31,6 +31,7 @@ export interface OpenF1Driver {
   team_name: string;
   country_code: string;
   session_key: number;
+  headshot_url?: string;
 }
 
 export interface OpenF1SessionResult {

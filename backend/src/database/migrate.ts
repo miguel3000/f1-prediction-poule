@@ -57,6 +57,11 @@ const runMigration = async () => {
     await query(`ALTER TABLE qualifying_results ADD COLUMN IF NOT EXISTS q3 VARCHAR(20)`);
     console.log('q1/q2/q3 columns ensured.');
 
+    // Add image_url column to drivers table for headshots
+    console.log('Checking for image_url column on drivers...');
+    await query(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
+    console.log('image_url column ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);
