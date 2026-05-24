@@ -288,7 +288,7 @@ const Admin = () => {
     }
   };
 
-  const handleSync = async (type: 'standings' | 'results') => {
+  const handleSync = async (type: 'standings' | 'results' | 'drivers') => {
     if (!credentials) return;
 
     const auth = btoa(`${credentials.username}:${credentials.password}`);
@@ -296,6 +296,8 @@ const Admin = () => {
 
     const endpoint = type === 'standings'
       ? '/api/admin/cronjobs/sync-driver-standings'
+      : type === 'drivers'
+      ? '/api/admin/cronjobs/sync-drivers'
       : `/api/admin/cronjobs/sync-race-results${forceResync ? '?force=true' : ''}`;
 
     setSyncStatus(prev => ({ ...prev, [type]: 'loading' }));
@@ -312,11 +314,13 @@ const Admin = () => {
     }
 
     if (type !== 'results') {
-      // Driver standings sync: just show a simple success after a short wait
-      setSyncStatus(prev => ({ ...prev, standings: 'success' }));
-      setSyncMessage('Driver standings sync started — check server logs for completion.');
+      // Driver standings / drivers sync: show simple success after a short wait
+      setSyncStatus(prev => ({ ...prev, [type]: 'success' }));
+      setSyncMessage(type === 'drivers'
+        ? 'Driver sync complete — headshots updated. Run Sync Standings to refresh points.'
+        : 'Driver standings sync started — check server logs for completion.');
       setTimeout(() => {
-        setSyncStatus(prev => ({ ...prev, standings: 'idle' }));
+        setSyncStatus(prev => ({ ...prev, [type]: 'idle' }));
         setSyncMessage(null);
       }, 8000);
       return;
@@ -465,6 +469,36 @@ const Admin = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Sync Drivers & Headshots */}
+          <div className="bg-f1-neutral-800 p-5 rounded-lg">
+            <h3 className="font-bold text-purple-400 mb-2">Sync Drivers & Headshots</h3>
+            <p className="text-sm text-f1-gray mb-4">
+              Fetch driver list from OpenF1 API and store headshot URLs for circular avatars on the prediction page.
+            </p>
+            <button
+              onClick={() => handleSync('drivers')}
+              disabled={syncStatus.drivers === 'loading' || syncStatus.results === 'loading'}
+              className={`w-full py-2 px-4 rounded font-medium transition-colors ${
+                syncStatus.drivers === 'loading'
+                  ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                  : syncStatus.drivers === 'success'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+              }`}
+            >
+              {syncStatus.drivers === 'loading' ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Syncing...
+                </span>
+              ) : syncStatus.drivers === 'success' ? (
+                'Done!'
+              ) : (
+                'Sync Drivers & Headshots'
+              )}
+            </button>
+          </div>
+
           {/* Sync Driver Standings */}
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
             <h3 className="font-bold text-blue-400 mb-2">Sync Driver Standings</h3>

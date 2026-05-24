@@ -12,6 +12,7 @@ import {
   setUserPassword,
   changeAdminPassword
 } from '../controllers/adminController';
+import { syncDrivers } from '../controllers/driverController';
 import { authenticateAdmin } from '../middleware/adminAuth';
 
 const router = express.Router();
@@ -25,6 +26,7 @@ router.post('/admin-password', authenticateAdmin, changeAdminPassword);
 // Cronjob management
 router.get('/cronjobs', authenticateAdmin, getCronJobs);
 router.post('/cronjobs/sync-driver-standings', authenticateAdmin, triggerDriverStandingsSync);
+router.post('/cronjobs/sync-drivers', authenticateAdmin, syncDrivers);
 // ?force=true to re-sync races that already have results (recalculates points)
 router.post('/cronjobs/sync-race-results', authenticateAdmin, triggerRaceResultsSync);
 
