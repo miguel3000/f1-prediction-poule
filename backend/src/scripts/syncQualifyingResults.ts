@@ -9,16 +9,15 @@ async function syncQualifyingResults() {
     // Find main races where qualifying has ended (qualifying_date + 2 hours < NOW)
     // and no qualifying_results exist yet
     const racesResult = await query(
-      `SELECT r.id, r.season, r.round, r.race_name, r.qualifying_date
+      `SELECT r.id, r.season, r.round, r.race_name, r.race_date
        FROM races r
        WHERE r.season = $1
          AND r.race_type = 'main'
-         AND r.qualifying_date IS NOT NULL
-         AND r.qualifying_date + INTERVAL '2 hours' < NOW()
+         AND r.race_date - INTERVAL '1 day' < NOW()
          AND NOT EXISTS (
            SELECT 1 FROM qualifying_results WHERE race_id = r.id
          )
-       ORDER BY r.qualifying_date DESC`,
+       ORDER BY r.race_date DESC`,
       [season]
     );
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
+import * as openF1Service from '../services/openF1Service';
 import { calculateRacePoints } from './leaderboardController';
 import { sendBroadcastEmail, sendPersonalRaceResults } from '../services/emailService';
 import { f1Cache } from '../utils/cache';
@@ -760,5 +761,157 @@ export const setUserPassword = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Set user password error:', error);
     res.status(500).json({ error: 'Failed to set password' });
+  }
+};
+
+export const triggerQualifyingSync = async (req: Request, res: Response) => {
+  const force = req.query.force === 'true';
+  const season = 2026;
+
+  try {
+    // qualifying_date is not populated — use race_date - 1 day as proxy
+    const racesResult = await query(
+      `SELECT r.id, r.season, r.round, r.race_name, r.race_date
+       FROM races r
+       WHERE r.season = $1
+         AND r.race_type = 'main'
+         AND r.race_date - INTERVAL '1 day' < NOW()
+         ${force ? '' : 'AND NOT EXISTS (SELECT 1 FROM qualifying_results WHERE race_id = r.id)'}
+       ORDER BY r.race_date DESC
+       LIMIT 1`,
+      [season]
+    );
+
+    if (racesResult.rows.length === 0) {
+      return res.json({
+        message: force
+          ? 'No past races found for this season yet.'
+          : 'Qualifying already synced for all past races. Use "Force re-sync" to overwrite.',
+        synced: 0,
+      });
+    }
+
+    const race = racesResult.rows[0];
+    jolpiService.clearRaceCache(race.season, race.round);
+
+    // ── Fetch from both sources in parallel ──────────────────────────────────
+    const [jolpiResults, openF1SessionKey] = await Promise.all([
+      jolpiService.getQualifyingResults(race.season, race.round).catch(() => []),
+      openF1Service.getQualifyingSessionKey(race.season, race.race_date),
+    ]);
+
+    const openF1Results = openF1SessionKey
+      ? await openF1Service.getQualifyingResults(openF1SessionKey).catch(() => [])
+      : [];
+
+    // ── Cross-verify top 10 ───────────────────────────────────────────────────
+    const conflicts: string[] = [];
+    const top10 = Math.min(10, jolpiResults.length, openF1Results.length);
+
+    for (let i = 0; i < top10; i++) {
+      const jolpiNum  = parseInt((jolpiResults[i] as any).number);
+      const openF1Num = openF1Results[i]?.driver_number;
+      if (openF1Num && jolpiNum !== openF1Num) {
+        conflicts.push(`P${i + 1}: Jolpi=#${jolpiNum} vs OpenF1=#${openF1Num}`);
+      }
+    }
+
+    // ── Use Jolpi as primary (historical data), OpenF1 as fallback ────────────
+    const primaryResults = jolpiResults.length > 0 ? jolpiResults : null;
+
+    if (!primaryResults || primaryResults.length === 0) {
+      const openF1Only = openF1Results.length > 0;
+      if (!openF1Only) {
+        return res.json({
+          message: `No qualifying results available yet for ${race.race_name} (Round ${race.round}). Neither Jolpi nor OpenF1 has data yet.`,
+          synced: 0,
+          race: race.race_name,
+          jolpiResults: 0,
+          openF1Results: 0,
+        });
+      }
+      // Fallback: use OpenF1 only
+      return res.json({
+        message: `Jolpi has no data yet — OpenF1 has ${openF1Results.length} results but they cannot be inserted without driver number mapping. Try again later.`,
+        synced: 0,
+        race: race.race_name,
+        jolpiResults: 0,
+        openF1Results: openF1Results.length,
+      });
+    }
+
+    // ── Map driver numbers → DB driver IDs ───────────────────────────────────
+    const driverNumbers = primaryResults.map((q: any) => parseInt(q.number));
+    const driversResult = await query(
+      'SELECT id, driver_number, name FROM drivers WHERE driver_number = ANY($1) AND season = $2',
+      [driverNumbers, race.season]
+    );
+    const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
+
+    // Merge Q times: prefer OpenF1 if it has data, fall back to Jolpi
+    const openF1ByNumber = new Map(openF1Results.map(r => [r.driver_number, r]));
+
+    let inserted = 0;
+    let notFound = 0;
+    const grid: string[] = [];
+
+    for (const result of primaryResults) {
+      const driverNumber = parseInt((result as any).number);
+      const driver = driverMap.get(driverNumber);
+      const of1 = openF1ByNumber.get(driverNumber);
+
+      if (driver) {
+        const q1 = (result as any).Q1 || of1?.q1 || null;
+        const q2 = (result as any).Q2 || of1?.q2 || null;
+        const q3 = (result as any).Q3 || of1?.q3 || null;
+        const position = parseInt((result as any).position);
+
+        await query(
+          `INSERT INTO qualifying_results (race_id, driver_id, position, q1, q2, q3)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (race_id, driver_id) DO UPDATE SET
+             position = EXCLUDED.position,
+             q1 = EXCLUDED.q1,
+             q2 = EXCLUDED.q2,
+             q3 = EXCLUDED.q3`,
+          [race.id, driver.id, position, q1, q2, q3]
+        );
+        inserted++;
+        grid.push(`P${position}: ${driver.name}`);
+      } else {
+        notFound++;
+      }
+    }
+
+    const verified = conflicts.length === 0 && openF1Results.length > 0;
+
+    res.json({
+      message: [
+        `Synced ${inserted} qualifying results for ${race.race_name}.`,
+        verified
+          ? `✅ Verified: Jolpi and OpenF1 agree on the top ${top10}.`
+          : conflicts.length > 0
+          ? `⚠️ ${conflicts.length} position conflict(s) detected — Jolpi used as primary.`
+          : openF1Results.length === 0
+          ? `ℹ️ OpenF1 had no data for this session yet (cross-check skipped).`
+          : '',
+        notFound > 0 ? `${notFound} driver(s) not in DB.` : '',
+      ].filter(Boolean).join(' '),
+      race: race.race_name,
+      round: race.round,
+      synced: inserted,
+      notFound,
+      verified,
+      conflicts,
+      sources: {
+        jolpi: jolpiResults.length,
+        openF1: openF1Results.length,
+        openF1SessionKey,
+      },
+      grid,
+    });
+  } catch (error) {
+    console.error('Qualifying sync error:', error);
+    res.status(500).json({ error: 'Failed to sync qualifying results', details: String(error) });
   }
 };

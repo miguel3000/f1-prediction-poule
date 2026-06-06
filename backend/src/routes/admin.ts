@@ -5,6 +5,7 @@ import {
   getCronJobs,
   triggerDriverStandingsSync,
   triggerRaceResultsSync,
+  triggerQualifyingSync,
   getSyncStatus,
   getSyncDiagnosis,
   sendBroadcastToAllUsers,
@@ -27,6 +28,8 @@ router.post('/admin-password', authenticateAdmin, changeAdminPassword);
 router.get('/cronjobs', authenticateAdmin, getCronJobs);
 router.post('/cronjobs/sync-driver-standings', authenticateAdmin, triggerDriverStandingsSync);
 router.post('/cronjobs/sync-drivers', authenticateAdmin, syncDrivers);
+// ?force=true to re-sync races that already have results (recalculates points)
+router.post('/cronjobs/sync-qualifying', authenticateAdmin, triggerQualifyingSync)
 // ?force=true to re-sync races that already have results (recalculates points)
 router.post('/cronjobs/sync-race-results', authenticateAdmin, triggerRaceResultsSync);
 

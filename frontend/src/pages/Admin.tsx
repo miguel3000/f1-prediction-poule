@@ -288,7 +288,7 @@ const Admin = () => {
     }
   };
 
-  const handleSync = async (type: 'standings' | 'results' | 'drivers') => {
+  const handleSync = async (type: 'standings' | 'results' | 'drivers' | 'qualifying') => {
     if (!credentials) return;
 
     const auth = btoa(`${credentials.username}:${credentials.password}`);
@@ -298,15 +298,30 @@ const Admin = () => {
       ? '/api/admin/cronjobs/sync-driver-standings'
       : type === 'drivers'
       ? '/api/admin/cronjobs/sync-drivers'
+      : type === 'qualifying'
+      ? `/api/admin/cronjobs/sync-qualifying${forceResync ? '?force=true' : ''}`
       : `/api/admin/cronjobs/sync-race-results${forceResync ? '?force=true' : ''}`;
 
     setSyncStatus(prev => ({ ...prev, [type]: 'loading' }));
     setSyncMessage(type === 'results'
       ? `Sync started${forceResync ? ' (force mode)' : ''}… polling for result…`
+      : type === 'qualifying'
+      ? 'Fetching qualifying results from Jolpi…'
       : 'Driver standings sync started…');
 
     try {
-      await axios.post(endpoint, {}, { headers });
+      const response = await axios.post(endpoint, {}, { headers });
+      if (type === 'qualifying') {
+        setSyncStatus(prev => ({ ...prev, qualifying: 'success' }));
+        const data = response.data;
+        const gridPreview = data.grid?.slice(0, 5).join(' · ') || '';
+        setSyncMessage(`✅ ${data.message}${gridPreview ? `\n${gridPreview}${data.grid?.length > 5 ? ` …+${data.grid.length - 5} more` : ''}` : ''}`);
+        setTimeout(() => {
+          setSyncStatus(prev => ({ ...prev, qualifying: 'idle' }));
+          setSyncMessage(null);
+        }, 15000);
+        return;
+      }
     } catch (err: any) {
       setSyncStatus(prev => ({ ...prev, [type]: 'error' }));
       setSyncMessage(err.response?.data?.error || `Failed to start sync`);
@@ -432,6 +447,7 @@ const Admin = () => {
         <h1 className="text-4xl md:text-display-xl font-bold text-gradient-red">
           Admin Panel
         </h1>
+        {/* v2 */}
         <button
           onClick={handleLogout}
           className="btn-f1-secondary"
@@ -478,7 +494,7 @@ const Admin = () => {
             <button
               onClick={() => handleSync('drivers')}
               disabled={syncStatus.drivers === 'loading' || syncStatus.results === 'loading'}
-              className={`w-full py-2 px-4 rounded font-medium transition-colors ${
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
                 syncStatus.drivers === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.drivers === 'success'
@@ -508,7 +524,7 @@ const Admin = () => {
             <button
               onClick={() => handleSync('standings')}
               disabled={syncStatus.standings === 'loading' || syncStatus.results === 'loading'}
-              className={`w-full py-2 px-4 rounded font-medium transition-colors ${
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
                 syncStatus.standings === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.standings === 'success'
@@ -525,6 +541,52 @@ const Admin = () => {
                 'Started!'
               ) : (
                 'Sync Standings'
+              )}
+            </button>
+          </div>
+
+          {/* Sync Qualifying Results */}
+          <div className="bg-f1-neutral-800 p-5 rounded-lg border border-yellow-500/30">
+            <h3 className="font-bold text-yellow-400 mb-2">🏁 Sync Qualifying Results</h3>
+            <p className="text-sm text-f1-gray mb-4">
+              Manually fetch the latest qualifying grid from Jolpi. Use this right after qualifying ends — bypasses the 2-hour cron delay and clears cache.
+            </p>
+
+            <label className="flex items-center gap-2 text-sm text-f1-gray mb-4 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={forceResync}
+                onChange={e => setForceResync(e.target.checked)}
+                className="w-4 h-4 accent-orange-500"
+              />
+              <span>
+                <span className="text-orange-400 font-medium">Force re-sync</span>
+                <span className="text-xs ml-1">(overwrite existing qualifying results)</span>
+              </span>
+            </label>
+
+            <button
+              onClick={() => handleSync('qualifying')}
+              disabled={syncStatus.qualifying === 'loading' || syncStatus.results === 'loading'}
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
+                syncStatus.qualifying === 'loading'
+                  ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                  : syncStatus.qualifying === 'success'
+                  ? 'bg-green-600 text-white'
+                  : forceResync
+                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                  : 'bg-yellow-500 hover:bg-yellow-400 text-black'
+              }`}
+            >
+              {syncStatus.qualifying === 'loading' ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Fetching qualifying…
+                </span>
+              ) : syncStatus.qualifying === 'success' ? (
+                '✅ Done!'
+              ) : (
+                forceResync ? 'Force Re-sync Qualifying' : 'Sync Qualifying Results'
               )}
             </button>
           </div>
@@ -553,7 +615,7 @@ const Admin = () => {
             <button
               onClick={() => handleSync('results')}
               disabled={syncStatus.results === 'loading'}
-              className={`w-full py-2 px-4 rounded font-medium transition-colors ${
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
                 syncStatus.results === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.results === 'success'
