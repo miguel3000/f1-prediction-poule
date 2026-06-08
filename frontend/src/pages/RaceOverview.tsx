@@ -119,6 +119,8 @@ const RaceOverview = () => {
               selectedRace?.id === race.id
                 ? isSprint(race) ? 'ring-2 ring-orange-500' : 'ring-2 ring-f1-red'
                 : ''
+            } ${
+              race.status === 'completed' || race.status === 'provisional' ? 'opacity-60' : ''
             }`}
           >
             <div className="flex justify-between items-start mb-3">

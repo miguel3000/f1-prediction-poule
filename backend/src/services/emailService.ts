@@ -153,7 +153,8 @@ export const sendFinalResults = async (
   raceName: string,
   totalPoints: number,
   hasChanges: boolean,
-  previousPoints?: number
+  previousPoints?: number,
+  userPrediction?: UserPredictionResult[]
 ) => {
   const changesSection = hasChanges && previousPoints !== undefined
     ? `
@@ -162,6 +163,28 @@ export const sendFinalResults = async (
         Due to post-race penalties/disqualifications, your points have changed:<br>
         Previous: ${previousPoints} points → Final: ${totalPoints} points
       </div>
+    `
+    : '';
+
+  const predictionTable = userPrediction && userPrediction.length > 0
+    ? `
+      <h3 style="color: #333;">Your Prediction Results</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="background-color: #333; color: white;">
+          <th style="padding: 8px; text-align: left;">Predicted</th>
+          <th style="padding: 8px; text-align: left;">Driver</th>
+          <th style="padding: 8px; text-align: center;">Actual</th>
+          <th style="padding: 8px; text-align: right;">Points</th>
+        </tr>
+        ${userPrediction.map((p, i) => `
+          <tr style="background-color: ${p.hasBonus ? '#d4edda' : (i % 2 === 0 ? '#f9f9f9' : '#fff')};">
+            <td style="padding: 8px;">P${p.predictedPosition}</td>
+            <td style="padding: 8px;">${escapeHtml(p.driverName)}</td>
+            <td style="padding: 8px; text-align: center;">${p.actualPosition ? `P${p.actualPosition}` : 'DNF/DNS'}</td>
+            <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (+50%)' : ''}</td>
+          </tr>
+        `).join('')}
+      </table>
     `
     : '';
 
@@ -176,6 +199,8 @@ export const sendFinalResults = async (
         <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been confirmed.</p>
 
         ${changesSection}
+
+        ${predictionTable}
 
         <div style="background-color: #E10600; color: white; padding: 15px; border-radius: 5px; text-align: center;">
           <strong>Your Final Points: ${totalPoints}</strong>

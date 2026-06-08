@@ -1,7 +1,7 @@
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
-import { sendFinalResults, sendResultsAreInEmail } from '../services/emailService';
+import { sendFinalResults, sendResultsAreInEmail, UserPredictionResult } from '../services/emailService';
 
 async function processFinalResults() {
   try {
@@ -123,13 +123,36 @@ async function processFinalResults() {
         );
 
         // Get new points and send emails
+        const maxPositions = isSprint ? 8 : 10;
+        const pointsMap: Record<number, number> = isSprint
+          ? { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4, 6: 3, 7: 2, 8: 1 }
+          : { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
+
         const newPredictions = await query(
-          `SELECT p.user_id, p.points_earned, u.email, u.nickname
+          `SELECT p.*, u.email, u.nickname
            FROM ${predictionTable} p
            JOIN users u ON p.user_id = u.id
            WHERE p.race_id = $1`,
           [race.id]
         );
+
+        // Load final results once for all users
+        const finalResultsResult = await query(
+          `SELECT driver_id, position FROM ${resultsTable} WHERE race_id = $1`,
+          [race.id]
+        );
+        const finalResultsMap = new Map(finalResultsResult.rows.map((r: any) => [r.driver_id, r.position]));
+
+        // Load driver names once
+        const allDriverIds = newPredictions.rows.flatMap((pred: any) =>
+          Array.from({ length: maxPositions }, (_, i) => pred[`position_${i + 1}`]).filter(Boolean)
+        );
+        const uniqueDriverIds = [...new Set(allDriverIds)];
+        const driverNamesResult = await query(
+          'SELECT id, name FROM drivers WHERE id = ANY($1)',
+          [uniqueDriverIds]
+        );
+        const driverNameMap = new Map(driverNamesResult.rows.map((d: any) => [d.id, d.name]));
 
         console.log(`[CRON] Sending final results to ${newPredictions.rows.length} users...`);
 
@@ -139,13 +162,31 @@ async function processFinalResults() {
             const previousPoints = previousData?.points || 0;
             const hasChanges = previousPoints !== pred.points_earned;
 
+            // Build per-driver breakdown
+            const userPredictionResults: UserPredictionResult[] = [];
+            for (let pos = 1; pos <= maxPositions; pos++) {
+              const driverId = pred[`position_${pos}`];
+              if (!driverId) continue;
+              const driverName = driverNameMap.get(driverId) || 'Unknown';
+              const actualPos: number | null = finalResultsMap.get(driverId) ?? null;
+              let pointsEarned = 0;
+              let hasBonus = false;
+              if (actualPos && actualPos <= maxPositions) {
+                const basePoints = pointsMap[actualPos] || 0;
+                hasBonus = Math.abs(pos - actualPos) <= 1;
+                pointsEarned = hasBonus ? Math.round(basePoints * 1.5) : basePoints;
+              }
+              userPredictionResults.push({ predictedPosition: pos, driverName, actualPosition: actualPos, pointsEarned, hasBonus });
+            }
+
             await sendFinalResults(
               pred.email,
               pred.nickname,
               race.race_name,
               pred.points_earned,
               hasChanges,
-              hasChanges ? previousPoints : undefined
+              hasChanges ? previousPoints : undefined,
+              userPredictionResults
             );
           } catch (emailError) {
             console.error(`[CRON] Error sending final results email to ${pred.email}:`, emailError);

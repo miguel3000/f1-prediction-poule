@@ -10,6 +10,12 @@ interface Driver {
   driver_number: number;
 }
 
+interface PositionPoint {
+  pointsEarned: number;
+  hasBonus: boolean;
+  actualPosition: number | null;
+}
+
 interface Prediction {
   id: number;
   race_id: number;
@@ -18,6 +24,7 @@ interface Prediction {
   status: 'upcoming' | 'in_progress' | 'completed';
   positions: Driver[];
   points?: number;
+  positionPoints?: PositionPoint[];
   race_type?: 'sprint' | 'main';
 }
 
@@ -201,26 +208,39 @@ const MyPredictions = () => {
               </div>
 
               <div className={`grid gap-3 ${isSprint ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-5'}`}>
-                {prediction.positions.map((driver, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 rounded border ${
-                      isSprint
-                        ? 'bg-orange-900/30 border-orange-500/30'
-                        : 'bg-f1-neutral-800 border-f1-neutral-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold text-sm ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
-                        P{index + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{driver.name}</p>
-                        <p className="text-xs text-f1-gray truncate">{driver.team}</p>
+                {prediction.positions.map((driver, index) => {
+                  const pts = prediction.positionPoints?.[index];
+                  return (
+                    <div
+                      key={index}
+                      className={`p-3 rounded border ${
+                        isSprint
+                          ? 'bg-orange-900/30 border-orange-500/30'
+                          : 'bg-f1-neutral-800 border-f1-neutral-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold text-sm ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                          P{index + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{driver.name}</p>
+                          <p className="text-xs text-f1-gray truncate">{driver.team}</p>
+                        </div>
                       </div>
+                      {pts !== undefined && (
+                        <div className="mt-1.5 flex items-center justify-between text-xs">
+                          <span className="text-f1-gray">
+                            {pts.actualPosition ? `→ P${pts.actualPosition}` : '→ DNF'}
+                          </span>
+                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-orange-400' : 'text-f1-red-500')) : 'text-f1-gray'}`}>
+                            {pts.pointsEarned > 0 ? `+${pts.pointsEarned}${pts.hasBonus ? ' ★' : ''}` : '0'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {prediction.status === 'upcoming' && (

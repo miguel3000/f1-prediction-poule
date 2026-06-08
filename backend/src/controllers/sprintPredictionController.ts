@@ -141,6 +141,31 @@ export const getUserSprintPredictions = async (req: Request, res: Response) => {
         }
       }
 
+      // Compute per-driver points for completed/provisional sprint races
+      const sprintPointsMap: Record<number, number> = { 1: 8, 2: 7, 3: 6, 4: 5, 5: 4, 6: 3, 7: 2, 8: 1 };
+      let positionPoints: Array<{ pointsEarned: number; hasBonus: boolean; actualPosition: number | null }> | undefined;
+
+      if (prediction.status === 'completed' || prediction.status === 'provisional') {
+        const resultsResult = await query(
+          'SELECT driver_id, position FROM sprint_results WHERE race_id = $1',
+          [prediction.race_id]
+        );
+        const resultsMap = new Map(resultsResult.rows.map((r: any) => [r.driver_id, r.position]));
+
+        positionPoints = [];
+        for (let i = 1; i <= 8; i++) {
+          const driverId = prediction[`position_${i}`];
+          const actualPos: number | null = resultsMap.get(driverId) ?? null;
+          if (actualPos && actualPos <= 8) {
+            const basePoints = sprintPointsMap[actualPos] || 0;
+            const hasBonus = Math.abs(i - actualPos) <= 1;
+            positionPoints.push({ pointsEarned: hasBonus ? Math.round(basePoints * 1.5) : basePoints, hasBonus, actualPosition: actualPos });
+          } else {
+            positionPoints.push({ pointsEarned: 0, hasBonus: false, actualPosition: actualPos });
+          }
+        }
+      }
+
       return {
         id: prediction.id,
         race_id: prediction.race_id,
@@ -149,6 +174,7 @@ export const getUserSprintPredictions = async (req: Request, res: Response) => {
         status: prediction.status,
         positions: positions,
         points: prediction.points_earned,
+        positionPoints,
         race_type: 'sprint'
       };
     }));

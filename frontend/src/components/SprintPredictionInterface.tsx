@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -6,6 +6,7 @@ import { TouchBackend } from 'react-dnd-touch-backend';
 import { getQualifyingOrder, submitSprintPrediction, getSprintPrediction } from '../services/api';
 import { haptics } from '../utils/haptics';
 import { getTeamColor } from '../utils/teamColors';
+import { AuthContext } from '../context/AuthContext';
 
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const DndBackend = isTouchDevice() ? TouchBackend : HTML5Backend;
@@ -204,10 +205,12 @@ const RemoveZone = ({ onDrop, children }: RemoveZoneProps) => {
 interface SprintPredictionInterfaceProps {
   raceId: number;
   mainRaceId?: number;
+  raceDate?: string;
 }
 
-const SprintPredictionInterface = ({ raceId, mainRaceId }: SprintPredictionInterfaceProps) => {
+const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredictionInterfaceProps) => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [qualifyingDrivers, setQualifyingDrivers] = useState<Driver[]>([]);
   const [predictions, setPredictions] = useState<(Driver | null)[]>(Array(8).fill(null));
   const [loading, setLoading] = useState(true);
@@ -216,6 +219,20 @@ const SprintPredictionInterface = ({ raceId, mainRaceId }: SprintPredictionInter
   const [hasQualifyingResults, setHasQualifyingResults] = useState(false);
   const [orderSource, setOrderSource] = useState<string>('');
   const [showQualiDetails, setShowQualiDetails] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
+  const checkLockState = useCallback(() => {
+    if (!raceDate) return;
+    const lockTime = new Date(new Date(raceDate).getTime() - 60_000);
+    setIsLocked(new Date() >= lockTime);
+  }, [raceDate]);
+
+  useEffect(() => {
+    checkLockState();
+    const timer = setInterval(checkLockState, 30_000);
+    return () => clearInterval(timer);
+  }, [checkLockState]);
 
   useEffect(() => { fetchData(); }, [raceId]);
 
@@ -296,7 +313,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId }: SprintPredictionInter
     setMessage('');
     try {
       await submitSprintPrediction(raceId, predictions.map(d => d!.id));
-      setMessage('Sprint prediction submitted successfully!');
+      setShowConfirmModal(true);
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to submit sprint prediction');
     } finally {
@@ -313,6 +330,46 @@ const SprintPredictionInterface = ({ raceId, mainRaceId }: SprintPredictionInter
 
   return (
     <DndProvider backend={DndBackend} options={backendOptions}>
+      {/* Confirmation modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-orange-500/50 rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
+            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-widest">Sprint Confirmed!</h2>
+            <p className="text-gray-400 text-sm mb-1">Your sprint prediction has been saved.</p>
+            {user?.email && (
+              <p className="text-gray-400 text-sm mb-6">
+                A confirmation email has been sent to <span className="text-white font-semibold">{user.email}</span>.
+              </p>
+            )}
+            <button
+              onClick={() => setShowConfirmModal(false)}
+              className="w-full py-3 rounded-xl bg-orange-600 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Deadline overlay */}
+      {isLocked && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-40 p-4">
+          <div className="bg-gray-900 border border-orange-500/50 rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
+            <div className="text-4xl mb-4">🏁</div>
+            <h2 className="text-2xl font-black text-orange-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
+            <p className="text-gray-300 text-sm">
+              The deadline for this sprint has passed. The race has started or is about to start.
+            </p>
+            <p className="text-gray-500 text-xs mt-4">You can still view your saved prediction below.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
 
         {/* Sprint badge */}

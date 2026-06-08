@@ -137,6 +137,31 @@ export const getUserPredictions = async (req: Request, res: Response) => {
         }
       }
 
+      // Compute per-driver points for completed/provisional races
+      const mainPointsMap: Record<number, number> = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
+      let positionPoints: Array<{ pointsEarned: number; hasBonus: boolean; actualPosition: number | null }> | undefined;
+
+      if (prediction.status === 'completed' || prediction.status === 'provisional') {
+        const resultsResult = await query(
+          'SELECT driver_id, position FROM race_results WHERE race_id = $1',
+          [prediction.race_id]
+        );
+        const resultsMap = new Map(resultsResult.rows.map((r: any) => [r.driver_id, r.position]));
+
+        positionPoints = [];
+        for (let i = 1; i <= 10; i++) {
+          const driverId = prediction[`position_${i}`];
+          const actualPos: number | null = resultsMap.get(driverId) ?? null;
+          if (actualPos && actualPos <= 10) {
+            const basePoints = mainPointsMap[actualPos] || 0;
+            const hasBonus = Math.abs(i - actualPos) <= 1;
+            positionPoints.push({ pointsEarned: hasBonus ? Math.round(basePoints * 1.5) : basePoints, hasBonus, actualPosition: actualPos });
+          } else {
+            positionPoints.push({ pointsEarned: 0, hasBonus: false, actualPosition: actualPos });
+          }
+        }
+      }
+
       return {
         id: prediction.id,
         race_id: prediction.race_id,
@@ -144,7 +169,8 @@ export const getUserPredictions = async (req: Request, res: Response) => {
         race_date: prediction.race_date,
         status: prediction.status,
         positions: positions,
-        points: prediction.points_earned
+        points: prediction.points_earned,
+        positionPoints
       };
     }));
 

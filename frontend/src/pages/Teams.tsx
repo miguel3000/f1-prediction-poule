@@ -37,10 +37,10 @@ const Teams = () => {
       engine: 'Red Bull Powertrains',
       drivers: [
         { number: 1, name: 'Max Verstappen', role: 'Race Driver' },
-        { number: 36, name: 'Arvid Lindblad', role: 'Race Driver' },
+        { number: 6, name: 'Isack Hadjar', role: 'Race Driver' },
       ],
       reserves: [
-        { name: 'Isack Hadjar', role: 'Reserve Driver' },
+        { name: 'Yuki Tsunoda', role: 'Reserve Driver' },
       ],
     },
     {
@@ -107,7 +107,7 @@ const Teams = () => {
       engine: 'Red Bull Powertrains',
       drivers: [
         { number: 30, name: 'Liam Lawson', role: 'Race Driver' },
-        { number: 6, name: 'Isack Hadjar', role: 'Race Driver' },
+        { number: 36, name: 'Arvid Lindblad', role: 'Race Driver' },
       ],
       reserves: [
         { name: 'Ayumu Iwasa', role: 'Reserve Driver' },

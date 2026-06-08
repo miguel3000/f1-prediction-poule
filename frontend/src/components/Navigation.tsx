@@ -169,8 +169,8 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
             </svg>
           </button>
 
-          <nav className="flex flex-col h-[calc(100vh-120px)]">
-            <ul className="space-y-2">
+          <nav className="flex flex-col h-[calc(100dvh-120px)]">
+            <ul className="space-y-2 overflow-y-auto">
               {menuItems.map((item) => (
                 <li key={item.path}>
                   <Link
