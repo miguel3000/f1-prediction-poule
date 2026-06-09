@@ -122,22 +122,33 @@ const Rules = () => {
             </div>
           </div>
 
-          <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg mb-4">
-            <h3 className="text-lg font-bold text-green-400 mb-2">Position Accuracy Bonus (+50%)</h3>
+          <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg mb-2">
+            <h3 className="text-lg font-bold text-green-400 mb-2">✓ Exact match</h3>
             <p className="text-sm">
-              If you predict a driver within <strong>one position</strong> of where they actually finish
-              (exact match or one off), you receive a <strong>50% bonus</strong> on those points!
+              Predict a driver in the <strong>exact position</strong> they finish → earn the <strong>full points</strong> for that position.
             </p>
-            <div className="mt-3 text-sm space-y-1">
-              <p><span className="text-green-400">Example:</span> Predict VER P1, finishes P1 → 25 + 13 = <strong>38 pts</strong></p>
-              <p><span className="text-green-400">Example:</span> Predict VER P1, finishes P2 → 18 + 9 = <strong>27 pts</strong></p>
-              <p><span className="text-f1-gray">Example:</span> Predict VER P1, finishes P5 → 10 + 0 = <strong>10 pts</strong> (no bonus)</p>
-            </div>
+            <p className="mt-2 text-sm"><span className="text-green-400">Example:</span> Predict VER P1, finishes P1 → <strong>25 pts</strong></p>
+          </div>
+
+          <div className="bg-yellow-900/30 border border-yellow-500/50 p-4 rounded-lg mb-2">
+            <h3 className="text-lg font-bold text-yellow-400 mb-2">≈ Near miss (±1 position)</h3>
+            <p className="text-sm">
+              Predict a driver <strong>one position off</strong> from where they actually finish → earn <strong>half the points</strong> for that position.
+            </p>
+            <p className="mt-2 text-sm"><span className="text-yellow-400">Example:</span> Predict VER P1, finishes P2 → half of 25 = <strong>13 pts</strong></p>
+          </div>
+
+          <div className="bg-gray-900/60 border border-gray-600/50 p-4 rounded-lg mb-4">
+            <h3 className="text-lg font-bold text-gray-400 mb-2">✗ Miss (more than 1 off)</h3>
+            <p className="text-sm">
+              If a driver finishes <strong>more than one position</strong> away from your prediction, or outside the top 10 entirely → <strong>0 points</strong>.
+            </p>
+            <p className="mt-2 text-sm"><span className="text-gray-400">Example:</span> Predict VER P1, finishes P5 → <strong>0 pts</strong></p>
           </div>
 
           <p className="text-f1-gray">
-            <strong>Important:</strong> You earn points based on where the drivers you predicted
-            actually finish. Bonus points are awarded for accurate position predictions!
+            <strong>Note:</strong> Points are based on the position you predicted, not where the driver actually finishes.
+            Predicting P1 correctly is worth more than predicting P10 correctly.
           </p>
         </section>
 
@@ -176,17 +187,17 @@ const Rules = () => {
           <p className="text-f1-red font-bold">Your score for this race:</p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-2">
             <li>
-              <strong>Verstappen:</strong> Predicted P1, finished P1 → 25 pts + 50% bonus = <span className="text-green-400">38 pts</span>
+              <strong>Verstappen:</strong> Predicted P1, finished P1 → exact match → <span className="text-green-400">25 pts</span>
             </li>
             <li>
-              <strong>Hamilton:</strong> Predicted P2, finished P5 → 10 pts (no bonus, 3 positions off)
+              <strong>Hamilton:</strong> Predicted P2, finished P5 → 3 positions off → <span className="text-gray-400">0 pts</span>
             </li>
             <li>
-              <strong>Leclerc:</strong> Predicted P3, finished P2 → 18 pts + 50% bonus = <span className="text-green-400">27 pts</span>
+              <strong>Leclerc:</strong> Predicted P3, finished P2 → near miss → half of 15 = <span className="text-yellow-400">8 pts</span>
             </li>
           </ul>
           <p className="mt-4 font-bold">
-            Total: 75 points (plus points from your other 7 predicted drivers who finished in top 10)
+            Total: 33 points (plus points from your other 7 predicted drivers)
           </p>
         </section>
 
@@ -228,7 +239,7 @@ const Rules = () => {
           </div>
 
           <p className="text-sm text-f1-gray">
-            The same <strong>50% accuracy bonus</strong> applies to sprint predictions too!
+            The same scoring rules apply: <strong>exact match = full points</strong>, <strong>near miss (±1) = half points</strong>, anything else = 0.
             Sprint points count toward your overall season total.
           </p>
         </section>
