@@ -142,14 +142,14 @@ async function processProvisionalResults() {
               if (actualResult.rows.length > 0 && actualResult.rows[0].position <= maxPositions) {
                 const pos: number = actualResult.rows[0].position;
                 actualPosition = pos;
-                const basePoints = pointsMap[pos] || 0;
+                const basePoints = pointsMap[predictedPos] || 0;
                 const posDiff = Math.abs(predictedPos - pos);
 
-                if (posDiff <= 1) {
-                  pointsEarned = Math.round(basePoints * 1.5);
-                  hasBonus = true;
-                } else {
+                if (posDiff === 0) {
                   pointsEarned = basePoints;
+                } else if (posDiff === 1) {
+                  pointsEarned = Math.round(basePoints * 0.5);
+                  hasBonus = true;
                 }
               }
 

@@ -245,16 +245,13 @@ export const calculateRacePoints = async (raceId: number) => {
         const actualResult = results.find((r: any) => r.driver_id === predictedDriverId);
 
         if (actualResult && actualResult.position <= scoringPositions) {
-          const basePoints = pointsMap[actualResult.position] || 0;
-          const actualPos = actualResult.position;
-          const posDiff = Math.abs(predictedPos - actualPos);
+          const basePoints = pointsMap[predictedPos] || 0;
+          const posDiff = Math.abs(predictedPos - actualResult.position);
 
-          if (posDiff <= 1) {
-            // Exact position or one off: 50% bonus
-            pointsEarned += Math.round(basePoints * 1.5);
-          } else {
-            // More than one off: base points only
+          if (posDiff === 0) {
             pointsEarned += basePoints;
+          } else if (posDiff === 1) {
+            pointsEarned += Math.round(basePoints * 0.5);
           }
         }
       }

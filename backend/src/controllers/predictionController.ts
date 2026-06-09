@@ -153,9 +153,11 @@ export const getUserPredictions = async (req: Request, res: Response) => {
           const driverId = prediction[`position_${i}`];
           const actualPos: number | null = resultsMap.get(driverId) ?? null;
           if (actualPos && actualPos <= 10) {
-            const basePoints = mainPointsMap[actualPos] || 0;
-            const hasBonus = Math.abs(i - actualPos) <= 1;
-            positionPoints.push({ pointsEarned: hasBonus ? Math.round(basePoints * 1.5) : basePoints, hasBonus, actualPosition: actualPos });
+            const basePoints = mainPointsMap[i] || 0;
+            const diff = Math.abs(i - actualPos);
+            const isNearMiss = diff === 1;
+            const pointsEarned = diff === 0 ? basePoints : isNearMiss ? Math.round(basePoints * 0.5) : 0;
+            positionPoints.push({ pointsEarned, hasBonus: isNearMiss, actualPosition: actualPos });
           } else {
             positionPoints.push({ pointsEarned: 0, hasBonus: false, actualPosition: actualPos });
           }

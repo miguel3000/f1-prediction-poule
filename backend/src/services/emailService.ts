@@ -122,7 +122,7 @@ export const sendProvisionalResults = async (
               <td style="padding: 8px;">P${p.predictedPosition}</td>
               <td style="padding: 8px;">${escapeHtml(p.driverName)}</td>
               <td style="padding: 8px; text-align: center;">${p.actualPosition ? `P${p.actualPosition}` : 'DNF/DNS'}</td>
-              <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (+50%)' : ''}</td>
+              <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (½ pts)' : ''}</td>
             </tr>
           `).join('')}
         </table>
@@ -181,7 +181,7 @@ export const sendFinalResults = async (
             <td style="padding: 8px;">P${p.predictedPosition}</td>
             <td style="padding: 8px;">${escapeHtml(p.driverName)}</td>
             <td style="padding: 8px; text-align: center;">${p.actualPosition ? `P${p.actualPosition}` : 'DNF/DNS'}</td>
-            <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (+50%)' : ''}</td>
+            <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (½ pts)' : ''}</td>
           </tr>
         `).join('')}
       </table>
@@ -324,6 +324,11 @@ export const sendPersonalRaceResults = async (
   const accentColor = isSprint ? '#F97316' : '#E10600';
   const label = isSprint ? 'Sprint Race' : 'Race';
 
+  const mainPointsMap: { [key: number]: number } = { 1:25, 2:18, 3:15, 4:12, 5:10, 6:8, 7:6, 8:4, 9:2, 10:1 };
+  const sprintPointsMap: { [key: number]: number } = { 1:8, 2:7, 3:6, 4:5, 5:4, 6:3, 7:2, 8:1 };
+  const pointsMap = isSprint ? sprintPointsMap : mainPointsMap;
+  const scoringPositions = isSprint ? 8 : 10;
+
   // Build a map: driverName -> actual position (for quick lookup)
   const actualPosByName = new Map<string, number>(actuals.map(a => [a.driverName, a.position]));
 
@@ -339,12 +344,19 @@ export const sendPersonalRaceResults = async (
       : isNear ? '≈ Near miss'
       : `Finished P${actualPos}`;
 
+    const basePoints = pointsMap[pred.position] || 0;
+    const inTopN = actualPos !== undefined && actualPos <= scoringPositions;
+    const rowPoints = diff === 0 ? basePoints : (diff === 1 ? Math.round(basePoints * 0.5) : 0);
+    const rowPointsText = rowPoints > 0 ? `+${rowPoints}` : '0';
+    const rowPointsColor = rowPoints > basePoints ? '#155724' : rowPoints > 0 ? '#555' : '#aaa';
+
     return `
       <tr style="background-color:${rowBg};">
         <td style="padding:7px 10px;border-bottom:1px solid #eee;">P${pred.position}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #eee;font-weight:bold;">${escapeHtml(pred.driverName)}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;">${actualPos != null ? `P${actualPos}` : '—'}</td>
-        <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-size:12px;color:${isExact ? '#155724' : isNear ? '#856404' : '#555'};">${statusText}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;font-size:12px;color:${isExact ? '#155724' : isNear ? '#856404' : '#555'};">${statusText}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:bold;color:${rowPointsColor};">${rowPointsText}</td>
       </tr>`;
   }).join('');
 
@@ -364,7 +376,8 @@ export const sendPersonalRaceResults = async (
               <th style="padding:8px 10px;text-align:left;">Predicted</th>
               <th style="padding:8px 10px;text-align:left;">Driver</th>
               <th style="padding:8px 10px;text-align:center;">Actual Pos</th>
-              <th style="padding:8px 10px;text-align:right;">Result</th>
+              <th style="padding:8px 10px;text-align:center;">Result</th>
+              <th style="padding:8px 10px;text-align:right;">Pts</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -372,7 +385,7 @@ export const sendPersonalRaceResults = async (
 
         <div style="display:flex;gap:12px;margin-bottom:20px;font-size:12px;color:#555;">
           <span style="background:#d4edda;padding:3px 8px;border-radius:4px;">✓ Exact = correct position</span>
-          <span style="background:#fff3cd;padding:3px 8px;border-radius:4px;">≈ Near miss = ±1 position</span>
+          <span style="background:#fff3cd;padding:3px 8px;border-radius:4px;">≈ Near miss = ±1 position (½ pts)</span>
         </div>
 
         <div style="background-color:${accentColor};color:white;padding:15px;border-radius:5px;text-align:center;margin-bottom:16px;">

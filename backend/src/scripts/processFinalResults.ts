@@ -172,9 +172,14 @@ async function processFinalResults() {
               let pointsEarned = 0;
               let hasBonus = false;
               if (actualPos && actualPos <= maxPositions) {
-                const basePoints = pointsMap[actualPos] || 0;
-                hasBonus = Math.abs(pos - actualPos) <= 1;
-                pointsEarned = hasBonus ? Math.round(basePoints * 1.5) : basePoints;
+                const basePoints = pointsMap[pos] || 0;
+                const diff = Math.abs(pos - actualPos);
+                if (diff === 0) {
+                  pointsEarned = basePoints;
+                } else if (diff === 1) {
+                  pointsEarned = Math.round(basePoints * 0.5);
+                  hasBonus = true;
+                }
               }
               userPredictionResults.push({ predictedPosition: pos, driverName, actualPosition: actualPos, pointsEarned, hasBonus });
             }
