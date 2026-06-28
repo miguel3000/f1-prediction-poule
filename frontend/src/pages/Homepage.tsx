@@ -12,6 +12,7 @@ interface Race {
   circuit_name: string;
   country: string;
   race_date: string;
+  qualifying_date: string | null;
   round: number;
   race_type: 'sprint' | 'main';
   status: 'upcoming' | 'provisional' | 'completed';
@@ -69,8 +70,10 @@ const Homepage = () => {
     return (
       <div className="text-center py-16">
         <Banner
-          nextRaceDate={nextRace ? new Date(nextRace.race_date) : undefined}
-          nextRaceName={nextRace?.race_name}
+          qualifyingDate={nextRace?.qualifying_date ? new Date(nextRace.qualifying_date) : undefined}
+          raceDate={nextRace ? new Date(nextRace.race_date) : undefined}
+          raceName={nextRace?.race_name}
+          isSprint={nextRace?.race_type === 'sprint'}
         />
         <div className="mt-12 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-gradient-red">
@@ -104,9 +107,10 @@ const Homepage = () => {
   return (
     <div>
       <Banner
-        nextRaceDate={new Date(nextRace.race_date)}
-        nextRaceName={nextRace.race_name}
-        isSprint={nextRace.race_type === 'sprint'}
+        qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
+        raceDate={mainRace ? new Date(mainRace.race_date) : undefined}
+        raceName={mainRace?.race_name}
+        isSprint={false}
       />
 
       {/* Sprint/Main Toggle Tabs (only shown for sprint weekends) */}
