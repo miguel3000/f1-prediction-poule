@@ -10,15 +10,17 @@ interface BannerProps {
 interface TimeLeft {
   hours: number;
   minutes: number;
+  seconds: number;
   past: boolean;
 }
 
 const getTimeLeft = (target: Date): TimeLeft => {
   const distance = target.getTime() - Date.now();
-  if (distance <= 0) return { hours: 0, minutes: 0, past: true };
+  if (distance <= 0) return { hours: 0, minutes: 0, seconds: 0, past: true };
   const hours = Math.floor(distance / (1000 * 60 * 60));
   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  return { hours, minutes, past: false };
+  const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  return { hours, minutes, seconds, past: false };
 };
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -27,7 +29,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setTick(t => t + 1), 30000);
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -48,7 +50,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
 
   const showQualifying = qualiLeft && !qualiLeft.past;
   const targetLabel = showQualifying ? 'QUALIFYING' : (isSprint ? 'SPRINT' : 'RACE');
-  const { hours, minutes, past } = showQualifying ? qualiLeft : raceLeft;
+  const { hours, minutes, seconds, past } = showQualifying ? qualiLeft : raceLeft;
 
   return (
     <div className={`bg-gradient-to-r ${accentColor} py-5 px-4`}>
@@ -75,6 +77,11 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
               <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
                 <span className="text-white font-mono font-bold text-3xl">{pad(minutes)}</span>
                 <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">min</p>
+              </div>
+              <span className="text-white font-bold text-3xl mb-4">:</span>
+              <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
+                <span className="text-white font-mono font-bold text-3xl">{pad(seconds)}</span>
+                <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">sec</p>
               </div>
             </div>
           </div>
