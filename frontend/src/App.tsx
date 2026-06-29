@@ -57,7 +57,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
       <Router>
-        <div className="bg-slashes min-h-screen text-white flex flex-col">
+        <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: '#080808' }}>
           <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} />
           <Navigation isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 

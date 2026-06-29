@@ -17,7 +17,7 @@ interface TimeLeft {
 const getTimeLeft = (target: Date): TimeLeft => {
   const distance = target.getTime() - Date.now();
   if (distance <= 0) return { hours: 0, minutes: 0, seconds: 0, past: true };
-  const hours = Math.floor(distance / (1000 * 60 * 60));
+  const hours   = Math.floor(distance / (1000 * 60 * 60));
   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((distance % (1000 * 60)) / 1000);
   return { hours, minutes, seconds, past: false };
@@ -33,58 +33,73 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
     return () => clearInterval(timer);
   }, []);
 
-  const accentColor = isSprint
-    ? 'from-orange-600 to-orange-500'
-    : 'from-f1-red to-red-700';
-
   if (!nextRaceDate || !nextRaceName) {
     return (
-      <div className={`bg-gradient-to-r ${accentColor} py-6 px-4 text-center`}>
-        <p className="text-white font-bold tracking-widest text-sm uppercase">Loading next race...</p>
+      <div className="w-full py-5 px-4 border-b border-f1-neutral-800 text-center" style={{ backgroundColor: '#0E0E0E' }}>
+        <p className="text-f1-neutral-500 font-mono text-xs uppercase tracking-widest">Fetching race data...</p>
       </div>
     );
   }
 
   const qualiLeft = qualifyingDate ? getTimeLeft(qualifyingDate) : null;
-  const raceLeft = getTimeLeft(nextRaceDate);
-
+  const raceLeft  = getTimeLeft(nextRaceDate);
   const showQualifying = qualiLeft && !qualiLeft.past;
-  const targetLabel = showQualifying ? 'QUALIFYING' : (isSprint ? 'SPRINT' : 'RACE');
+  const targetLabel    = showQualifying ? 'QUALIFYING' : (isSprint ? 'SPRINT' : 'RACE');
   const { hours, minutes, seconds, past } = showQualifying ? qualiLeft : raceLeft;
 
   return (
-    <div className={`bg-gradient-to-r ${accentColor} py-5 px-4`}>
-      <div className="max-w-lg mx-auto text-center">
-        <p className="text-white/80 text-xs font-bold tracking-[0.2em] uppercase mb-1">
-          {isSprint ? '🏃 Sprint Weekend' : '🏁 Race Weekend'} · {nextRaceName}
-        </p>
+    <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#0E0E0E' }}>
+      {/* Top label bar */}
+      <div className="border-b border-f1-neutral-800 px-4 py-1.5 flex items-center gap-3">
+        <div className="w-2 h-2 bg-f1-pink-500" style={{ borderRadius: 0 }} />
+        <span className="text-f1-neutral-500 font-mono text-[10px] uppercase tracking-[0.25em]">
+          {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
+        </span>
+        <span className="text-white font-mono text-[10px] uppercase tracking-widest ml-auto">
+          {nextRaceName}
+        </span>
+      </div>
 
+      {/* Countdown row */}
+      <div className="px-4 py-4 flex items-center justify-center gap-4">
         {past ? (
-          <p className="text-white font-bold text-2xl tracking-wider">
-            {targetLabel === 'QUALIFYING' ? 'QUALIFYING IN PROGRESS' : 'RACE IN PROGRESS'}
-          </p>
-        ) : (
-          <div className="flex items-center justify-center gap-3 mt-1">
-            <span className="text-white/70 text-sm font-bold tracking-widest uppercase">
-              {targetLabel} IN
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 bg-f1-pink-500 animate-pulse" />
+            <span className="font-f1 font-black text-f1-pink-500 text-sm uppercase tracking-widest">
+              {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'Race in progress'}
             </span>
-            <div className="flex items-center gap-1">
-              <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
-                <span className="text-white font-mono font-bold text-3xl">{pad(hours)}</span>
-                <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">hrs</p>
+          </div>
+        ) : (
+          <>
+            <span className="text-f1-neutral-500 font-mono text-[10px] uppercase tracking-[0.2em] hidden sm:block">
+              {targetLabel} in
+            </span>
+            <div className="flex items-end gap-1">
+              {/* Hours */}
+              <div className="text-center">
+                <div className="bg-f1-neutral-950 border border-f1-neutral-800 px-3 py-2 min-w-[52px]">
+                  <span className="font-mono font-black text-white text-3xl tabular-nums">{pad(hours)}</span>
+                </div>
+                <p className="text-f1-neutral-600 text-[9px] font-mono uppercase tracking-widest mt-1">HRS</p>
               </div>
-              <span className="text-white font-bold text-3xl mb-4">:</span>
-              <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
-                <span className="text-white font-mono font-bold text-3xl">{pad(minutes)}</span>
-                <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">min</p>
+              <span className="text-f1-pink-500 font-black text-2xl pb-5">:</span>
+              {/* Minutes */}
+              <div className="text-center">
+                <div className="bg-f1-neutral-950 border border-f1-neutral-800 px-3 py-2 min-w-[52px]">
+                  <span className="font-mono font-black text-white text-3xl tabular-nums">{pad(minutes)}</span>
+                </div>
+                <p className="text-f1-neutral-600 text-[9px] font-mono uppercase tracking-widest mt-1">MIN</p>
               </div>
-              <span className="text-white font-bold text-3xl mb-4">:</span>
-              <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
-                <span className="text-white font-mono font-bold text-3xl">{pad(seconds)}</span>
-                <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">sec</p>
+              <span className="text-f1-pink-500 font-black text-2xl pb-5">:</span>
+              {/* Seconds */}
+              <div className="text-center">
+                <div className="bg-f1-neutral-950 border border-f1-pink-500/30 px-3 py-2 min-w-[52px]">
+                  <span className="font-mono font-black text-f1-pink-400 text-3xl tabular-nums">{pad(seconds)}</span>
+                </div>
+                <p className="text-f1-pink-600 text-[9px] font-mono uppercase tracking-widest mt-1">SEC</p>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

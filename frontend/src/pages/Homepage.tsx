@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Banner from '../components/Banner';
+import CircuitBackground from '../components/CircuitBackground';
 import PredictionInterface from '../components/PredictionInterface';
 import SprintPredictionInterface from '../components/SprintPredictionInterface';
 import { getUpcomingRaces } from '../services/api';
@@ -60,7 +61,7 @@ const Homepage = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-red-500 mx-auto shadow-f1-glow"></div>
+        <div className="animate-spin h-16 w-16 border-b-2 border-f1-pink-500 mx-auto shadow-f1-glow" style={{ borderRadius: 0 }}></div>
         <p className="mt-4 text-f1-gray">Loading next race...</p>
       </div>
     );
@@ -69,13 +70,14 @@ const Homepage = () => {
   if (!user) {
     return (
       <div className="text-center py-16">
+        <CircuitBackground circuitName={nextRace?.circuit_name} />
         <Banner
           nextRaceDate={mainRace ? new Date(mainRace.race_date) : (nextRace ? new Date(nextRace.race_date) : undefined)}
           nextRaceName={nextRace?.race_name}
           qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
         />
         <div className="mt-12 max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-gradient-red">
+          <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-gradient-pink">
             Welcome to F1 Prediction Poule!
           </h2>
           <p className="text-f1-gray mb-8 text-lg">
@@ -105,6 +107,7 @@ const Homepage = () => {
 
   return (
     <div>
+      <CircuitBackground circuitName={mainRace?.circuit_name ?? nextRace?.circuit_name} />
       <Banner
         nextRaceDate={new Date(mainRace?.race_date ?? nextRace.race_date)}
         nextRaceName={mainRace?.race_name ?? nextRace.race_name}
@@ -117,20 +120,20 @@ const Homepage = () => {
         <div className="flex gap-2 mt-4 mb-2">
           <button
             onClick={() => setActiveTab('sprint')}
-            className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${
+            className={`flex-1 py-2 px-4 font-bold text-sm transition-colors ${
               activeTab === 'sprint'
                 ? 'bg-orange-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-f1-neutral-850 text-f1-neutral-400 hover:bg-f1-neutral-800'
             }`}
           >
             SPRINT
           </button>
           <button
             onClick={() => setActiveTab('main')}
-            className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-colors ${
+            className={`flex-1 py-2 px-4 font-bold text-sm transition-colors ${
               activeTab === 'main'
-                ? 'bg-f1-red text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                ? 'bg-f1-pink-500 text-white'
+                : 'bg-f1-neutral-850 text-f1-neutral-400 hover:bg-f1-neutral-800'
             }`}
           >
             MAIN RACE

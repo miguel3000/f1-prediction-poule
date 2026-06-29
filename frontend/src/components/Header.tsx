@@ -11,56 +11,55 @@ const Header = ({ onMenuToggle }: HeaderProps) => {
   const navigate = useNavigate();
 
   return (
-    <header className="glass-dark border-b border-f1-red-500/50 sticky top-0 z-40 shadow-lg">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Hamburger Menu */}
+    <header className="sticky top-0 z-40 border-b border-f1-neutral-800" style={{ backgroundColor: '#0A0A0A' }}>
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+
+          {/* Hamburger */}
           <button
             onClick={onMenuToggle}
-            className="text-white hover:text-f1-red-500 transition-all duration-300 hover:scale-110"
+            className="text-white hover:text-f1-pink-500 transition-colors p-1"
             aria-label="Toggle menu"
           >
-            <svg
-              className="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
 
-          {/* Logo/Title */}
-          <h1 className="text-2xl md:text-4xl font-bold text-gradient-red text-center flex-1 tracking-tight">
-            F1 PREDICTION POULE 2026
-          </h1>
+          {/* Logo */}
+          <div className="flex-1 flex items-center justify-center gap-3">
+            <div className="w-1 h-8 bg-f1-pink-500 flex-shrink-0" />
+            <h1
+              className="font-f1 font-black text-white uppercase tracking-[0.15em] text-lg md:text-2xl cursor-pointer select-none"
+              onClick={() => navigate('/')}
+            >
+              F1 Prediction Poule
+              <span className="text-f1-pink-500 ml-2 text-base md:text-lg">2026</span>
+            </h1>
+          </div>
 
-          {/* User Info */}
-          <div className="flex items-center gap-4">
+          {/* User */}
+          <div className="flex items-center gap-3">
             {user ? (
               <>
                 <div
                   className="hidden md:block text-right cursor-pointer"
                   onClick={() => navigate('/profile')}
                 >
-                  <p className="text-sm font-bold hover:text-f1-red-400 transition-colors">{user.nickname}</p>
-                  <p className="text-xs text-f1-red-400 font-semibold">{user.total_points} pts</p>
+                  <p className="text-sm font-bold text-white hover:text-f1-pink-400 transition-colors">{user.nickname}</p>
+                  <p className="text-xs text-f1-pink-500 font-mono font-semibold tabular-nums">{user.total_points} PTS</p>
                 </div>
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
                     alt={user.nickname}
-                    className="w-10 h-10 rounded-full border-2 border-f1-red-500 shadow-f1-glow hover-scale cursor-pointer object-cover"
+                    className="w-9 h-9 border-2 border-f1-pink-500 cursor-pointer object-cover"
+                    style={{ borderRadius: 0 }}
                     onClick={() => navigate('/profile')}
                   />
                 ) : (
                   <div
-                    className="w-10 h-10 rounded-full border-2 border-f1-neutral-700 bg-f1-neutral-800 flex items-center justify-center text-sm font-bold cursor-pointer hover-scale"
+                    className="w-9 h-9 border border-f1-neutral-700 bg-f1-neutral-850 flex items-center justify-center text-sm font-black cursor-pointer hover:border-f1-pink-500 transition-colors"
                     onClick={() => navigate('/profile')}
                   >
                     {user.nickname.charAt(0).toUpperCase()}
@@ -68,20 +67,21 @@ const Header = ({ onMenuToggle }: HeaderProps) => {
                 )}
                 <button
                   onClick={logout}
-                  className="text-sm text-f1-gray hover:text-f1-red-400 transition-all duration-300 font-semibold"
+                  className="text-xs text-f1-neutral-500 hover:text-f1-pink-400 transition-colors font-bold uppercase tracking-wider"
                 >
-                  Logout
+                  Out
                 </button>
               </>
             ) : (
               <a
                 href="/auth"
-                className="bg-f1-red-500 hover:bg-f1-red-600 text-white px-6 py-2 rounded-lg transition-all duration-300 shadow-f1-glow hover:shadow-f1-glow-lg hover:-translate-y-0.5 font-bold"
+                className="btn-f1-primary px-5 py-2 text-sm"
               >
                 Login
               </a>
             )}
           </div>
+
         </div>
       </div>
     </header>

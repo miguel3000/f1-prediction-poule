@@ -52,14 +52,14 @@ const DriverAvatar = ({ driver, size = 'md' }: { driver: Driver; size?: 'sm' | '
       <img
         src={driver.image_url}
         alt={driver.name}
-        className={`${dim} rounded-full object-cover flex-shrink-0 border-2 ${teamColor.border} bg-gray-700`}
+        className={`${dim} rounded-full object-cover flex-shrink-0 border-2 ${teamColor.border} bg-f1-neutral-800`}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
     );
   }
 
   return (
-    <div className={`${dim} rounded-full flex-shrink-0 flex items-center justify-center font-black border-2 ${teamColor.border} bg-gray-800 text-white`}>
+    <div className={`${dim} rounded-full flex-shrink-0 flex items-center justify-center font-black border-2 ${teamColor.border} bg-f1-neutral-800 text-white`}>
       {acronym(driver)}
     </div>
   );
@@ -87,13 +87,13 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCar
       ref={drag}
       onClick={() => !isSelected && onTap(driver)}
       className={`
-        flex items-center gap-2 px-2 py-1.5 rounded-xl border-l-4 transition-all select-none
+        flex items-center gap-2 px-2 py-1.5 border-l-4 transition-all select-none
         ${teamColor.border}
         ${isSelected
-          ? 'opacity-30 cursor-default bg-gray-800'
+          ? 'opacity-30 cursor-default bg-f1-neutral-850'
           : isDragging
-          ? 'opacity-40 bg-gray-800'
-          : 'bg-gray-800 active:scale-95 cursor-grab'}
+          ? 'opacity-40 bg-f1-neutral-850'
+          : 'bg-f1-neutral-850 active:scale-95 cursor-grab'}
       `}
     >
       <DriverAvatar driver={driver} size="md" />
@@ -105,14 +105,14 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCar
         <span className="text-[9px] font-mono">
           {driver.q3 || driver.q2 || driver.q1
             ? <span className="text-green-400">{driver.q3 || driver.q2 || driver.q1}</span>
-            : <span className="text-gray-500">#{driver.driver_number}</span>
+            : <span className="text-f1-neutral-500">#{driver.driver_number}</span>
           }
         </span>
       </div>
 
       {isSelected
         ? <span className="text-green-400 text-sm font-bold pr-1 flex-shrink-0">✓</span>
-        : <span className="text-gray-600 text-lg font-light pr-1 flex-shrink-0">+</span>
+        : <span className="text-f1-neutral-600 text-lg font-light pr-1 flex-shrink-0">+</span>
       }
     </div>
   );
@@ -149,21 +149,22 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHel
   const posColor = position === 1 ? 'text-yellow-400' :
     position === 2 ? 'text-gray-300' :
     position === 3 ? 'text-orange-400' :
-    'text-gray-600';
+    'text-f1-neutral-600';
 
+  // Sprint drop zones use orange, held state uses pink (action UI state)
   const slotClass = isHeld
-    ? 'border-amber-400 bg-amber-900/20 ring-1 ring-amber-400/40 opacity-75 cursor-pointer'
+    ? 'border-f1-pink-500 bg-f1-pink-900/20 ring-1 ring-f1-pink-500/40 opacity-75 cursor-pointer'
     : isOver && canDrop
     ? 'border-orange-500 bg-orange-500/10 scale-[1.02]'
     : isDragging
-    ? 'opacity-40 border-orange-500 scale-95 bg-gray-800'
+    ? 'opacity-40 border-orange-500 scale-95 bg-f1-neutral-850'
     : hasHeld
     ? driver && teamColor
-      ? `${teamColor.border} bg-gray-800/80 cursor-pointer ring-1 ring-white/20`
-      : 'border-dashed border-gray-500 bg-gray-800/20 cursor-pointer'
+      ? `${teamColor.border} bg-f1-neutral-850/80 cursor-pointer ring-1 ring-white/20`
+      : 'border-dashed border-f1-neutral-500 bg-f1-neutral-850/20 cursor-pointer'
     : driver && teamColor
-    ? `${teamColor.border} bg-gray-800/80 cursor-grab active:scale-95`
-    : 'border-dashed border-gray-700 bg-gray-900/40';
+    ? `${teamColor.border} bg-f1-neutral-850/80 cursor-grab active:scale-95`
+    : 'border-dashed border-f1-neutral-700 bg-f1-neutral-900/40';
 
   return (
     <div className="flex items-center gap-1.5 w-full">
@@ -173,18 +174,18 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHel
       <div
         ref={ref}
         onClick={() => onTap(position)}
-        className={`flex-1 h-12 rounded-lg border-l-4 flex items-center gap-2 px-2 transition-all ${slotClass}`}
+        className={`flex-1 h-12 border-l-4 flex items-center gap-2 px-2 transition-all ${slotClass}`}
       >
         {driver ? (
           <>
             <DriverAvatar driver={driver} size="sm" />
-            <span className={`font-f1 font-bold text-[11px] tracking-widest truncate flex-1 ${isHeld ? 'text-amber-300' : 'text-white'}`}>
+            <span className={`font-f1 font-bold text-[11px] tracking-widest truncate flex-1 ${isHeld ? 'text-f1-pink-400' : 'text-white'}`}>
               {lastName(driver)}
             </span>
-            {isHeld && <span className="text-amber-400 text-xs flex-shrink-0">↕</span>}
+            {isHeld && <span className="text-f1-pink-400 text-xs flex-shrink-0">↕</span>}
           </>
         ) : (
-          <span className={`text-[9px] mx-auto tracking-wider uppercase ${hasHeld ? 'text-gray-500' : 'text-gray-700'}`}>
+          <span className={`text-[9px] mx-auto tracking-wider uppercase ${hasHeld ? 'text-f1-neutral-500' : 'text-f1-neutral-700'}`}>
             {hasHeld ? 'place here' : 'empty'}
           </span>
         )}
@@ -205,7 +206,7 @@ const RemoveZone = ({ onDrop, children }: RemoveZoneProps) => {
   });
 
   return (
-    <div ref={drop} className={`transition-all rounded-xl ${isOver && canDrop ? 'ring-2 ring-orange-500 bg-orange-900/20' : ''}`}>
+    <div ref={drop} className={`transition-all ${isOver && canDrop ? 'ring-2 ring-orange-500 bg-orange-900/20' : ''}`}>
       {children}
     </div>
   );
@@ -344,7 +345,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
     }
   };
 
-  if (loading) return <div className="text-center py-8 text-gray-400">Loading...</div>;
+  if (loading) return <div className="text-center py-8 text-f1-neutral-500">Loading...</div>;
 
   const filledCount = predictions.filter(Boolean).length;
   const orderLabel =
@@ -356,22 +357,22 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
       {/* Confirmation modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-orange-500/50 rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
+          <div className="bg-f1-neutral-900 border border-orange-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-widest">Sprint Confirmed!</h2>
-            <p className="text-gray-400 text-sm mb-1">Your sprint prediction has been saved.</p>
+            <p className="text-f1-neutral-500 text-sm mb-1">Your sprint prediction has been saved.</p>
             {user?.email && (
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-f1-neutral-500 text-sm mb-6">
                 A confirmation email has been sent to <span className="text-white font-semibold">{user.email}</span>.
               </p>
             )}
             <button
               onClick={() => setShowConfirmModal(false)}
-              className="w-full py-3 rounded-xl bg-orange-600 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+              className="w-full py-3 bg-orange-600 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
             >
               Close
             </button>
@@ -382,20 +383,20 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
       {/* Deadline overlay */}
       {isLocked && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-40 p-4">
-          <div className="bg-gray-900 border border-orange-500/50 rounded-2xl max-w-sm w-full p-8 text-center shadow-2xl">
+          <div className="bg-f1-neutral-900 border border-orange-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="text-4xl mb-4">🏁</div>
             <h2 className="text-2xl font-black text-orange-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
-            <p className="text-gray-300 text-sm">
+            <p className="text-f1-neutral-300 text-sm">
               The deadline for this sprint has passed. The race has started or is about to start.
             </p>
-            <p className="text-gray-500 text-xs mt-4">You can still view your saved prediction below.</p>
+            <p className="text-f1-neutral-500 text-xs mt-4">You can still view your saved prediction below.</p>
           </div>
         </div>
       )}
 
       <div className="flex flex-col gap-3">
 
-        {/* Sprint badge */}
+        {/* Sprint badge — keep orange pill for sprint identity */}
         <div className="flex items-center justify-center gap-2 bg-orange-600 text-white py-1.5 px-4 rounded-full text-xs font-black tracking-widest uppercase mx-auto">
           ⚡ Sprint Race
         </div>
@@ -408,7 +409,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
               {!hasQualifyingResults && (
                 <button
                   onClick={fetchData}
-                  className="text-[10px] text-gray-400 hover:text-white transition-colors"
+                  className="text-[10px] text-f1-neutral-500 hover:text-white transition-colors"
                   title="Refresh qualifying order"
                 >
                   ↺ Refresh
@@ -427,17 +428,17 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
           </div>
           <div className="flex items-start justify-between">
             <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Sprint Grid</p>
-            <span className="text-[10px] text-gray-500 font-bold tabular-nums">{filledCount}/8</span>
+            <span className="text-[10px] text-f1-neutral-500 font-bold tabular-nums">{filledCount}/8</span>
           </div>
         </div>
 
         {/* Qualifying times panel */}
         {hasQualifyingResults && showQualiDetails && (
-          <div className="bg-gray-900 rounded-xl p-3 text-xs max-h-[180px] overflow-y-auto">
+          <div className="bg-f1-neutral-950 border border-f1-neutral-800 p-3 text-xs max-h-[180px] overflow-y-auto">
             <div className="grid grid-cols-[20px_1fr_auto] gap-x-2 gap-y-1">
               {qualifyingDrivers.map((d) => (
                 <div key={d.id} className="contents">
-                  <span className="text-gray-500 font-mono">P{d.position}</span>
+                  <span className="text-f1-neutral-500 font-mono">P{d.position}</span>
                   <span className="font-f1 font-bold text-white">{acronym(d)}</span>
                   <span className="text-green-400 font-mono">{d.q3 || d.q2 || d.q1 || '—'}</span>
                 </div>
@@ -447,7 +448,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
         )}
 
         {/* Hint */}
-        <p className="text-center text-[10px] text-gray-600 tracking-wider uppercase">
+        <p className="text-center text-[10px] text-f1-neutral-600 tracking-wider uppercase">
           {heldIndex !== null
             ? 'Tap a slot to place · Tap same slot to cancel'
             : 'Tap to add · Tap slot to hold & reorder · Drag to swap'}
@@ -469,29 +470,29 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
           </RemoveZone>
 
           {/* Right: sprint timing tower */}
-          <div className="bg-gray-900 rounded-xl py-2 px-2 border border-gray-800 flex flex-col gap-1">
+          <div className="bg-f1-neutral-900 py-2 px-2 border border-f1-neutral-800 flex flex-col gap-1">
             {/* Holding dock */}
-            <div className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all ${
+            <div className={`flex items-center gap-2 px-2 py-1.5 border transition-all ${
               heldIndex !== null
-                ? 'border-amber-400/60 bg-amber-900/20'
-                : 'border-dashed border-gray-700/40 bg-transparent'
+                ? 'border-f1-pink-500/50 bg-f1-pink-950/30'
+                : 'border-dashed border-f1-neutral-700/40 bg-transparent'
             }`}>
               {heldIndex !== null && predictions[heldIndex] ? (
                 <>
                   <DriverAvatar driver={predictions[heldIndex]!} size="sm" />
-                  <span className="font-f1 font-bold text-amber-300 text-[11px] tracking-widest truncate flex-1">
+                  <span className="font-f1 font-bold text-f1-pink-400 text-[11px] tracking-widest truncate flex-1">
                     {lastName(predictions[heldIndex]!)}
                   </span>
                   <button
                     onClick={() => setHeldIndex(null)}
-                    className="text-gray-500 hover:text-white text-xs px-1 flex-shrink-0 leading-none"
+                    className="text-f1-neutral-500 hover:text-white text-xs px-1 flex-shrink-0 leading-none"
                   >✕</button>
                 </>
               ) : (
-                <span className="text-gray-700 text-[9px] mx-auto tracking-wider uppercase">hold</span>
+                <span className="text-f1-neutral-700 text-[9px] mx-auto tracking-wider uppercase">hold</span>
               )}
             </div>
-            <div className="border-t border-gray-800" />
+            <div className="border-t border-f1-neutral-800" />
             {[1, 2, 3, 4, 5, 6, 7, 8].map((position) => (
               <GridSlot
                 key={position}
@@ -507,36 +508,36 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+        {/* Progress bar — keep orange for sprint identity */}
+        <div className="w-full h-1 bg-f1-neutral-800 overflow-hidden">
           <div
-            className="h-full bg-orange-500 rounded-full transition-all duration-300"
+            className="h-full bg-orange-500 transition-all duration-300"
             style={{ width: `${(filledCount / 8) * 100}%` }}
           />
         </div>
 
-        {/* Submit */}
+        {/* Submit — keep orange for sprint identity */}
         <button
           onClick={handleSubmit}
           disabled={submitting || filledCount < 8}
-          className={`w-full py-3.5 rounded-xl font-black text-sm tracking-widest uppercase transition-all ${
+          className={`w-full py-3.5 font-black text-sm tracking-widest uppercase transition-all ${
             filledCount < 8
-              ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+              ? 'bg-f1-neutral-800 text-f1-neutral-600 cursor-not-allowed'
               : 'bg-orange-600 text-white active:scale-95 shadow-lg shadow-orange-900/50'
           }`}
         >
-          {submitting ? 'Submitting…' : filledCount < 8 ? `${8 - filledCount} slots remaining` : 'Confirm Sprint Prediction'}
+          {submitting ? 'Submitting...' : filledCount < 8 ? `${8 - filledCount} slots remaining` : 'Confirm Sprint Prediction'}
         </button>
 
         <button
           onClick={() => navigate('/predictions')}
-          className="w-full py-3 rounded-xl font-bold text-sm text-gray-400 bg-gray-800/60 active:scale-95 tracking-wider uppercase"
+          className="w-full py-3 font-bold text-sm text-f1-neutral-400 bg-f1-neutral-850 active:scale-95 tracking-wider uppercase"
         >
           View All Predictions
         </button>
 
         {message && (
-          <div className={`p-3 rounded-xl text-sm text-center font-bold ${
+          <div className={`p-3 text-sm text-center font-bold ${
             message.includes('success') ? 'bg-green-900/60 text-green-300' : 'bg-red-900/60 text-red-300'
           }`}>
             {message}

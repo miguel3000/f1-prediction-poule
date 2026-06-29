@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Formula1 font — place .ttf files in /public/fonts/ */
+/* Formula1 font */
 @font-face {
   font-family: 'Formula1';
   src: url('/fonts/Formula1-Regular_web_0.ttf') format('truetype');
@@ -24,248 +24,75 @@
 
 body {
   margin: 0;
-  font-family: 'Saira', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Saira', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(180deg, #15151E 0%, #0A0A0F 100%);
-  background-attachment: fixed;
+  background-color: #080808;
   color: #FFFFFF;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0E0E0E; }
+::-webkit-scrollbar-thumb { background: #E6007E; }
+::-webkit-scrollbar-thumb:hover { background: #FF40A0; }
 
-::-webkit-scrollbar-track {
-  background: #15151E;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #E10600 0%, #B00500 100%);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #FF3333 0%, #E10600 100%);
-}
-
-/* F1 Custom Utilities */
 @layer utilities {
-  /* Glass morphism effects */
-  .glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .glass-dark {
-    background: rgba(21, 21, 30, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  /* Gradient text effect */
-  .text-gradient-red {
-    background: linear-gradient(135deg, #FF3333 0%, #E10600 50%, #B00500 100%);
+  .text-gradient-pink {
+    background: linear-gradient(135deg, #FF40A0 0%, #E6007E 50%, #B3005F 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Hover lift effect (F1.com style) */
-  .hover-lift {
-    transition: transform 300ms ease, box-shadow 300ms ease;
+  /* Left-bar timing tower accent */
+  .timing-row {
+    border-left: 3px solid #E6007E;
+    background: #0E0E0E;
   }
 
-  .hover-lift:hover {
-    transform: translateY(-4px);
-  }
-
-  /* Image hover scale (F1.com style) */
-  .hover-scale {
-    transition: transform 300ms ease;
-  }
-
-  .hover-scale:hover {
-    transform: scale(1.1);
-  }
-
-  /* Racing stripe decoration */
-  .racing-stripe {
-    position: relative;
-  }
-
-  .racing-stripe::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #E10600 0%, transparent 100%);
-  }
-
-  /* Gradient border effect */
-  .border-gradient-red {
-    border: 2px solid transparent;
-    background:
-      linear-gradient(#15151E, #15151E) padding-box,
-      linear-gradient(135deg, #E10600, #FF3333) border-box;
-  }
-
-  /* Card with glow hover */
-  .card-glow {
-    transition: box-shadow 300ms ease, transform 300ms ease;
-  }
-
-  .card-glow:hover {
-    box-shadow: 0 0 30px rgba(225, 6, 0, 0.4);
-    transform: translateY(-2px);
-  }
-
-  /* Shimmer loading effect */
-  @keyframes shimmer {
-    0% {
-      background-position: -1000px 0;
-    }
-    100% {
-      background-position: 1000px 0;
-    }
-  }
-
-  .shimmer {
-    animation: shimmer 2s infinite linear;
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    background-size: 1000px 100%;
+  .timing-row-muted {
+    border-left: 3px solid #1E1E1E;
+    background: #0A0A0A;
   }
 }
 
-/* Custom component styles */
 @layer components {
-  /* F1 Button */
+  /* Primary button */
   .btn-f1-primary {
-    @apply bg-f1-red-500 hover:bg-f1-red-600 text-white px-8 py-3 rounded-lg font-bold
-           transition-all duration-300 shadow-f1-glow hover:shadow-f1-glow-lg
-           hover:-translate-y-1 active:translate-y-0;
+    @apply bg-f1-pink-500 hover:bg-f1-pink-400 text-white px-8 py-3 font-bold uppercase tracking-widest transition-all duration-200 shadow-f1-glow hover:shadow-f1-glow-lg active:scale-95;
+    border-radius: 0;
   }
 
+  /* Secondary button */
   .btn-f1-secondary {
-    @apply bg-f1-neutral-800 hover:bg-f1-neutral-700 text-white px-8 py-3 rounded-lg font-bold
-           transition-all duration-300 border border-f1-neutral-600 hover:border-f1-red-500;
+    @apply bg-f1-neutral-850 hover:bg-f1-neutral-800 text-white px-8 py-3 font-bold uppercase tracking-widest transition-all duration-200 border border-f1-neutral-700 hover:border-f1-pink-500;
+    border-radius: 0;
   }
 
-  /* F1 Card */
+  /* Card */
   .card-f1 {
-    @apply bg-f1-neutral-850 rounded-lg p-6 shadow-card hover:shadow-card-hover
-           transition-all duration-300 border border-f1-neutral-800;
+    @apply bg-f1-neutral-900 p-6 shadow-card border border-f1-neutral-800 transition-all duration-200;
+    border-radius: 0;
   }
 
   .card-f1-interactive {
-    @apply card-f1 hover:-translate-y-1 cursor-pointer;
+    @apply card-f1 cursor-pointer hover:border-f1-pink-500/40 hover:shadow-f1-glow;
   }
 
-  /* F1 Input */
+  /* Input */
   .input-f1 {
-    @apply bg-f1-neutral-850 border border-f1-neutral-700 rounded-lg px-4 py-3
-           text-white placeholder-f1-gray focus:border-f1-red-500 focus:ring-2
-           focus:ring-f1-red-500/20 outline-none transition-all duration-300;
+    @apply bg-f1-neutral-850 border border-f1-neutral-700 px-4 py-3 text-white placeholder-f1-gray focus:border-f1-pink-500 focus:ring-1 focus:ring-f1-pink-500/30 outline-none transition-all duration-200;
+    border-radius: 0;
   }
 }
 
-/* Racing Diagonal Slash Background */
-.bg-slashes {
-  /* Tweak these to taste */
-  --bg: #0e0f14;                 /* near-black base */
-  --line-glow: rgba(255,255,255,.02); /* subtle horizontal banding */
-  --bar: #1b1d26;                /* slash base */
-  --bar-gloss1: rgba(255,255,255,.06);
-  --bar-gloss2: rgba(255,255,255,.02);
-  --angle: -24deg;               /* tilt; negative makes forward slashes // */
-  --bar-width: 28vw;             /* width of each slash */
-  --bar-gap: 4vw;                /* space between slashes */
-  --bar-opacity: .9;
-
-  position: relative;
-  width: 100%;
-  min-height: 100vh;             /* full viewport height */
-  background:
-    /* subtle horizontal micro-lines */
-    repeating-linear-gradient(
-      to bottom,
-      var(--line-glow) 0 1px,
-      transparent 1px 7px
-    ),
-    var(--bg);
-  overflow: hidden;
-}
-
-/* Two diagonal slashes */
-.bg-slashes::before,
-.bg-slashes::after {
-  content: "";
-  position: absolute;
-  inset: -10% -10%;              /* oversize so edges don't show */
-  background:
-    /* glossy highlight across the bar */
-    linear-gradient(90deg,
-      transparent 0%,
-      var(--bar-gloss2) 20%,
-      var(--bar-gloss1) 50%,
-      var(--bar-gloss2) 80%,
-      transparent 100%
-    ),
-    var(--bar);
-  opacity: var(--bar-opacity);
-  transform: rotate(var(--angle));
-  transform-origin: center;
-  mask:
-    /* cut two vertical bars with a gap; then rotation tilts them */
-    linear-gradient(90deg,
-      transparent 0 calc(50% - var(--bar-width) - var(--bar-gap)/2),
-      #000 calc(50% - var(--bar-width) - var(--bar-gap)/2) calc(50% - var(--bar-gap)/2),
-      transparent calc(50% - var(--bar-gap)/2) calc(50% + var(--bar-gap)/2),
-      #000 calc(50% + var(--bar-gap)/2) calc(50% + var(--bar-width) + var(--bar-gap)/2),
-      transparent calc(50% + var(--bar-width) + var(--bar-gap)/2) 100%
-    );
-  -webkit-mask: linear-gradient(90deg,
-      transparent 0 calc(50% - var(--bar-width) - var(--bar-gap)/2),
-      #000 calc(50% - var(--bar-width) - var(--bar-gap)/2) calc(50% - var(--bar-gap)/2),
-      transparent calc(50% - var(--bar-gap)/2) calc(50% + var(--bar-gap)/2),
-      #000 calc(50% + var(--bar-gap)/2) calc(50% + var(--bar-width) + var(--bar-gap)/2),
-      transparent calc(50% + var(--bar-width) + var(--bar-gap)/2) 100%
-    );
-  box-shadow:
-    0 0 80px rgba(0,0,0,.4) inset; /* soften edges */
-  pointer-events: none;
-}
-
-/* Optional: a very subtle vignette */
-.bg-slashes::after {
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.25) 100%);
-  mask: none;
-  -webkit-mask: none;
-  transform: none;
-  opacity: 1;
-  pointer-events: none;
-}
-
-/* Footer with solid background to block slashes */
+/* Footer */
 .footer-solid {
-  background-color: #111827;
+  background-color: #0A0A0A;
+  border-top: 1px solid #1E1E1E;
   position: relative;
   z-index: 30;
 }
