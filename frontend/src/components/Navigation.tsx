@@ -111,7 +111,7 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
         <div className="flex items-center justify-between px-5 py-4 border-b border-f1-neutral-800">
           <div className="flex items-center gap-2">
             <div className="w-1 h-5 bg-f1-pink-500" />
-            <span className="font-f1 font-black text-white text-sm uppercase tracking-widest">Menu</span>
+            <span className="font-f1 font-black text-white text-sm uppercase tracking-widest">Poule Position</span>
           </div>
           <button
             onClick={onClose}

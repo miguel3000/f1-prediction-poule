@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import LogoMark from './LogoMark';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -27,15 +28,12 @@ const Header = ({ onMenuToggle }: HeaderProps) => {
           </button>
 
           {/* Logo */}
-          <div className="flex-1 flex items-center justify-center gap-3">
-            <div className="w-1 h-8 bg-f1-pink-500 flex-shrink-0" />
-            <h1
-              className="font-f1 font-black text-white uppercase tracking-[0.15em] text-lg md:text-2xl cursor-pointer select-none"
-              onClick={() => navigate('/')}
-            >
-              F1 Prediction Poule
-              <span className="text-f1-pink-500 ml-2 text-base md:text-lg">2026</span>
-            </h1>
+          <div className="flex-1 flex items-center justify-center">
+            {/* Full wordmark on md+, icon only on mobile */}
+            <button onClick={() => navigate('/')} className="focus:outline-none select-none" aria-label="Poule Position home">
+              <LogoMark variant="full" className="hidden md:block h-10 w-auto" />
+              <LogoMark variant="icon" className="block md:hidden h-9 w-9" />
+            </button>
           </div>
 
           {/* User */}

@@ -78,7 +78,7 @@ const Homepage = () => {
         />
         <div className="mt-12 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-gradient-pink">
-            Welcome to F1 Prediction Poule!
+            Welcome to Poule Position!
           </h2>
           <p className="text-f1-gray mb-8 text-lg">
             Please log in or register to make your race predictions
