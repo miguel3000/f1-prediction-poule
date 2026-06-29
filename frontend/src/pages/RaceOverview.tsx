@@ -96,7 +96,7 @@ const RaceOverview = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-red mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading races...</p>
       </div>
     );
@@ -113,11 +113,11 @@ const RaceOverview = () => {
             onClick={() => handleRaceClick(race)}
             className={`rounded-lg p-6 cursor-pointer transition-all transform hover:scale-105 ${
               isSprint(race)
-                ? 'bg-orange-900/30 border border-orange-500/50 hover:bg-orange-900/50'
+                ? 'bg-f1-pink-900/20 border border-f1-pink-500/50 hover:bg-f1-pink-400/50'
                 : 'bg-gray-800 hover:bg-gray-700'
             } ${
               selectedRace?.id === race.id
-                ? isSprint(race) ? 'ring-2 ring-orange-500' : 'ring-2 ring-f1-red'
+                ? isSprint(race) ? 'ring-2 ring-f1-pink-500' : 'ring-2 ring-f1-pink-500'
                 : ''
             } ${
               race.status === 'completed' || race.status === 'provisional' ? 'opacity-60' : ''
@@ -127,7 +127,7 @@ const RaceOverview = () => {
               <div className="flex items-center gap-2">
                 <h3 className="text-xl font-bold">Round {race.round}</h3>
                 {isSprint(race) && (
-                  <span className="text-xs px-2 py-0.5 rounded bg-orange-600 text-white font-bold">
+                  <span className="text-xs px-2 py-0.5 rounded bg-f1-pink-500 text-white font-bold">
                     SPRINT
                   </span>
                 )}
@@ -137,7 +137,7 @@ const RaceOverview = () => {
               </span>
             </div>
 
-            <h4 className={`text-lg font-semibold mb-2 ${isSprint(race) ? 'text-orange-400' : 'text-f1-red'}`}>
+            <h4 className={`text-lg font-semibold mb-2 ${isSprint(race) ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
               {race.race_name}
             </h4>
             <p className="text-sm text-f1-gray mb-1">📍 {race.circuit_name}</p>
@@ -158,16 +158,16 @@ const RaceOverview = () => {
       {selectedRace && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className={`rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8 ${
-            isSprint(selectedRace) ? 'bg-gray-800 border-2 border-orange-500/50' : 'bg-gray-800'
+            isSprint(selectedRace) ? 'bg-gray-800 border-2 border-f1-pink-500/50' : 'bg-gray-800'
           }`}>
             <div className="flex justify-between items-start mb-6">
               <div>
                 <div className="flex items-center gap-3">
-                  <h2 className={`text-3xl font-bold ${isSprint(selectedRace) ? 'text-orange-400' : 'text-f1-red'}`}>
+                  <h2 className={`text-3xl font-bold ${isSprint(selectedRace) ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
                     {selectedRace.race_name}
                   </h2>
                   {isSprint(selectedRace) && (
-                    <span className="text-sm px-3 py-1 rounded bg-orange-600 text-white font-bold">
+                    <span className="text-sm px-3 py-1 rounded bg-f1-pink-500 text-white font-bold">
                       SPRINT
                     </span>
                   )}
@@ -178,7 +178,7 @@ const RaceOverview = () => {
               </div>
               <button
                 onClick={() => setSelectedRace(null)}
-                className={`text-white text-3xl ${isSprint(selectedRace) ? 'hover:text-orange-400' : 'hover:text-f1-red'}`}
+                className={`text-white text-3xl ${isSprint(selectedRace) ? 'hover:text-f1-pink-400' : 'hover:text-f1-pink-500'}`}
               >
                 ×
               </button>
@@ -202,7 +202,7 @@ const RaceOverview = () => {
                         className="flex items-center justify-between bg-gray-900 p-4 rounded"
                       >
                         <div className="flex items-center gap-4">
-                          <span className={`text-2xl font-bold w-8 ${isSprint(selectedRace) ? 'text-orange-400' : 'text-f1-red'}`}>
+                          <span className={`text-2xl font-bold w-8 ${isSprint(selectedRace) ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
                             {result.position}
                           </span>
                           <div>
@@ -232,8 +232,8 @@ const RaceOverview = () => {
                   onClick={() => navigate('/')}
                   className={`text-white px-6 py-3 rounded-lg font-bold ${
                     isSprint(selectedRace)
-                      ? 'bg-orange-600 hover:bg-orange-500'
-                      : 'bg-f1-red hover:bg-red-700'
+                      ? 'bg-f1-pink-500 hover:bg-f1-pink-500'
+                      : 'bg-f1-pink-500 hover:bg-f1-pink-600'
                   }`}
                 >
                   Make Your {isSprint(selectedRace) ? 'Sprint ' : ''}Prediction

@@ -148,16 +148,16 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHel
 
   const posColor = position === 1 ? 'text-yellow-400' :
     position === 2 ? 'text-gray-300' :
-    position === 3 ? 'text-orange-400' :
+    position === 3 ? 'text-f1-pink-400' :
     'text-f1-neutral-600';
 
   // Sprint drop zones use orange, held state uses pink (action UI state)
   const slotClass = isHeld
     ? 'border-f1-pink-500 bg-f1-pink-900/20 ring-1 ring-f1-pink-500/40 opacity-75 cursor-pointer'
     : isOver && canDrop
-    ? 'border-orange-500 bg-orange-500/10 scale-[1.02]'
+    ? 'border-f1-pink-500 bg-f1-pink-500/10 scale-[1.02]'
     : isDragging
-    ? 'opacity-40 border-orange-500 scale-95 bg-f1-neutral-850'
+    ? 'opacity-40 border-f1-pink-500 scale-95 bg-f1-neutral-850'
     : hasHeld
     ? driver && teamColor
       ? `${teamColor.border} bg-f1-neutral-850/80 cursor-pointer ring-1 ring-white/20`
@@ -206,7 +206,7 @@ const RemoveZone = ({ onDrop, children }: RemoveZoneProps) => {
   });
 
   return (
-    <div ref={drop} className={`transition-all ${isOver && canDrop ? 'ring-2 ring-orange-500 bg-orange-900/20' : ''}`}>
+    <div ref={drop} className={`transition-all ${isOver && canDrop ? 'ring-2 ring-f1-pink-500 bg-f1-pink-900/20' : ''}`}>
       {children}
     </div>
   );
@@ -357,7 +357,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
       {/* Confirmation modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-f1-neutral-900 border border-orange-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
+          <div className="bg-f1-neutral-900 border border-f1-pink-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -372,7 +372,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
             )}
             <button
               onClick={() => setShowConfirmModal(false)}
-              className="w-full py-3 bg-orange-600 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+              className="w-full py-3 bg-f1-pink-500 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
             >
               Close
             </button>
@@ -383,9 +383,9 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
       {/* Deadline overlay */}
       {isLocked && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-40 p-4">
-          <div className="bg-f1-neutral-900 border border-orange-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
+          <div className="bg-f1-neutral-900 border border-f1-pink-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="text-4xl mb-4">🏁</div>
-            <h2 className="text-2xl font-black text-orange-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
+            <h2 className="text-2xl font-black text-f1-pink-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
             <p className="text-f1-neutral-300 text-sm">
               The deadline for this sprint has passed. The race has started or is about to start.
             </p>
@@ -397,7 +397,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
       <div className="flex flex-col gap-3">
 
         {/* Sprint badge — keep orange pill for sprint identity */}
-        <div className="flex items-center justify-center gap-2 bg-orange-600 text-white py-1.5 px-4 rounded-full text-xs font-black tracking-widest uppercase mx-auto">
+        <div className="flex items-center justify-center gap-2 bg-f1-pink-500 text-white py-1.5 px-4 rounded-full text-xs font-black tracking-widest uppercase mx-auto">
           ⚡ Sprint Race
         </div>
 
@@ -405,7 +405,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
         <div className="grid grid-cols-2 gap-2 px-1">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">{orderLabel}</p>
+              <p className="text-[10px] font-bold text-f1-pink-500 uppercase tracking-widest">{orderLabel}</p>
               {!hasQualifyingResults && (
                 <button
                   onClick={fetchData}
@@ -427,7 +427,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
             )}
           </div>
           <div className="flex items-start justify-between">
-            <p className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Sprint Grid</p>
+            <p className="text-[10px] font-bold text-f1-pink-500 uppercase tracking-widest">Sprint Grid</p>
             <span className="text-[10px] text-f1-neutral-500 font-bold tabular-nums">{filledCount}/8</span>
           </div>
         </div>
@@ -511,7 +511,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
         {/* Progress bar — keep orange for sprint identity */}
         <div className="w-full h-1 bg-f1-neutral-800 overflow-hidden">
           <div
-            className="h-full bg-orange-500 transition-all duration-300"
+            className="h-full bg-f1-pink-500 transition-all duration-300"
             style={{ width: `${(filledCount / 8) * 100}%` }}
           />
         </div>
@@ -523,7 +523,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
           className={`w-full py-3.5 font-black text-sm tracking-widest uppercase transition-all ${
             filledCount < 8
               ? 'bg-f1-neutral-800 text-f1-neutral-600 cursor-not-allowed'
-              : 'bg-orange-600 text-white active:scale-95 shadow-lg shadow-orange-900/50'
+              : 'bg-f1-pink-500 text-white active:scale-95 shadow-lg shadow-f1-glow'
           }`}
         >
           {submitting ? 'Submitting...' : filledCount < 8 ? `${8 - filledCount} slots remaining` : 'Confirm Sprint Prediction'}

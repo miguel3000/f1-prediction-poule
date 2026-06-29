@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* About Section */}
           <div>
-            <h3 className="text-f1-red font-bold text-lg mb-3">F1 Prediction Poule</h3>
+            <h3 className="text-f1-pink-500 font-bold text-lg mb-3">F1 Prediction Poule</h3>
             <p className="text-f1-gray text-sm">
               Test your Formula 1 knowledge by predicting race results and competing on the leaderboard.
               Free to play, built for F1 fans.
@@ -21,22 +21,22 @@ const Footer = () => {
             <h3 className="text-white font-bold text-lg mb-3">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/" className="text-f1-gray hover:text-f1-red transition-colors">
+                <Link to="/" className="text-f1-gray hover:text-f1-pink-500 transition-colors">
                   Homepage
                 </Link>
               </li>
               <li>
-                <Link to="/races" className="text-f1-gray hover:text-f1-red transition-colors">
+                <Link to="/races" className="text-f1-gray hover:text-f1-pink-500 transition-colors">
                   Race Overview
                 </Link>
               </li>
               <li>
-                <Link to="/leaderboard" className="text-f1-gray hover:text-f1-red transition-colors">
+                <Link to="/leaderboard" className="text-f1-gray hover:text-f1-pink-500 transition-colors">
                   Leaderboard
                 </Link>
               </li>
               <li>
-                <Link to="/rules" className="text-f1-gray hover:text-f1-red transition-colors">
+                <Link to="/rules" className="text-f1-gray hover:text-f1-pink-500 transition-colors">
                   Rules
                 </Link>
               </li>
@@ -48,19 +48,19 @@ const Footer = () => {
             <h3 className="text-white font-bold text-lg mb-3">Legal & Contact</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/about" className="text-f1-gray hover:text-f1-red transition-colors">
+                <Link to="/about" className="text-f1-gray hover:text-f1-pink-500 transition-colors">
                   About
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-f1-gray hover:text-f1-red transition-colors">
+                <Link to="/privacy" className="text-f1-gray hover:text-f1-pink-500 transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
                 <a
                   href="mailto:matt.gloudemans@gmail.com"
-                  className="text-f1-gray hover:text-f1-red transition-colors"
+                  className="text-f1-gray hover:text-f1-pink-500 transition-colors"
                 >
                   Contact Us
                 </a>

@@ -122,7 +122,7 @@ const Homepage = () => {
             onClick={() => setActiveTab('sprint')}
             className={`flex-1 py-2 px-4 font-bold text-sm transition-colors ${
               activeTab === 'sprint'
-                ? 'bg-orange-600 text-white'
+                ? 'bg-f1-pink-500 text-white'
                 : 'bg-f1-neutral-850 text-f1-neutral-400 hover:bg-f1-neutral-800'
             }`}
           >

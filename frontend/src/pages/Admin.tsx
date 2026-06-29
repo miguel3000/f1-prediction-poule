@@ -560,7 +560,7 @@ const Admin = () => {
                 className="w-4 h-4 accent-orange-500"
               />
               <span>
-                <span className="text-orange-400 font-medium">Force re-sync</span>
+                <span className="text-f1-pink-400 font-medium">Force re-sync</span>
                 <span className="text-xs ml-1">(overwrite existing qualifying results)</span>
               </span>
             </label>
@@ -574,7 +574,7 @@ const Admin = () => {
                   : syncStatus.qualifying === 'success'
                   ? 'bg-green-600 text-white'
                   : forceResync
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                  ? 'bg-f1-pink-500 hover:bg-f1-pink-500 text-white'
                   : 'bg-yellow-500 hover:bg-yellow-400 text-black'
               }`}
             >
@@ -593,7 +593,7 @@ const Admin = () => {
 
           {/* Sync Race Results */}
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h3 className="font-bold text-f1-red-500 mb-2">Sync Race Results & Calculate Points</h3>
+            <h3 className="font-bold text-f1-pink-500 mb-2">Sync Race Results & Calculate Points</h3>
             <p className="text-sm text-f1-gray mb-3">
               Fetch race &amp; sprint results from Jolpi API, update race statuses, and recalculate prediction points for all users.
             </p>
@@ -607,7 +607,7 @@ const Admin = () => {
                 className="w-4 h-4 accent-orange-500"
               />
               <span>
-                <span className="text-orange-400 font-medium">Force re-sync</span>
+                <span className="text-f1-pink-400 font-medium">Force re-sync</span>
                 <span className="text-xs ml-1">(re-calculates points for races already synced)</span>
               </span>
             </label>
@@ -621,8 +621,8 @@ const Admin = () => {
                   : syncStatus.results === 'success'
                   ? 'bg-green-600 text-white'
                   : forceResync
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                  : 'bg-f1-red hover:bg-red-700 text-white'
+                  ? 'bg-f1-pink-500 hover:bg-f1-pink-400 text-white'
+                  : 'bg-f1-pink-500 hover:bg-f1-pink-600 text-white'
               }`}
             >
               {syncStatus.results === 'loading' ? (
@@ -711,7 +711,7 @@ const Admin = () => {
                             <tr key={r.id} className="border-b border-f1-neutral-800 text-f1-gray">
                               <td className="py-1 pr-3">{r.round}</td>
                               <td className="py-1 pr-3">{r.race_name}</td>
-                              <td className={`py-1 pr-3 ${r.race_type === 'sprint' ? 'text-orange-400' : 'text-blue-400'}`}>{r.race_type}</td>
+                              <td className={`py-1 pr-3 ${r.race_type === 'sprint' ? 'text-f1-pink-400' : 'text-blue-400'}`}>{r.race_type}</td>
                               <td className={`py-1 pr-3 ${r.status === 'completed' ? 'text-green-400' : r.status === 'provisional' ? 'text-yellow-400' : 'text-f1-gray'}`}>{r.status}</td>
                               <td className={`py-1 ${count > 0 ? 'text-green-400' : 'text-red-400'}`}>{count} rows</td>
                             </tr>
@@ -759,7 +759,7 @@ const Admin = () => {
               ? 'bg-gray-600 cursor-not-allowed text-gray-400'
               : raceResultsStatus === 'success'
               ? 'bg-green-600 text-white'
-              : 'bg-f1-red hover:bg-red-700 text-white'
+              : 'bg-f1-pink-500 hover:bg-f1-pink-600 text-white'
           }`}
         >
           {raceResultsStatus === 'loading' ? (
@@ -855,9 +855,9 @@ const Admin = () => {
 
         {/* Visual Timeline */}
         <div className="bg-f1-neutral-800 p-6 rounded-lg mb-6">
-          <h3 className="text-lg font-bold text-f1-red-500 mb-4">Race Weekend Timeline</h3>
+          <h3 className="text-lg font-bold text-f1-pink-500 mb-4">Race Weekend Timeline</h3>
           <div className="font-mono text-sm text-f1-gray space-y-2">
-            <p className="text-orange-400 font-bold">SUNDAY (Race Day)</p>
+            <p className="text-f1-pink-400 font-bold">SUNDAY (Race Day)</p>
             <p>12:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
             <p>    │                                                    │</p>
             <p>    ├─ Copy missing predictions (every 2 min until 18:00)│</p>
@@ -888,7 +888,7 @@ const Admin = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Copy Missing Predictions */}
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h4 className="font-bold text-orange-400 mb-3">1. Copy Missing Predictions</h4>
+            <h4 className="font-bold text-f1-pink-400 mb-3">1. Copy Missing Predictions</h4>
             <p className="text-sm text-f1-gray mb-3">
               Runs for races that locked 1-10 minutes ago. Finds users who have predicted before
               but NOT for this race, and copies their most recent prediction automatically.
@@ -946,7 +946,7 @@ const Admin = () => {
         {/* Points System */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h4 className="font-bold text-f1-red-500 mb-3">Main Race Points (Top 10)</h4>
+            <h4 className="font-bold text-f1-pink-500 mb-3">Main Race Points (Top 10)</h4>
             <div className="grid grid-cols-5 gap-2 text-center text-sm">
               {[
                 { pos: 'P1', pts: 25 }, { pos: 'P2', pts: 18 }, { pos: 'P3', pts: 15 },
@@ -961,7 +961,7 @@ const Admin = () => {
             </div>
           </div>
           <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h4 className="font-bold text-orange-500 mb-3">Sprint Race Points (Top 8)</h4>
+            <h4 className="font-bold text-f1-pink-500 mb-3">Sprint Race Points (Top 8)</h4>
             <div className="grid grid-cols-4 gap-2 text-center text-sm">
               {[
                 { pos: 'P1', pts: 8 }, { pos: 'P2', pts: 7 }, { pos: 'P3', pts: 6 }, { pos: 'P4', pts: 5 },
@@ -979,7 +979,7 @@ const Admin = () => {
 
         {/* Email Types */}
         <div className="bg-f1-neutral-800 p-5 rounded-lg mb-6">
-          <h4 className="font-bold text-f1-red-500 mb-3">Email Types</h4>
+          <h4 className="font-bold text-f1-pink-500 mb-3">Email Types</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -1027,11 +1027,11 @@ const Admin = () => {
 
         {/* Race Status Flow */}
         <div className="bg-f1-neutral-800 p-5 rounded-lg">
-          <h4 className="font-bold text-f1-red-500 mb-3">Race Status Flow</h4>
+          <h4 className="font-bold text-f1-pink-500 mb-3">Race Status Flow</h4>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="bg-blue-900/50 text-blue-300 px-3 py-1 rounded">upcoming</span>
             <span className="text-f1-gray">→ race ends →</span>
-            <span className="bg-orange-900/50 text-orange-300 px-3 py-1 rounded">provisional</span>
+            <span className="bg-f1-pink-900/20 text-orange-300 px-3 py-1 rounded">provisional</span>
             <span className="text-f1-gray">→ 24 hours →</span>
             <span className="bg-green-900/50 text-green-300 px-3 py-1 rounded">completed</span>
           </div>
@@ -1045,7 +1045,7 @@ const Admin = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* API URLs */}
         <div className="card-f1">
-          <h2 className="text-xl font-bold mb-4 text-f1-red-500">External APIs</h2>
+          <h2 className="text-xl font-bold mb-4 text-f1-pink-500">External APIs</h2>
           <div className="space-y-3">
             <div className="bg-f1-neutral-800 p-4 rounded-lg">
               <p className="text-sm text-f1-gray mb-1">OpenF1 API</p>
@@ -1062,7 +1062,7 @@ const Admin = () => {
 
         {/* Cron Schedule Info */}
         <div className="card-f1">
-          <h2 className="text-xl font-bold mb-4 text-f1-red-500">Cron Schedule Summary</h2>
+          <h2 className="text-xl font-bold mb-4 text-f1-pink-500">Cron Schedule Summary</h2>
           <div className="space-y-2 text-sm">
             <div className="bg-purple-900/30 border border-purple-500/30 p-3 rounded-lg">
               <div className="flex justify-between items-center">
@@ -1125,7 +1125,7 @@ const Admin = () => {
 
         {loading && users.length === 0 ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-f1-red mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-f1-pink-500 mx-auto"></div>
             <p className="mt-4 text-f1-gray">Loading users...</p>
           </div>
         ) : (
@@ -1174,7 +1174,7 @@ const Admin = () => {
                     <td className="py-3 px-4 text-f1-gray">{user.id}</td>
                     <td className="py-3 px-4 font-medium">{user.nickname}</td>
                     <td className="py-3 px-4 text-f1-gray">{user.email}</td>
-                    <td className="py-3 px-4 text-f1-red-500 font-bold">
+                    <td className="py-3 px-4 text-f1-pink-500 font-bold">
                       {user.total_points}
                     </td>
                     <td className="py-3 px-4 text-f1-gray text-sm">
@@ -1194,7 +1194,7 @@ const Admin = () => {
                       </button>
                       <button
                         onClick={() => handleDeleteUser(user.id, user.nickname)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                        className="bg-red-600 hover:bg-f1-pink-600 text-white px-3 py-1 rounded text-sm transition-colors"
                       >
                         Delete
                       </button>

@@ -149,7 +149,7 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHel
 
   const posColor = position === 1 ? 'text-yellow-400' :
     position === 2 ? 'text-gray-300' :
-    position === 3 ? 'text-orange-400' :
+    position === 3 ? 'text-f1-pink-400' :
     'text-f1-neutral-600';
 
   const slotClass = isHeld

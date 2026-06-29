@@ -85,7 +85,7 @@ const DriverStandings = () => {
   const getPositionColor = (position: number) => {
     if (position === 1) return 'bg-yellow-500 text-black';
     if (position === 2) return 'bg-gray-300 text-black';
-    if (position === 3) return 'bg-orange-600 text-white';
+    if (position === 3) return 'bg-f1-pink-500 text-white';
     return 'bg-gray-700 text-white';
   };
 
@@ -120,7 +120,7 @@ const DriverStandings = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-red mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading driver standings...</p>
       </div>
     );
@@ -168,7 +168,7 @@ const DriverStandings = () => {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-f1-red-500 font-bold text-sm">#{driver.driver_number}</span>
+                      <span className="text-f1-pink-500 font-bold text-sm">#{driver.driver_number}</span>
                       <h3 className="text-lg font-bold">{driver.name}</h3>
                     </div>
                     <div className="flex items-center gap-2 mt-1">

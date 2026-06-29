@@ -21,7 +21,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-bold text-white mb-3">2. Information We Collect</h2>
 
-            <h3 className="text-xl font-semibold text-f1-red mb-2">2.1 Personal Information</h3>
+            <h3 className="text-xl font-semibold text-f1-pink-500 mb-2">2.1 Personal Information</h3>
             <p className="mb-3">We collect the following personal information that you provide to us:</p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li><strong>Email Address:</strong> Used for account authentication</li>
@@ -30,7 +30,7 @@ const PrivacyPolicy = () => {
               <li><strong>Race Predictions:</strong> Your top 10 driver predictions for each race</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-f1-red mt-4 mb-2">2.2 Automatically Collected Information</h3>
+            <h3 className="text-xl font-semibold text-f1-pink-500 mt-4 mb-2">2.2 Automatically Collected Information</h3>
             <p className="mb-3">When you visit our website, we automatically collect certain information:</p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li><strong>Log Data:</strong> IP address, browser type, operating system, referring URLs, and pages visited</li>
@@ -56,7 +56,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-bold text-white mb-3">4. Third-Party Services</h2>
 
-            <h3 className="text-xl font-semibold text-f1-red mb-2">4.1 Google AdSense</h3>
+            <h3 className="text-xl font-semibold text-f1-pink-500 mb-2">4.1 Google AdSense</h3>
             <p className="mb-3">
               We use Google AdSense to display advertisements on our website. Google AdSense uses cookies
               and web beacons to serve ads based on your prior visits to our website and other websites on
@@ -65,20 +65,20 @@ const PrivacyPolicy = () => {
                 href="https://www.google.com/settings/ads"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-f1-red hover:underline"
+                className="text-f1-pink-500 hover:underline"
               >
                 Google Ads Settings
               </a>.
             </p>
 
-            <h3 className="text-xl font-semibold text-f1-red mb-2">4.2 External APIs</h3>
+            <h3 className="text-xl font-semibold text-f1-pink-500 mb-2">4.2 External APIs</h3>
             <p className="mb-3">We use the following external services to provide Formula 1 data:</p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li><strong>OpenF1 API:</strong> Race schedules, driver information, and race results</li>
               <li><strong>Jolpi Ergast API:</strong> Historical F1 data and statistics</li>
             </ul>
 
-            <h3 className="text-xl font-semibold text-f1-red mb-2">4.3 Email Service</h3>
+            <h3 className="text-xl font-semibold text-f1-pink-500 mb-2">4.3 Email Service</h3>
             <p>
               We use Gmail/Google Workspace to send transactional emails (prediction confirmations, race results).
             </p>

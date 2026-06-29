@@ -58,11 +58,11 @@ const HelpCircleIcon = () => (
 const Rules = () => {
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-center text-f1-red">Game Rules</h1>
+      <h1 className="text-4xl font-bold mb-8 text-center text-f1-pink-500">Game Rules</h1>
 
       <div className="space-y-8 text-lg leading-relaxed">
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><ClipboardIcon />How to Play</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><ClipboardIcon />How to Play</h2>
           <ol className="list-decimal list-inside space-y-3">
             <li>
               <strong>Register</strong> with your nickname and email (no password required!)
@@ -85,40 +85,40 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><TrophyIcon />Scoring System</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><TrophyIcon />Scoring System</h2>
           <p className="mb-4">
             Points are awarded using the official Formula 1 points system for the top 10 finishers:
           </p>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">1st Place:</span> 25 points
+              <span className="text-f1-pink-500 font-bold">1st Place:</span> 25 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">2nd Place:</span> 18 points
+              <span className="text-f1-pink-500 font-bold">2nd Place:</span> 18 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">3rd Place:</span> 15 points
+              <span className="text-f1-pink-500 font-bold">3rd Place:</span> 15 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">4th Place:</span> 12 points
+              <span className="text-f1-pink-500 font-bold">4th Place:</span> 12 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">5th Place:</span> 10 points
+              <span className="text-f1-pink-500 font-bold">5th Place:</span> 10 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">6th Place:</span> 8 points
+              <span className="text-f1-pink-500 font-bold">6th Place:</span> 8 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">7th Place:</span> 6 points
+              <span className="text-f1-pink-500 font-bold">7th Place:</span> 6 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">8th Place:</span> 4 points
+              <span className="text-f1-pink-500 font-bold">8th Place:</span> 4 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">9th Place:</span> 2 points
+              <span className="text-f1-pink-500 font-bold">9th Place:</span> 2 points
             </div>
             <div className="bg-gray-900 p-3 rounded">
-              <span className="text-f1-red font-bold">10th Place:</span> 1 point
+              <span className="text-f1-pink-500 font-bold">10th Place:</span> 1 point
             </div>
           </div>
 
@@ -153,7 +153,7 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><ClockIcon />Prediction Deadlines</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><ClockIcon />Prediction Deadlines</h2>
           <ul className="list-disc list-inside space-y-2">
             <li>
               Predictions <strong>must be submitted</strong> at least 1 minute before the race
@@ -169,7 +169,7 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><TargetIcon />Example</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><TargetIcon />Example</h2>
           <p className="mb-4">Let's say you predicted:</p>
           <div className="bg-gray-900 p-4 rounded mb-4">
             <p>P1: Max Verstappen</p>
@@ -184,7 +184,7 @@ const Rules = () => {
             <p>P3: Lando Norris (15 pts)</p>
             <p>P5: Lewis Hamilton (10 pts)</p>
           </div>
-          <p className="text-f1-red font-bold">Your score for this race:</p>
+          <p className="text-f1-pink-500 font-bold">Your score for this race:</p>
           <ul className="list-disc list-inside ml-4 mt-2 space-y-2">
             <li>
               <strong>Verstappen:</strong> Predicted P1, finished P1 → exact match → <span className="text-green-400">25 pts</span>
@@ -202,38 +202,38 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-orange-500"><span className="inline-block mr-2">🏃</span>Sprint Races</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><span className="inline-block mr-2">🏃</span>Sprint Races</h2>
           <p className="mb-4">
             Some race weekends feature a Sprint race on Saturday in addition to the main Grand Prix on Sunday.
             Sprint races require <strong>separate predictions</strong> for the top 8 positions!
           </p>
 
-          <div className="bg-orange-900/30 border border-orange-500/50 p-4 rounded-lg mb-4">
-            <h3 className="text-lg font-bold text-orange-400 mb-2">Sprint Race Points (Top 8)</h3>
+          <div className="bg-f1-pink-900/20 border border-f1-pink-500/50 p-4 rounded-lg mb-4">
+            <h3 className="text-lg font-bold text-f1-pink-400 mb-2">Sprint Race Points (Top 8)</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">1st:</span> 8 pts
+                <span className="text-f1-pink-400 font-bold">1st:</span> 8 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">2nd:</span> 7 pts
+                <span className="text-f1-pink-400 font-bold">2nd:</span> 7 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">3rd:</span> 6 pts
+                <span className="text-f1-pink-400 font-bold">3rd:</span> 6 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">4th:</span> 5 pts
+                <span className="text-f1-pink-400 font-bold">4th:</span> 5 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">5th:</span> 4 pts
+                <span className="text-f1-pink-400 font-bold">5th:</span> 4 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">6th:</span> 3 pts
+                <span className="text-f1-pink-400 font-bold">6th:</span> 3 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">7th:</span> 2 pts
+                <span className="text-f1-pink-400 font-bold">7th:</span> 2 pts
               </div>
               <div className="bg-gray-900 p-2 rounded">
-                <span className="text-orange-400 font-bold">8th:</span> 1 pt
+                <span className="text-f1-pink-400 font-bold">8th:</span> 1 pt
               </div>
             </div>
           </div>
@@ -245,7 +245,7 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><CheckeredFlagIcon />Season Championship</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><CheckeredFlagIcon />Season Championship</h2>
           <p>
             Your points accumulate throughout the entire 2026 season. The player with the most
             points at the end of the season wins the Players Championship! Check the leaderboard
@@ -254,7 +254,7 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><BellIcon />Notifications</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><BellIcon />Notifications</h2>
           <ul className="list-disc list-inside space-y-2">
             <li>Email confirmation when you register</li>
             <li>Confirmation email every time you submit or update predictions</li>
@@ -263,7 +263,7 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><CheckeredFlagIcon />Race Results Processing</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><CheckeredFlagIcon />Race Results Processing</h2>
           <p className="mb-4">
             Race results are processed in two stages to account for post-race penalties and disqualifications:
           </p>
@@ -291,7 +291,7 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-4 text-f1-red"><HelpCircleIcon />Questions?</h2>
+          <h2 className="text-2xl font-bold mb-4 text-f1-pink-500"><HelpCircleIcon />Questions?</h2>
           <p>
             If you have any questions about the rules or how the game works, feel free to contact
             the administrator. Good luck and may the best predictor win! 🏎️

@@ -91,7 +91,7 @@ const MyPredictions = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-red-500 mx-auto shadow-f1-glow"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto shadow-f1-glow"></div>
         <p className="mt-4 text-f1-gray">Loading your predictions...</p>
       </div>
     );
@@ -172,18 +172,18 @@ const MyPredictions = () => {
               key={`${prediction.race_type}-${prediction.id}`}
               className={`p-6 rounded-lg transition-all ${
                 isSprint
-                  ? 'bg-orange-900/20 border border-orange-500/50 hover:bg-orange-900/30'
+                  ? 'bg-f1-pink-900/20 border border-f1-pink-500/50 hover:bg-f1-pink-400/30'
                   : 'card-f1 hover:shadow-f1-glow'
               }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
                       {prediction.race_name}
                     </h2>
                     {isSprint && (
-                      <span className="text-xs px-2 py-1 rounded bg-orange-600 text-white font-bold">
+                      <span className="text-xs px-2 py-1 rounded bg-f1-pink-500 text-white font-bold">
                         SPRINT
                       </span>
                     )}
@@ -200,7 +200,7 @@ const MyPredictions = () => {
                 <div className="flex flex-col items-end gap-2">
                   {getStatusBadge(prediction.status)}
                   {prediction.points !== undefined && (
-                    <div className={`text-2xl font-bold ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                    <div className={`text-2xl font-bold ${isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
                       {prediction.points} pts
                     </div>
                   )}
@@ -215,12 +215,12 @@ const MyPredictions = () => {
                       key={index}
                       className={`p-3 rounded border ${
                         isSprint
-                          ? 'bg-orange-900/30 border-orange-500/30'
+                          ? 'bg-f1-pink-900/20 border-f1-pink-500/30'
                           : 'bg-f1-neutral-800 border-f1-neutral-700'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold text-sm ${isSprint ? 'text-orange-400' : 'text-f1-red-500'}`}>
+                        <span className={`font-bold text-sm ${isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
                           P{index + 1}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -233,7 +233,7 @@ const MyPredictions = () => {
                           <span className="text-f1-gray">
                             {pts.actualPosition ? `→ P${pts.actualPosition}` : '→ DNF'}
                           </span>
-                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-orange-400' : 'text-f1-red-500')) : 'text-f1-gray'}`}>
+                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500')) : 'text-f1-gray'}`}>
                             {pts.pointsEarned > 0 ? `+${pts.pointsEarned}${pts.hasBonus ? ' ★' : ''}` : '0'}
                           </span>
                         </div>
@@ -249,7 +249,7 @@ const MyPredictions = () => {
                     onClick={() => navigate('/')}
                     className={`w-full py-3 rounded-lg font-bold transition-colors ${
                       isSprint
-                        ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                        ? 'bg-f1-pink-500 hover:bg-f1-pink-500 text-white'
                         : 'btn-f1-primary'
                     }`}
                   >

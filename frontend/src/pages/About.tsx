@@ -47,14 +47,14 @@ const About = () => {
             <h2 className="text-2xl font-bold text-white mb-3">How It Works</h2>
             <div className="space-y-4">
               <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-lg font-bold text-f1-red mb-2">1. Create Your Account</h3>
+                <h3 className="text-lg font-bold text-f1-pink-500 mb-2">1. Create Your Account</h3>
                 <p>
                   Sign up with your email address, choose a nickname, and set a password to get started.
                 </p>
               </div>
 
               <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-lg font-bold text-f1-red mb-2">2. Make Your Predictions</h3>
+                <h3 className="text-lg font-bold text-f1-pink-500 mb-2">2. Make Your Predictions</h3>
                 <p>
                   Before each race, drag and drop drivers to predict the top 10 finishing positions. You can
                   modify your predictions anytime until 1 minute before the race starts.
@@ -62,14 +62,14 @@ const About = () => {
               </div>
 
               <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-lg font-bold text-f1-red mb-2">3. Watch the Race</h3>
+                <h3 className="text-lg font-bold text-f1-pink-500 mb-2">3. Watch the Race</h3>
                 <p>
                   Enjoy the Grand Prix and see how your predictions compare to the actual race results!
                 </p>
               </div>
 
               <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-lg font-bold text-f1-red mb-2">4. Earn Points</h3>
+                <h3 className="text-lg font-bold text-f1-pink-500 mb-2">4. Earn Points</h3>
                 <p>
                   After the race, points are automatically calculated based on correct predictions using the
                   official F1 scoring system. Your total score is updated on the leaderboard.
@@ -77,7 +77,7 @@ const About = () => {
               </div>
 
               <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-lg font-bold text-f1-red mb-2">5. Climb the Leaderboard</h3>
+                <h3 className="text-lg font-bold text-f1-pink-500 mb-2">5. Climb the Leaderboard</h3>
                 <p>
                   Compete throughout the season to reach the podium and claim your place among the top
                   predictors!
@@ -122,7 +122,7 @@ const About = () => {
               <li>Race results are updated from official F1 data sources</li>
             </ul>
             <p className="mt-3">
-              For complete game rules and scoring details, visit our <a href="/rules" className="text-f1-red hover:underline">Rules page</a>.
+              For complete game rules and scoring details, visit our <a href="/rules" className="text-f1-pink-500 hover:underline">Rules page</a>.
             </p>
           </section>
 
@@ -169,11 +169,11 @@ const About = () => {
               We'd love to hear from you! Whether you have questions, feedback, or need support:
             </p>
             <ul className="list-none ml-4 space-y-1">
-              <li><strong>Email:</strong> <a href="mailto:matt.gloudemans@gmail.com" className="text-f1-red hover:underline">matt.gloudemans@gmail.com</a></li>
+              <li><strong>Email:</strong> <a href="mailto:matt.gloudemans@gmail.com" className="text-f1-pink-500 hover:underline">matt.gloudemans@gmail.com</a></li>
               <li><strong>Website:</strong> http://localhost:5000</li>
             </ul>
             <p className="mt-3">
-              For privacy-related inquiries, please see our <a href="/privacy" className="text-f1-red hover:underline">Privacy Policy</a>.
+              For privacy-related inquiries, please see our <a href="/privacy" className="text-f1-pink-500 hover:underline">Privacy Policy</a>.
             </p>
           </section>
 
@@ -194,7 +194,7 @@ const About = () => {
             <p className="mb-4">Join thousands of F1 fans competing for leaderboard glory!</p>
             <a
               href="/"
-              className="inline-block bg-f1-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              className="inline-block bg-f1-pink-500 hover:bg-f1-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
             >
               Go to Homepage
             </a>

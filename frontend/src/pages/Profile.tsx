@@ -108,7 +108,7 @@ const Profile = () => {
               <img
                 src={user.avatar_url}
                 alt={user.nickname}
-                className="w-32 h-32 rounded-full border-4 border-f1-red-500 shadow-f1-glow mx-auto object-cover"
+                className="w-32 h-32 rounded-full border-4 border-f1-pink-500 shadow-f1-glow mx-auto object-cover"
               />
             ) : (
               <div className="w-32 h-32 rounded-full border-4 border-f1-neutral-700 bg-f1-neutral-800 mx-auto flex items-center justify-center text-4xl font-bold text-f1-gray">
@@ -137,7 +137,7 @@ const Profile = () => {
             {user.avatar_url && (
               <button
                 onClick={handleDeleteAvatar}
-                className="bg-f1-neutral-800 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300"
+                className="bg-f1-neutral-800 hover:bg-f1-pink-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300"
               >
                 Remove
               </button>
@@ -164,7 +164,7 @@ const Profile = () => {
 
         {/* User Information */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-f1-red-500">Account Information</h2>
+          <h2 className="text-2xl font-bold text-f1-pink-500">Account Information</h2>
 
           <div className="grid gap-4">
             <div className="bg-f1-neutral-800 p-4 rounded-lg">
@@ -179,7 +179,7 @@ const Profile = () => {
 
             <div className="bg-f1-neutral-800 p-4 rounded-lg">
               <p className="text-sm text-f1-gray mb-1">Total Points</p>
-              <p className="text-2xl font-bold text-f1-red-500">{user.total_points}</p>
+              <p className="text-2xl font-bold text-f1-pink-500">{user.total_points}</p>
             </div>
 
             {user.created_at && (
@@ -201,7 +201,7 @@ const Profile = () => {
           </button>
           <button
             onClick={logout}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300"
+            className="bg-red-600 hover:bg-f1-pink-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300"
           >
             Logout
           </button>

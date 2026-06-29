@@ -144,7 +144,7 @@ const Auth = () => {
               setIsRegister(!isRegister);
               setMessage('');
             }}
-            className="text-f1-gray hover:text-f1-red-400 transition-all duration-300 font-semibold"
+            className="text-f1-gray hover:text-f1-pink-400 transition-all duration-300 font-semibold"
           >
             {isRegister
               ? 'Already have an account? Login'

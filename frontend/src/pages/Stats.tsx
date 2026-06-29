@@ -139,14 +139,14 @@ const Stats = () => {
   const getPositionColor = (position: number) => {
     if (position === 1) return 'bg-yellow-500 text-black';
     if (position === 2) return 'bg-gray-300 text-black';
-    if (position === 3) return 'bg-orange-600 text-white';
+    if (position === 3) return 'bg-f1-pink-500 text-white';
     return 'bg-gray-700 text-white';
   };
 
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-red mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading statistics...</p>
       </div>
     );
@@ -164,11 +164,11 @@ const Stats = () => {
       {seasonStats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-f1-red">{seasonStats.races.completed_races}</p>
+            <p className="text-3xl font-bold text-f1-pink-500">{seasonStats.races.completed_races}</p>
             <p className="text-sm text-f1-gray">Races Completed</p>
           </div>
           <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-orange-500">{seasonStats.races.completed_sprints}</p>
+            <p className="text-3xl font-bold text-f1-pink-500">{seasonStats.races.completed_sprints}</p>
             <p className="text-sm text-f1-gray">Sprints Completed</p>
           </div>
           <div className="bg-gray-800 rounded-lg p-4 text-center">
@@ -188,7 +188,7 @@ const Stats = () => {
         <select
           value={selectedRound || ''}
           onChange={(e) => setSelectedRound(parseInt(e.target.value))}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-f1-red focus:outline-none"
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-f1-pink-500 focus:outline-none"
         >
           {uniqueRounds.map(round => {
             const race = races.find(r => r.round === round && r.race_type === 'main');
@@ -212,9 +212,9 @@ const Stats = () => {
                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
                   selectedSession === session
                     ? session === 'sprint'
-                      ? 'bg-orange-600 text-white'
+                      ? 'bg-f1-pink-500 text-white'
                       : session === 'race'
-                      ? 'bg-f1-red text-white'
+                      ? 'bg-f1-pink-500 text-white'
                       : 'bg-blue-600 text-white'
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
@@ -242,7 +242,7 @@ const Stats = () => {
 
           {loadingSession ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-red mx-auto"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto"></div>
               <p className="mt-2 text-f1-gray">Loading results...</p>
             </div>
           ) : sessionResults.length === 0 ? (
@@ -287,7 +287,7 @@ const Stats = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-f1-red font-bold">#{result.driverNumber}</span>
+                          <span className="text-f1-pink-500 font-bold">#{result.driverNumber}</span>
                           <span className="font-semibold">{result.driverName}</span>
                           <span className="text-xs text-f1-gray">({result.driverCode})</span>
                         </div>
@@ -297,7 +297,7 @@ const Stats = () => {
                         <>
                           <td className="px-4 py-3 font-mono text-sm">{result.q1 || '-'}</td>
                           <td className="px-4 py-3 font-mono text-sm">{result.q2 || '-'}</td>
-                          <td className="px-4 py-3 font-mono text-sm text-f1-red font-bold">{result.q3 || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-sm text-f1-pink-500 font-bold">{result.q3 || '-'}</td>
                         </>
                       ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
                         <>

@@ -94,7 +94,7 @@ const Leaderboard = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-red mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading leaderboard...</p>
       </div>
     );
@@ -110,7 +110,7 @@ const Leaderboard = () => {
 
         {historyLoading ? (
           <div className="bg-gray-900 rounded-lg p-8 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-red-500"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-pink-500"></div>
           </div>
         ) : seasonRaces.length === 0 ? (
           <div className="bg-gray-900 rounded-lg p-8 text-center text-f1-gray">
@@ -218,7 +218,7 @@ const Leaderboard = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className="text-f1-red-500 font-bold text-lg">{entry.total_points}</span>
+                      <span className="text-f1-pink-500 font-bold text-lg">{entry.total_points}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className="text-white">{entry.last_race_points}</span>

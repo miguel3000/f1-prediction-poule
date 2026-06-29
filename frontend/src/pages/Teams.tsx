@@ -2,9 +2,9 @@ const Teams = () => {
   const teams = [
     {
       name: 'McLaren',
-      color: 'bg-orange-500',
-      textColor: 'text-orange-400',
-      borderColor: 'border-orange-500/50',
+      color: 'bg-f1-pink-500',
+      textColor: 'text-f1-pink-400',
+      borderColor: 'border-f1-pink-500/50',
       engine: 'Mercedes',
       drivers: [
         { number: 4, name: 'Lando Norris', role: 'Race Driver' },
@@ -250,7 +250,7 @@ const Teams = () => {
             href="https://www.formula1.com/en/teams"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-f1-red hover:underline"
+            className="text-f1-pink-500 hover:underline"
           >
             Formula1.com
           </a>
@@ -259,7 +259,7 @@ const Teams = () => {
             href="https://www.the-race.com/formula-1/f1-2026-entry-list-driver-numbers-chassis-engines/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-f1-red hover:underline"
+            className="text-f1-pink-500 hover:underline"
           >
             The Race
           </a>
