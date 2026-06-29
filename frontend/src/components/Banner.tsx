@@ -1,115 +1,81 @@
 import { useState, useEffect } from 'react';
 
 interface BannerProps {
+  nextRaceDate?: Date;
+  nextRaceName?: string;
   qualifyingDate?: Date;
-  raceDate?: Date;
-  raceName?: string;
   isSprint?: boolean;
 }
 
-const Banner = ({ qualifyingDate, raceDate, raceName, isSprint }: BannerProps) => {
-  const [now, setNow] = useState(new Date());
+interface TimeLeft {
+  hours: number;
+  minutes: number;
+  past: boolean;
+}
+
+const getTimeLeft = (target: Date): TimeLeft => {
+  const distance = target.getTime() - Date.now();
+  if (distance <= 0) return { hours: 0, minutes: 0, past: true };
+  const hours = Math.floor(distance / (1000 * 60 * 60));
+  const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  return { hours, minutes, past: false };
+};
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: BannerProps) => {
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
+    const timer = setInterval(() => setTick(t => t + 1), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  const getCountdown = () => {
-    if (!qualifyingDate || !raceDate) return null;
+  const accentColor = isSprint
+    ? 'from-orange-600 to-orange-500'
+    : 'from-f1-red to-red-700';
 
-    const qualiTime = new Date(qualifyingDate).getTime();
-    const raceTime = new Date(raceDate).getTime();
-    const currentTime = now.getTime();
-
-    // Determine which session to count down to
-    const qualiPassed = currentTime >= qualiTime;
-    const racePassed = currentTime >= raceTime;
-
-    if (racePassed) {
-      return { label: isSprint ? 'SPRINT' : 'RACE', hours: 0, minutes: 0, seconds: 0, active: true };
-    }
-
-    const targetTime = qualiPassed ? raceTime : qualiTime;
-    const targetLabel = qualiPassed
-      ? (isSprint ? 'SPRINT' : 'RACE')
-      : 'QUALIFYING';
-    const distance = targetTime - currentTime;
-
-    const totalHours = Math.floor(distance / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-    return { label: targetLabel, hours: totalHours, minutes, seconds, active: false };
-  };
-
-  const countdown = getCountdown();
-
-  if (!countdown) {
+  if (!nextRaceDate || !nextRaceName) {
     return (
-      <div className="bg-gradient-to-r from-f1-red to-red-700 py-4 text-center">
-        <span className="text-white font-bold">Loading...</span>
+      <div className={`bg-gradient-to-r ${accentColor} py-6 px-4 text-center`}>
+        <p className="text-white font-bold tracking-widest text-sm uppercase">Loading next race...</p>
       </div>
     );
   }
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
+  const qualiLeft = qualifyingDate ? getTimeLeft(qualifyingDate) : null;
+  const raceLeft = getTimeLeft(nextRaceDate);
+
+  const showQualifying = qualiLeft && !qualiLeft.past;
+  const targetLabel = showQualifying ? 'QUALIFYING' : (isSprint ? 'SPRINT' : 'RACE');
+  const { hours, minutes, past } = showQualifying ? qualiLeft : raceLeft;
 
   return (
-    <div className={`${
-      isSprint
-        ? 'bg-gradient-to-r from-orange-600 to-orange-500'
-        : 'bg-gradient-to-r from-f1-red to-red-700'
-    } py-4 px-4`}>
+    <div className={`bg-gradient-to-r ${accentColor} py-5 px-4`}>
       <div className="max-w-lg mx-auto text-center">
-        {/* Race name */}
-        <div className="text-white/70 text-xs font-medium uppercase tracking-widest mb-2">
-          {raceName}
-        </div>
+        <p className="text-white/80 text-xs font-bold tracking-[0.2em] uppercase mb-1">
+          {isSprint ? '🏃 Sprint Weekend' : '🏁 Race Weekend'} · {nextRaceName}
+        </p>
 
-        {/* Session label */}
-        <div className="text-white text-sm font-bold uppercase tracking-wider mb-3">
-          {countdown.active
-            ? `${countdown.label} IN PROGRESS! 🏁`
-            : `${countdown.label} STARTS IN`
-          }
-        </div>
-
-        {/* Countdown digits */}
-        {!countdown.active && (
-          <div className="flex items-center justify-center gap-3">
-            {/* Hours */}
-            <div className="flex flex-col items-center">
-              <div className="bg-black/30 rounded-lg px-3 py-2 min-w-[60px] backdrop-blur-sm">
-                <span className="text-white text-3xl font-mono font-bold">
-                  {pad(countdown.hours)}
-                </span>
+        {past ? (
+          <p className="text-white font-bold text-2xl tracking-wider">
+            {targetLabel === 'QUALIFYING' ? 'QUALIFYING IN PROGRESS' : 'RACE IN PROGRESS'}
+          </p>
+        ) : (
+          <div className="flex items-center justify-center gap-3 mt-1">
+            <span className="text-white/70 text-sm font-bold tracking-widest uppercase">
+              {targetLabel} IN
+            </span>
+            <div className="flex items-center gap-1">
+              <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
+                <span className="text-white font-mono font-bold text-3xl">{pad(hours)}</span>
+                <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">hrs</p>
               </div>
-              <span className="text-white/50 text-[10px] uppercase mt-1 tracking-wider">Hours</span>
-            </div>
-
-            <span className="text-white/60 text-2xl font-bold mt-[-16px]">:</span>
-
-            {/* Minutes */}
-            <div className="flex flex-col items-center">
-              <div className="bg-black/30 rounded-lg px-3 py-2 min-w-[60px] backdrop-blur-sm">
-                <span className="text-white text-3xl font-mono font-bold">
-                  {pad(countdown.minutes)}
-                </span>
+              <span className="text-white font-bold text-3xl mb-4">:</span>
+              <div className="bg-black/30 rounded px-3 py-1 min-w-[3.5rem] text-center">
+                <span className="text-white font-mono font-bold text-3xl">{pad(minutes)}</span>
+                <p className="text-white/60 text-[10px] font-bold tracking-widest uppercase">min</p>
               </div>
-              <span className="text-white/50 text-[10px] uppercase mt-1 tracking-wider">Min</span>
-            </div>
-
-            <span className="text-white/60 text-2xl font-bold mt-[-16px]">:</span>
-
-            {/* Seconds */}
-            <div className="flex flex-col items-center">
-              <div className="bg-black/30 rounded-lg px-3 py-2 min-w-[60px] backdrop-blur-sm">
-                <span className="text-white text-3xl font-mono font-bold">
-                  {pad(countdown.seconds)}
-                </span>
-              </div>
-              <span className="text-white/50 text-[10px] uppercase mt-1 tracking-wider">Sec</span>
             </div>
           </div>
         )}

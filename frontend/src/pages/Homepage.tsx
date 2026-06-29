@@ -70,10 +70,9 @@ const Homepage = () => {
     return (
       <div className="text-center py-16">
         <Banner
-          qualifyingDate={nextRace?.qualifying_date ? new Date(nextRace.qualifying_date) : undefined}
-          raceDate={nextRace ? new Date(nextRace.race_date) : undefined}
-          raceName={nextRace?.race_name}
-          isSprint={nextRace?.race_type === 'sprint'}
+          nextRaceDate={mainRace ? new Date(mainRace.race_date) : (nextRace ? new Date(nextRace.race_date) : undefined)}
+          nextRaceName={nextRace?.race_name}
+          qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
         />
         <div className="mt-12 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-gradient-red">
@@ -107,9 +106,9 @@ const Homepage = () => {
   return (
     <div>
       <Banner
+        nextRaceDate={new Date(mainRace?.race_date ?? nextRace.race_date)}
+        nextRaceName={mainRace?.race_name ?? nextRace.race_name}
         qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
-        raceDate={mainRace ? new Date(mainRace.race_date) : undefined}
-        raceName={mainRace?.race_name}
         isSprint={false}
       />
 

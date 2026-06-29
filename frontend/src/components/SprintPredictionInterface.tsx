@@ -125,13 +125,15 @@ interface GridSlotProps {
   onDrop: (item: DragItem, targetPosition: number) => void;
   onDragStart: (position: number) => void;
   onTap: (position: number) => void;
+  isHeld?: boolean;
+  hasHeld?: boolean;
 }
 
-const GridSlot = ({ position, driver, onDrop, onDragStart, onTap }: GridSlotProps) => {
+const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHeld }: GridSlotProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: () => { haptics.light(); onDragStart(position); return { driver, source: 'grid' as const, sourceIndex: position - 1 }; },
-    canDrag: !!driver,
+    canDrag: !!driver && !isHeld,
     collect: (m) => ({ isDragging: m.isDragging() }),
   });
 
@@ -149,6 +151,20 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap }: GridSlotProp
     position === 3 ? 'text-orange-400' :
     'text-gray-600';
 
+  const slotClass = isHeld
+    ? 'border-amber-400 bg-amber-900/20 ring-1 ring-amber-400/40 opacity-75 cursor-pointer'
+    : isOver && canDrop
+    ? 'border-orange-500 bg-orange-500/10 scale-[1.02]'
+    : isDragging
+    ? 'opacity-40 border-orange-500 scale-95 bg-gray-800'
+    : hasHeld
+    ? driver && teamColor
+      ? `${teamColor.border} bg-gray-800/80 cursor-pointer ring-1 ring-white/20`
+      : 'border-dashed border-gray-500 bg-gray-800/20 cursor-pointer'
+    : driver && teamColor
+    ? `${teamColor.border} bg-gray-800/80 cursor-grab active:scale-95`
+    : 'border-dashed border-gray-700 bg-gray-900/40';
+
   return (
     <div className="flex items-center gap-1.5 w-full">
       <span className={`text-xs w-6 text-center tabular-nums font-black flex-shrink-0 ${posColor}`}>
@@ -156,27 +172,21 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap }: GridSlotProp
       </span>
       <div
         ref={ref}
-        onClick={() => driver && onTap(position)}
-        className={`
-          flex-1 h-12 rounded-lg border-l-4 flex items-center gap-2 px-2 transition-all
-          ${isDragging
-            ? 'opacity-40 border-orange-500 scale-95 bg-gray-800'
-            : isOver && canDrop
-            ? 'border-orange-500 bg-orange-500/10 scale-[1.02]'
-            : driver && teamColor
-            ? `${teamColor.border} bg-gray-800/80 cursor-grab active:scale-95`
-            : 'border-dashed border-gray-700 bg-gray-900/40'}
-        `}
+        onClick={() => onTap(position)}
+        className={`flex-1 h-12 rounded-lg border-l-4 flex items-center gap-2 px-2 transition-all ${slotClass}`}
       >
         {driver ? (
           <>
             <DriverAvatar driver={driver} size="sm" />
-            <span className="font-f1 font-bold text-white text-[11px] tracking-widest truncate flex-1">
+            <span className={`font-f1 font-bold text-[11px] tracking-widest truncate flex-1 ${isHeld ? 'text-amber-300' : 'text-white'}`}>
               {lastName(driver)}
             </span>
+            {isHeld && <span className="text-amber-400 text-xs flex-shrink-0">↕</span>}
           </>
         ) : (
-          <span className="text-gray-700 text-[9px] mx-auto tracking-wider uppercase">empty</span>
+          <span className={`text-[9px] mx-auto tracking-wider uppercase ${hasHeld ? 'text-gray-500' : 'text-gray-700'}`}>
+            {hasHeld ? 'place here' : 'empty'}
+          </span>
         )}
       </div>
     </div>
@@ -221,6 +231,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
   const [showQualiDetails, setShowQualiDetails] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [heldIndex, setHeldIndex] = useState<number | null>(null);
 
   const checkLockState = useCallback(() => {
     if (!raceDate) return;
@@ -274,10 +285,22 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
   };
 
   const handleTapGridSlot = (position: number) => {
-    haptics.light();
-    const next = [...predictions];
-    next[position - 1] = null;
-    setPredictions(next);
+    const idx = position - 1;
+    if (heldIndex === null) {
+      if (predictions[idx]) {
+        haptics.light();
+        setHeldIndex(idx);
+      }
+    } else if (heldIndex === idx) {
+      haptics.light();
+      setHeldIndex(null);
+    } else {
+      haptics.success();
+      const next = [...predictions];
+      [next[heldIndex], next[idx]] = [next[idx], next[heldIndex]];
+      setPredictions(next);
+      setHeldIndex(null);
+    }
   };
 
   const handleDrop = (item: DragItem, targetPosition: number) => {
@@ -425,7 +448,9 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
 
         {/* Hint */}
         <p className="text-center text-[10px] text-gray-600 tracking-wider uppercase">
-          Tap to add · Tap slot to remove · Drag to reorder
+          {heldIndex !== null
+            ? 'Tap a slot to place · Tap same slot to cancel'
+            : 'Tap to add · Tap slot to hold & reorder · Drag to swap'}
         </p>
 
         {/* Two-column area */}
@@ -444,15 +469,39 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
           </RemoveZone>
 
           {/* Right: sprint timing tower */}
-          <div className="bg-gray-900 rounded-xl py-2 px-2 space-y-1 border border-gray-800">
+          <div className="bg-gray-900 rounded-xl py-2 px-2 border border-gray-800 flex flex-col gap-1">
+            {/* Holding dock */}
+            <div className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all ${
+              heldIndex !== null
+                ? 'border-amber-400/60 bg-amber-900/20'
+                : 'border-dashed border-gray-700/40 bg-transparent'
+            }`}>
+              {heldIndex !== null && predictions[heldIndex] ? (
+                <>
+                  <DriverAvatar driver={predictions[heldIndex]!} size="sm" />
+                  <span className="font-f1 font-bold text-amber-300 text-[11px] tracking-widest truncate flex-1">
+                    {lastName(predictions[heldIndex]!)}
+                  </span>
+                  <button
+                    onClick={() => setHeldIndex(null)}
+                    className="text-gray-500 hover:text-white text-xs px-1 flex-shrink-0 leading-none"
+                  >✕</button>
+                </>
+              ) : (
+                <span className="text-gray-700 text-[9px] mx-auto tracking-wider uppercase">hold</span>
+              )}
+            </div>
+            <div className="border-t border-gray-800" />
             {[1, 2, 3, 4, 5, 6, 7, 8].map((position) => (
               <GridSlot
                 key={position}
                 position={position}
                 driver={predictions[position - 1]}
-                onDrop={handleDrop}
-                onDragStart={() => {}}
+                onDrop={(item, pos) => { setHeldIndex(null); handleDrop(item, pos); }}
+                onDragStart={(pos) => { if (heldIndex === pos - 1) setHeldIndex(null); }}
                 onTap={handleTapGridSlot}
+                isHeld={heldIndex === position - 1}
+                hasHeld={heldIndex !== null}
               />
             ))}
           </div>

@@ -56,30 +56,6 @@ body {
   background: linear-gradient(180deg, #FF3333 0%, #E10600 100%);
 }
 
-/* Marquee banner animation */
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.marquee-container {
-  overflow: hidden;
-  width: 100%;
-}
-
-.marquee-content {
-  display: inline-flex;
-  animation: marquee 30s linear infinite;
-}
-
-.marquee-content:hover {
-  animation-play-state: paused;
-}
-
 /* F1 Custom Utilities */
 @layer utilities {
   /* Glass morphism effects */
