@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { getRaces } from '../services/api';
 
 interface User {
   id: number;
@@ -15,6 +16,20 @@ interface SyncJobState {
   lastStatus: 'success' | 'error' | 'running' | null;
   lastMessage: string | null;
   isRunning: boolean;
+}
+
+interface RaceOption {
+  id: number;
+  round: number;
+  race_name: string;
+  race_type: 'main' | 'sprint';
+}
+
+interface PredictionStatusUser {
+  id: number;
+  nickname: string;
+  email: string;
+  hasPredicted: boolean;
 }
 
 interface DiagnosisResult {
@@ -57,6 +72,38 @@ const Admin = () => {
   // Send last race results email state
   const [raceResultsStatus, setRaceResultsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [raceResultsMessage, setRaceResultsMessage] = useState<string | null>(null);
+
+  // Prediction status ("who has predicted") state
+  const [predictionRaces, setPredictionRaces] = useState<RaceOption[]>([]);
+  const [selectedPredictionRaceId, setSelectedPredictionRaceId] = useState<number | ''>('');
+  const [predictionStatus, setPredictionStatus] = useState<{ raceName: string; predicted: number; total: number; users: PredictionStatusUser[] } | null>(null);
+  const [predictionStatusLoading, setPredictionStatusLoading] = useState(false);
+  const [predictionStatusError, setPredictionStatusError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getRaces(2026)
+      .then(res => setPredictionRaces(res.data))
+      .catch(() => { /* race list is a nice-to-have; ignore failures */ });
+  }, [isAuthenticated]);
+
+  const handleFetchPredictionStatus = async (raceId: number) => {
+    if (!credentials || !raceId) return;
+    setPredictionStatusLoading(true);
+    setPredictionStatusError(null);
+    try {
+      const auth = btoa(`${credentials.username}:${credentials.password}`);
+      const response = await axios.get(`/api/admin/races/${raceId}/prediction-status`, {
+        headers: { 'Authorization': `Basic ${auth}` }
+      });
+      setPredictionStatus(response.data);
+    } catch (err: any) {
+      setPredictionStatus(null);
+      setPredictionStatusError(err.response?.data?.error || 'Failed to fetch prediction status');
+    } finally {
+      setPredictionStatusLoading(false);
+    }
+  };
 
   // Set password state
   const [passwordModal, setPasswordModal] = useState<{ userId: number; nickname: string } | null>(null);
@@ -773,6 +820,77 @@ const Admin = () => {
             'Send Last Race Results to All Players'
           )}
         </button>
+      </div>
+
+      {/* Prediction Status */}
+      <div className="card-f1 mb-8">
+        <h2 className="text-2xl font-bold mb-2">Who's Predicted?</h2>
+        <p className="text-f1-gray text-sm mb-4">
+          Check which players have already submitted a prediction for a race, to chase down stragglers before lock.
+        </p>
+
+        <select
+          value={selectedPredictionRaceId}
+          onChange={(e) => {
+            const raceId = parseInt(e.target.value);
+            setSelectedPredictionRaceId(raceId);
+            setPredictionStatus(null);
+            setPredictionStatusError(null);
+            if (raceId) handleFetchPredictionStatus(raceId);
+          }}
+          className="w-full bg-f1-neutral-800 border border-f1-neutral-700 rounded px-4 py-3 text-white focus:border-f1-pink-500 focus:outline-none mb-4"
+        >
+          <option value="">Select a race…</option>
+          {predictionRaces.map(race => (
+            <option key={race.id} value={race.id}>
+              Round {race.round}: {race.race_name}{race.race_type === 'sprint' ? ' (Sprint)' : ''}
+            </option>
+          ))}
+        </select>
+
+        {predictionStatusLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto"></div>
+          </div>
+        ) : predictionStatusError ? (
+          <div className="px-4 py-3 rounded bg-red-900/50 border border-red-500 text-red-200">
+            {predictionStatusError}
+          </div>
+        ) : predictionStatus ? (
+          <div>
+            <p className="text-sm text-f1-gray mb-3">
+              <span className="text-white font-bold">{predictionStatus.predicted}</span> of{' '}
+              <span className="text-white font-bold">{predictionStatus.total}</span> players have predicted{' '}
+              {predictionStatus.raceName}.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-f1-neutral-700">
+                    <th className="text-left py-3 px-4">Nickname</th>
+                    <th className="text-left py-3 px-4">Email</th>
+                    <th className="text-left py-3 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {predictionStatus.users.map(user => (
+                    <tr key={user.id} className="border-b border-f1-neutral-800 hover:bg-f1-neutral-800/50">
+                      <td className="py-3 px-4 font-medium">{user.nickname}</td>
+                      <td className="py-3 px-4 text-f1-gray">{user.email}</td>
+                      <td className="py-3 px-4">
+                        {user.hasPredicted ? (
+                          <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1 rounded">✓ Predicted</span>
+                        ) : (
+                          <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded">Not yet</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Broadcast Email */}

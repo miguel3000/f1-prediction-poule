@@ -232,6 +232,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
   const [showQualiDetails, setShowQualiDetails] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [lockNoticeDismissed, setLockNoticeDismissed] = useState(false);
   const [heldIndex, setHeldIndex] = useState<number | null>(null);
 
   const checkLockState = useCallback(() => {
@@ -382,7 +383,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
       )}
 
       {/* Deadline overlay */}
-      {isLocked && (
+      {isLocked && !lockNoticeDismissed && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-40 p-4">
           <div className="bg-f1-neutral-900 border border-f1-pink-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="text-4xl mb-4">🏁</div>
@@ -391,6 +392,12 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
               The deadline for this sprint has passed. The race has started or is about to start.
             </p>
             <p className="text-f1-neutral-500 text-xs mt-4">You can still view your saved prediction below.</p>
+            <button
+              onClick={() => setLockNoticeDismissed(true)}
+              className="w-full py-3 mt-6 bg-f1-pink-500 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ import {
   getSyncDiagnosis,
   sendBroadcastToAllUsers,
   sendLastRaceResults,
+  getRacePredictionStatus,
   setUserPassword,
   changeAdminPassword
 } from '../controllers/adminController';
@@ -42,5 +43,8 @@ router.post('/broadcast', authenticateAdmin, sendBroadcastToAllUsers);
 
 // Send personal prediction results for the last race to all players
 router.post('/send-last-race-results', authenticateAdmin, sendLastRaceResults);
+
+// Which users have submitted a prediction for a given race
+router.get('/races/:raceId/prediction-status', authenticateAdmin, getRacePredictionStatus);
 
 export default router;

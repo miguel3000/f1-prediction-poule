@@ -716,6 +716,40 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
   }
 };
 
+// Get which users have (and haven't) submitted a prediction for a given race
+export const getRacePredictionStatus = async (req: Request, res: Response) => {
+  try {
+    const { raceId } = req.params;
+
+    const raceResult = await query(`SELECT * FROM races WHERE id = $1`, [raceId]);
+    if (raceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Race not found' });
+    }
+
+    const race = raceResult.rows[0];
+    const predictionsTable = race.race_type === 'sprint' ? 'sprint_predictions' : 'predictions';
+
+    const statusResult = await query(
+      `SELECT u.id, u.nickname, u.email, (p.user_id IS NOT NULL) AS "hasPredicted"
+       FROM users u
+       LEFT JOIN ${predictionsTable} p ON p.user_id = u.id AND p.race_id = $1
+       ORDER BY (p.user_id IS NULL) DESC, u.nickname ASC`,
+      [race.id]
+    );
+
+    res.json({
+      raceName: race.race_name,
+      raceType: race.race_type,
+      predicted: statusResult.rows.filter((r: any) => r.hasPredicted).length,
+      total: statusResult.rows.length,
+      users: statusResult.rows
+    });
+  } catch (error) {
+    console.error('Get race prediction status error:', error);
+    res.status(500).json({ error: 'Failed to get race prediction status' });
+  }
+};
+
 // Change admin password
 export const changeAdminPassword = async (req: Request, res: Response) => {
   try {

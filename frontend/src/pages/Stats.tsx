@@ -269,137 +269,6 @@ const Stats = () => {
         </div>
       )}
 
-      {/* Race Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-f1-gray mb-2">Select Race</label>
-        <select
-          value={selectedRound || ''}
-          onChange={(e) => setSelectedRound(parseInt(e.target.value))}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-f1-pink-500 focus:outline-none"
-        >
-          {uniqueRounds.map(round => {
-            const race = races.find(r => r.round === round && r.race_type === 'main');
-            return (
-              <option key={round} value={round}>
-                Round {round}: {race?.race_name}
-              </option>
-            );
-          })}
-        </select>
-      </div>
-
-      {/* Session Tabs */}
-      {selectedRound && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {sessions.map((session) => (
-            <button
-              key={session}
-              onClick={() => setSelectedSession(session)}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                selectedSession === session
-                  ? 'bg-f1-pink-500 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              {sessionLabel[session]}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Session Results Table */}
-      {selectedRound && (
-        <div className="bg-gray-800 rounded-lg overflow-hidden mb-8">
-          <div className="p-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold">
-              {getSelectedRace()?.race_name} — {sessionLabel[selectedSession]}
-            </h2>
-          </div>
-
-          {loadingSession ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto" />
-              <p className="mt-2 text-f1-gray">Loading results...</p>
-            </div>
-          ) : sessionResults.length === 0 ? (
-            <div className="p-8 text-center text-f1-gray">No results available for this session</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-900">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pos</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Team</th>
-                    {isQualiSession ? (
-                      <>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ2' : 'Q2'}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ3' : 'Q3'}</th>
-                      </>
-                    ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
-                      <>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pts</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Status</th>
-                      </>
-                    ) : (
-                      <>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Laps</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {sessionResults.map((result, index) => (
-                    <tr key={index} className="hover:bg-gray-700/50">
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${getPositionColor(result.position)}`}>
-                          {result.position}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-f1-pink-500 font-bold">#{result.driverNumber}</span>
-                          <span className="font-semibold">{result.driverName}</span>
-                          <span className="text-xs text-f1-gray hidden sm:inline">({result.driverCode})</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-f1-gray text-sm">{result.team}</td>
-                      {isQualiSession ? (
-                        <>
-                          <td className="px-4 py-3 font-mono text-sm">{result.q1 || '—'}</td>
-                          <td className="px-4 py-3 font-mono text-sm">{result.q2 || '—'}</td>
-                          <td className="px-4 py-3 font-mono text-sm text-f1-pink-500 font-bold">{result.q3 || '—'}</td>
-                        </>
-                      ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
-                        <>
-                          <td className="px-4 py-3 font-mono text-sm">{result.time || '—'}</td>
-                          <td className="px-4 py-3 font-bold">{result.points ?? '—'}</td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              result.status === 'Finished' ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
-                            }`}>
-                              {result.status}
-                            </span>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-4 py-3 font-mono text-sm">{result.time || 'No time'}</td>
-                          <td className="px-4 py-3">{result.laps}</td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── Fun Stats Section ──────────────────────────────────────────────── */}
       <div className="mb-4">
         <h2 className="text-2xl font-bold text-white mb-1">Season Highlights</h2>
@@ -538,6 +407,178 @@ const Stats = () => {
           </div>
         </>
       )}
+
+      {/* Race Selector */}
+      <div className="mb-6">
+        <label className="block text-sm font-semibold text-f1-gray mb-2">Select Race</label>
+        <select
+          value={selectedRound || ''}
+          onChange={(e) => setSelectedRound(parseInt(e.target.value))}
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-f1-pink-500 focus:outline-none"
+        >
+          {uniqueRounds.map(round => {
+            const race = races.find(r => r.round === round && r.race_type === 'main');
+            return (
+              <option key={round} value={round}>
+                Round {round}: {race?.race_name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      {/* Session Tabs */}
+      {selectedRound && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {sessions.map((session) => (
+            <button
+              key={session}
+              onClick={() => setSelectedSession(session)}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                selectedSession === session
+                  ? 'bg-f1-pink-500 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {sessionLabel[session]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Session Results Table */}
+      {selectedRound && (
+        <div className="bg-gray-800 rounded-lg overflow-hidden mb-8">
+          <div className="p-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold">
+              {getSelectedRace()?.race_name} — {sessionLabel[selectedSession]}
+            </h2>
+          </div>
+
+          {loadingSession ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto" />
+              <p className="mt-2 text-f1-gray">Loading results...</p>
+            </div>
+          ) : sessionResults.length === 0 ? (
+            <div className="p-8 text-center text-f1-gray">No results available for this session</div>
+          ) : (
+            <>
+              {/* Desktop/tablet: full table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-900">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pos</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Team</th>
+                      {isQualiSession ? (
+                        <>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ2' : 'Q2'}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ3' : 'Q3'}</th>
+                        </>
+                      ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
+                        <>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pts</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Status</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Laps</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {sessionResults.map((result, index) => (
+                      <tr key={index} className="hover:bg-gray-700/50">
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${getPositionColor(result.position)}`}>
+                            {result.position}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-f1-pink-500 font-bold">#{result.driverNumber}</span>
+                            <span className="font-semibold">{result.driverName}</span>
+                            <span className="text-xs text-f1-gray hidden sm:inline">({result.driverCode})</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-f1-gray text-sm">{result.team}</td>
+                        {isQualiSession ? (
+                          <>
+                            <td className="px-4 py-3 font-mono text-sm">{result.q1 || '—'}</td>
+                            <td className="px-4 py-3 font-mono text-sm">{result.q2 || '—'}</td>
+                            <td className="px-4 py-3 font-mono text-sm text-f1-pink-500 font-bold">{result.q3 || '—'}</td>
+                          </>
+                        ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
+                          <>
+                            <td className="px-4 py-3 font-mono text-sm">{result.time || '—'}</td>
+                            <td className="px-4 py-3 font-bold">{result.points ?? '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                result.status === 'Finished' ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                              }`}>
+                                {result.status}
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-4 py-3 font-mono text-sm">{result.time || 'No time'}</td>
+                            <td className="px-4 py-3">{result.laps}</td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile: stacked cards, no horizontal scrolling */}
+              <div className="md:hidden divide-y divide-gray-700">
+                {sessionResults.map((result, index) => (
+                  <div key={index} className="flex items-center gap-3 px-4 py-3">
+                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold flex-shrink-0 ${getPositionColor(result.position)}`}>
+                      {result.position}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-f1-pink-500 font-bold text-sm">#{result.driverNumber}</span>
+                        <span className="font-semibold truncate">{result.driverName}</span>
+                      </div>
+                      <p className="text-xs text-f1-gray truncate">{result.team}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {isQualiSession ? (
+                        <p className="font-mono text-sm text-f1-pink-500 font-bold">{result.q3 || result.q2 || result.q1 || '—'}</p>
+                      ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
+                        <>
+                          <p className="font-bold text-sm">{result.points ?? '—'} pts</p>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            result.status === 'Finished' ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                          }`}>
+                            {result.status}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-mono text-sm">{result.time || 'No time'}</p>
+                          <p className="text-xs text-f1-gray">{result.laps} laps</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };
