@@ -55,8 +55,10 @@ const Homepage = () => {
   const sprintRace = upcomingRaces.find(r => r.race_type === 'sprint');
   const mainRace = upcomingRaces.find(r => r.race_type === 'main');
   const nextRace = upcomingRaces[0] || null;
-  // Only show sprint tab if sprint exists and is still upcoming (not finished)
-  const hasSprint = sprintRace && sprintRace.status === 'upcoming';
+  // Keep showing the sprint tab for the whole race weekend, even after the sprint's
+  // results are synced — the backend already stops returning this round entirely
+  // once the main race also completes, so this doesn't need its own status check.
+  const hasSprint = !!sprintRace;
 
   if (loading) {
     return (

@@ -12,17 +12,19 @@
 # Picks up qualifying data ~2 hours after session ends
 0 * * * 5,6 /app/sync-qualifying-results.sh
 
-# COPY MISSING PREDICTIONS: Check every 2 minutes on race days (Sat sprint + Sun main, 12:00-18:00 UTC)
+# COPY MISSING PREDICTIONS: Check every 2 minutes on race days (Sat sprint + Sun main, 02:00-20:00 UTC)
+# Wide window covers early sprints (e.g. China ~03:00 UTC) through late-timezone races.
 # Copies last prediction for users who forgot to submit
-*/2 12-18 * * 0,6 /app/copy-missing-predictions.sh
+*/2 2-20 * * 0,6 /app/copy-missing-predictions.sh
 
-# PROVISIONAL RESULTS: Check every 5 minutes on race days (Sat sprint + Sun main, 12:00-20:00 UTC)
+# PROVISIONAL RESULTS: Check every 5 minutes on race days (Sat sprint + Sun main, 02:00-22:00 UTC)
+# Wide window covers early sprints (e.g. China ~03:00 UTC) through late-timezone races.
 # Sends provisional results email ~5 minutes after race ends, calculates points, marks status='provisional'
-*/5 12-20 * * 0,6 /app/send-provisional-results.sh
+*/5 2-22 * * 0,6 /app/send-provisional-results.sh
 
-# FINAL RESULTS: Process 24 hours after race (Sun for Sat sprints, Mon for Sun main races, 12:00-20:00 UTC)
+# FINAL RESULTS: Process 24 hours after race (Sun for Sat sprints, Mon for Sun main races, 02:00-22:00 UTC)
 # Recalculates points considering disqualifications/penalties; only acts on status='provisional' races
-0 12-20 * * 0,1 /app/process-final-results.sh
+0 2-22 * * 0,1 /app/process-final-results.sh
 
 # Log rotation to prevent log file from growing too large
 0 0 * * 0 echo "" > /var/log/cron.log
