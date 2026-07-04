@@ -4,9 +4,12 @@ import {
   getSeasonStats,
   getPracticeResults,
   getQualifyingResultsStats,
+  getSprintQualifyingResultsStats,
   getRaceResultsStats,
-  getSprintResultsStats
+  getSprintResultsStats,
+  getFunStats,
 } from '../services/api';
+import { getTeamColor } from '../utils/teamColors';
 
 interface Race {
   id: number;
@@ -50,7 +53,82 @@ interface SeasonStats {
   };
 }
 
-type SessionType = 'fp1' | 'fp2' | 'fp3' | 'qualifying' | 'sprint' | 'race';
+interface FunStatsDriver {
+  name: string;
+  name_acronym: string;
+  team: string;
+  count: number;
+}
+
+interface FunStatsUser {
+  nickname: string;
+  count?: number;
+  avg_points?: number;
+  races?: number;
+  best_race?: number;
+}
+
+interface FunStats {
+  poles: FunStatsDriver[];
+  wins: FunStatsDriver[];
+  predictedWinners: FunStatsDriver[];
+  crystalBall: FunStatsUser[];
+  biggestUpset: {
+    race_name: string;
+    round: number;
+    total: number;
+    correct: number;
+    accuracy_pct: number;
+    winner_name: string;
+    winner_acronym: string;
+    winner_team: string;
+  } | null;
+  bestLap: {
+    name: string;
+    name_acronym: string;
+    team: string;
+    race_name: string;
+    round: number;
+    lap_time: string;
+  } | null;
+  consistency: FunStatsUser[];
+}
+
+type SessionType = 'fp1' | 'fp2' | 'fp3' | 'qualifying' | 'sprint_qualifying' | 'sprint' | 'race';
+
+// ── Small driver chip with team color accent ──────────────────────────────────
+const DriverChip = ({ name, team, count, suffix = '' }: {
+  name: string; team: string; count: number; suffix?: string;
+}) => {
+  const tc = getTeamColor(team);
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 border-l-4 bg-gray-900 ${tc.border}`}>
+      <span className={`font-mono font-black text-xl tabular-nums ${tc.text}`}>{count}</span>
+      <div className="min-w-0">
+        <p className="font-bold text-white text-sm truncate">{name}</p>
+        <p className="text-xs text-gray-500">{team}</p>
+      </div>
+      {suffix && <span className="text-xs text-gray-500 ml-auto flex-shrink-0">{suffix}</span>}
+    </div>
+  );
+};
+
+// ── Stat card wrapper ─────────────────────────────────────────────────────────
+const StatCard = ({ emoji, title, children, isEmpty }: {
+  emoji: string; title: string; children: React.ReactNode; isEmpty?: boolean;
+}) => (
+  <div className="bg-gray-800 rounded-lg overflow-hidden">
+    <div className="px-4 py-3 bg-gray-900 border-b border-gray-700 flex items-center gap-2">
+      <span className="text-lg">{emoji}</span>
+      <h3 className="font-bold text-sm text-white uppercase tracking-widest">{title}</h3>
+    </div>
+    <div className="p-4">
+      {isEmpty
+        ? <p className="text-gray-500 text-sm text-center py-2">No data yet this season</p>
+        : children}
+    </div>
+  </div>
+);
 
 const Stats = () => {
   const [races, setRaces] = useState<Race[]>([]);
@@ -58,23 +136,25 @@ const Stats = () => {
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [selectedSession, setSelectedSession] = useState<SessionType>('race');
   const [sessionResults, setSessionResults] = useState<SessionResult[]>([]);
+  const [funStats, setFunStats] = useState<FunStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingSession, setLoadingSession] = useState(false);
+  const [loadingFun, setLoadingFun] = useState(true);
 
   useEffect(() => {
     fetchData();
+    fetchFunStats();
   }, []);
 
   const fetchData = async () => {
     try {
       const [racesRes, statsRes] = await Promise.all([
         getCompletedRaces(2026),
-        getSeasonStats(2026)
+        getSeasonStats(2026),
       ]);
       setRaces(racesRes.data);
       setSeasonStats(statsRes.data);
 
-      // Auto-select the most recent completed main race
       const mainRaces = racesRes.data.filter((r: Race) => r.race_type === 'main');
       if (mainRaces.length > 0) {
         setSelectedRound(mainRaces[mainRaces.length - 1].round);
@@ -86,73 +166,80 @@ const Stats = () => {
     }
   };
 
-  useEffect(() => {
-    if (selectedRound !== null) {
-      fetchSessionResults();
+  const fetchFunStats = async () => {
+    try {
+      const res = await getFunStats(2026);
+      setFunStats(res.data);
+    } catch (error) {
+      console.error('Failed to fetch fun stats:', error);
+    } finally {
+      setLoadingFun(false);
     }
+  };
+
+  useEffect(() => {
+    if (selectedRound !== null) fetchSessionResults();
   }, [selectedRound, selectedSession]);
 
   const fetchSessionResults = async () => {
     if (selectedRound === null) return;
-
     setLoadingSession(true);
     try {
       let response;
       switch (selectedSession) {
-        case 'fp1':
-          response = await getPracticeResults(selectedRound, 1, 2026);
-          break;
-        case 'fp2':
-          response = await getPracticeResults(selectedRound, 2, 2026);
-          break;
-        case 'fp3':
-          response = await getPracticeResults(selectedRound, 3, 2026);
-          break;
-        case 'qualifying':
-          response = await getQualifyingResultsStats(selectedRound, 2026);
-          break;
-        case 'sprint':
-          response = await getSprintResultsStats(selectedRound, 2026);
-          break;
-        case 'race':
-        default:
-          response = await getRaceResultsStats(selectedRound, 2026);
-          break;
+        case 'fp1': response = await getPracticeResults(selectedRound, 1, 2026); break;
+        case 'fp2': response = await getPracticeResults(selectedRound, 2, 2026); break;
+        case 'fp3': response = await getPracticeResults(selectedRound, 3, 2026); break;
+        case 'qualifying': response = await getQualifyingResultsStats(selectedRound, 2026); break;
+        case 'sprint_qualifying': response = await getSprintQualifyingResultsStats(selectedRound, 2026); break;
+        case 'sprint': response = await getSprintResultsStats(selectedRound, 2026); break;
+        case 'race': default: response = await getRaceResultsStats(selectedRound, 2026); break;
       }
       setSessionResults(response.data);
-    } catch (error) {
-      console.error('Failed to fetch session results:', error);
+    } catch {
       setSessionResults([]);
     } finally {
       setLoadingSession(false);
     }
   };
 
-  const getSelectedRace = () => {
-    return races.find(r => r.round === selectedRound && r.race_type === 'main');
-  };
+  const getSelectedRace = () => races.find(r => r.round === selectedRound && r.race_type === 'main');
+  const hasSprintRound = (round: number) => races.some(r => r.round === round && r.race_type === 'sprint');
 
-  const hasSprintRound = (round: number) => {
-    return races.some(r => r.round === round && r.race_type === 'sprint');
-  };
-
-  const getPositionColor = (position: number) => {
-    if (position === 1) return 'bg-yellow-500 text-black';
-    if (position === 2) return 'bg-gray-300 text-black';
-    if (position === 3) return 'bg-f1-pink-500 text-white';
+  const getPositionColor = (pos: number) => {
+    if (pos === 1) return 'bg-yellow-500 text-black';
+    if (pos === 2) return 'bg-gray-300 text-black';
+    if (pos === 3) return 'bg-f1-pink-500 text-white';
     return 'bg-gray-700 text-white';
   };
+
+  const sessionLabel: Record<SessionType, string> = {
+    fp1: 'FP1', fp2: 'FP2', fp3: 'FP3',
+    qualifying: 'Qualifying',
+    sprint_qualifying: 'Sprint Quali',
+    sprint: 'Sprint',
+    race: 'Race',
+  };
+
+  const isQualiSession = selectedSession === 'qualifying' || selectedSession === 'sprint_qualifying';
+  const isSQSession = selectedSession === 'sprint_qualifying';
 
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto" />
         <p className="mt-4 text-f1-gray">Loading statistics...</p>
       </div>
     );
   }
 
   const uniqueRounds = [...new Set(races.filter(r => r.race_type === 'main').map(r => r.round))];
+
+  const sessions: SessionType[] = [
+    'fp1', 'fp2', 'fp3', 'qualifying',
+    ...(selectedRound && hasSprintRound(selectedRound) ? ['sprint_qualifying' as SessionType, 'sprint' as SessionType] : []),
+    'race',
+  ];
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -203,52 +290,39 @@ const Stats = () => {
 
       {/* Session Tabs */}
       {selectedRound && (
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
-            {['fp1', 'fp2', 'fp3', 'qualifying', ...(hasSprintRound(selectedRound) ? ['sprint'] : []), 'race'].map((session) => (
-              <button
-                key={session}
-                onClick={() => setSelectedSession(session as SessionType)}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                  selectedSession === session
-                    ? session === 'sprint'
-                      ? 'bg-f1-pink-500 text-white'
-                      : session === 'race'
-                      ? 'bg-f1-pink-500 text-white'
-                      : 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                {session === 'fp1' && 'FP1'}
-                {session === 'fp2' && 'FP2'}
-                {session === 'fp3' && 'FP3'}
-                {session === 'qualifying' && 'Qualifying'}
-                {session === 'sprint' && 'Sprint'}
-                {session === 'race' && 'Race'}
-              </button>
-            ))}
-          </div>
+        <div className="mb-6 flex flex-wrap gap-2">
+          {sessions.map((session) => (
+            <button
+              key={session}
+              onClick={() => setSelectedSession(session)}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                selectedSession === session
+                  ? 'bg-f1-pink-500 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {sessionLabel[session]}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Session Results */}
+      {/* Session Results Table */}
       {selectedRound && (
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
+        <div className="bg-gray-800 rounded-lg overflow-hidden mb-8">
           <div className="p-4 border-b border-gray-700">
             <h2 className="text-xl font-bold">
-              {getSelectedRace()?.race_name} - {selectedSession.toUpperCase()}
+              {getSelectedRace()?.race_name} — {sessionLabel[selectedSession]}
             </h2>
           </div>
 
           {loadingSession ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto" />
               <p className="mt-2 text-f1-gray">Loading results...</p>
             </div>
           ) : sessionResults.length === 0 ? (
-            <div className="p-8 text-center text-f1-gray">
-              No results available for this session
-            </div>
+            <div className="p-8 text-center text-f1-gray">No results available for this session</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -257,16 +331,16 @@ const Stats = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pos</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Team</th>
-                    {selectedSession === 'qualifying' ? (
+                    {isQualiSession ? (
                       <>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Q1</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Q2</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Q3</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ2' : 'Q2'}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ3' : 'Q3'}</th>
                       </>
                     ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
                       <>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Points</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pts</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Status</th>
                       </>
                     ) : (
@@ -289,20 +363,20 @@ const Stats = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-f1-pink-500 font-bold">#{result.driverNumber}</span>
                           <span className="font-semibold">{result.driverName}</span>
-                          <span className="text-xs text-f1-gray">({result.driverCode})</span>
+                          <span className="text-xs text-f1-gray hidden sm:inline">({result.driverCode})</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-f1-gray">{result.team}</td>
-                      {selectedSession === 'qualifying' ? (
+                      <td className="px-4 py-3 text-f1-gray text-sm">{result.team}</td>
+                      {isQualiSession ? (
                         <>
-                          <td className="px-4 py-3 font-mono text-sm">{result.q1 || '-'}</td>
-                          <td className="px-4 py-3 font-mono text-sm">{result.q2 || '-'}</td>
-                          <td className="px-4 py-3 font-mono text-sm text-f1-pink-500 font-bold">{result.q3 || '-'}</td>
+                          <td className="px-4 py-3 font-mono text-sm">{result.q1 || '—'}</td>
+                          <td className="px-4 py-3 font-mono text-sm">{result.q2 || '—'}</td>
+                          <td className="px-4 py-3 font-mono text-sm text-f1-pink-500 font-bold">{result.q3 || '—'}</td>
                         </>
                       ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
                         <>
-                          <td className="px-4 py-3 font-mono text-sm">{result.time || '-'}</td>
-                          <td className="px-4 py-3 font-bold">{result.points}</td>
+                          <td className="px-4 py-3 font-mono text-sm">{result.time || '—'}</td>
+                          <td className="px-4 py-3 font-bold">{result.points ?? '—'}</td>
                           <td className="px-4 py-3">
                             <span className={`text-xs px-2 py-1 rounded ${
                               result.status === 'Finished' ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
@@ -326,20 +400,144 @@ const Stats = () => {
         </div>
       )}
 
-      {/* Coming Soon - More Stats */}
-      <div className="mt-8 bg-gray-800/50 border border-dashed border-gray-600 rounded-lg p-8 text-center">
-        <h3 className="text-xl font-bold text-f1-gray mb-2">More Statistics Coming Soon</h3>
-        <p className="text-f1-gray text-sm mb-4">
-          We're working on adding more detailed statistics including:
-        </p>
-        <ul className="text-f1-gray text-sm space-y-1">
-          <li>• Driver head-to-head comparisons</li>
-          <li>• Prediction accuracy trends</li>
-          <li>• Team performance analysis</li>
-          <li>• Lap time comparisons</li>
-          <li>• Points progression charts</li>
-        </ul>
+      {/* ── Fun Stats Section ──────────────────────────────────────────────── */}
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold text-white mb-1">Season Highlights</h2>
+        <p className="text-f1-gray text-sm">Fun facts and stats from the 2026 season so far</p>
       </div>
+
+      {loadingFun ? (
+        <div className="flex items-center gap-3 py-8 text-f1-gray">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-f1-pink-500 flex-shrink-0" />
+          <span>Crunching the numbers...</span>
+        </div>
+      ) : !funStats ? (
+        <p className="text-f1-gray text-sm">Stats unavailable</p>
+      ) : (
+        <>
+          {/* Row 1: Driver performance */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+            <StatCard emoji="🏆" title="Race Wins" isEmpty={funStats.wins.length === 0}>
+              <div className="space-y-2">
+                {funStats.wins.map((d) => (
+                  <DriverChip key={d.name} name={d.name} team={d.team}
+                    count={d.count} suffix={`win${d.count !== 1 ? 's' : ''}`} />
+                ))}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="⚡" title="Pole Positions" isEmpty={funStats.poles.length === 0}>
+              <div className="space-y-2">
+                {funStats.poles.map((d) => (
+                  <DriverChip key={d.name} name={d.name} team={d.team}
+                    count={d.count} suffix={`pole${d.count !== 1 ? 's' : ''}`} />
+                ))}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="⏱️" title="Fastest Qualifying Lap" isEmpty={!funStats.bestLap}>
+              {funStats.bestLap && (() => {
+                const tc = getTeamColor(funStats.bestLap!.team);
+                return (
+                  <div>
+                    <p className={`font-mono font-black text-3xl ${tc.text} mb-1`}>
+                      {funStats.bestLap.lap_time}
+                    </p>
+                    <p className="font-bold text-white">{funStats.bestLap.name}</p>
+                    <p className="text-xs text-gray-500">{funStats.bestLap.team}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Round {funStats.bestLap.round} — {funStats.bestLap.race_name}
+                    </p>
+                  </div>
+                );
+              })()}
+            </StatCard>
+          </div>
+
+          {/* Row 2: Poule stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+            <StatCard emoji="🔮" title="Crystal Ball — Most P1 Predictions Correct"
+              isEmpty={funStats.crystalBall.length === 0}>
+              <div className="space-y-2">
+                {funStats.crystalBall.map((u, i) => (
+                  <div key={u.nickname} className="flex items-center gap-3 py-1">
+                    <span className={`text-sm font-black w-6 text-center ${
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
+                    }`}>{i + 1}</span>
+                    <span className="font-semibold text-white flex-1">{u.nickname}</span>
+                    <span className="font-mono text-f1-pink-500 font-black">
+                      {u.count}× correct
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="📈" title="Most Consistent Predictor"
+              isEmpty={funStats.consistency.length === 0}>
+              <div className="space-y-2">
+                {funStats.consistency.map((u, i) => (
+                  <div key={u.nickname} className="flex items-center gap-3 py-1">
+                    <span className={`text-sm font-black w-6 text-center ${
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
+                    }`}>{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white">{u.nickname}</p>
+                      <p className="text-xs text-gray-500">{u.races} races · best: {u.best_race} pts</p>
+                    </div>
+                    <span className="font-mono text-green-400 font-black">
+                      {u.avg_points} avg
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </StatCard>
+          </div>
+
+          {/* Row 3: Fun individual facts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <StatCard emoji="😱" title="Biggest Upset" isEmpty={!funStats.biggestUpset}>
+              {funStats.biggestUpset && (() => {
+                const upset = funStats.biggestUpset!;
+                const tc = getTeamColor(upset.winner_team);
+                return (
+                  <div>
+                    <p className="text-white font-bold mb-1">{upset.race_name}</p>
+                    <div className={`flex items-center gap-2 my-2 border-l-4 px-3 py-2 bg-gray-900 ${tc.border}`}>
+                      <span className={`font-black text-lg ${tc.text}`}>{upset.winner_acronym}</span>
+                      <span className="text-white text-sm">{upset.winner_name} won</span>
+                    </div>
+                    <p className="text-gray-400 text-sm">
+                      Only{' '}
+                      <span className="text-f1-pink-500 font-bold">{upset.correct}</span>
+                      {' '}of{' '}
+                      <span className="font-bold text-white">{upset.total}</span>
+                      {' '}players predicted it
+                      {' '}({Number(upset.accuracy_pct).toFixed(1)}% accuracy)
+                    </p>
+                  </div>
+                );
+              })()}
+            </StatCard>
+
+            <StatCard emoji="❤️" title="Fan Favorite — Most Picked as Winner"
+              isEmpty={funStats.predictedWinners.length === 0}>
+              <div className="space-y-2">
+                {funStats.predictedWinners.slice(0, 3).map((d) => (
+                  <DriverChip key={d.name} name={d.name} team={d.team}
+                    count={d.count} suffix="picks" />
+                ))}
+                {funStats.predictedWinners.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center">No predictions yet</p>
+                )}
+              </div>
+            </StatCard>
+          </div>
+        </>
+      )}
     </div>
   );
 };

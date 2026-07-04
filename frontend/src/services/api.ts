@@ -125,11 +125,17 @@ export const getPracticeResults = (round: number, session: 1 | 2 | 3, season?: n
 export const getQualifyingResultsStats = (round: number, season?: number) =>
   api.get(`/api/stats/qualifying/${round}`, { params: { season } });
 
+export const getSprintQualifyingResultsStats = (round: number, season?: number) =>
+  api.get(`/api/stats/sprint-qualifying/${round}`, { params: { season } });
+
 export const getRaceResultsStats = (round: number, season?: number) =>
   api.get(`/api/stats/race/${round}`, { params: { season } });
 
 export const getSprintResultsStats = (round: number, season?: number) =>
   api.get(`/api/stats/sprint/${round}`, { params: { season } });
+
+export const getFunStats = (season?: number) =>
+  api.get('/api/stats/fun', { params: { season } });
 
 // Admin
 export const getAdminUsers = () =>
