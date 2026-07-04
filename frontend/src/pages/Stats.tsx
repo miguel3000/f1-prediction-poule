@@ -269,145 +269,6 @@ const Stats = () => {
         </div>
       )}
 
-      {/* ── Fun Stats Section ──────────────────────────────────────────────── */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-white mb-1">Season Highlights</h2>
-        <p className="text-f1-gray text-sm">Fun facts and stats from the 2026 season so far</p>
-      </div>
-
-      {loadingFun ? (
-        <div className="flex items-center gap-3 py-8 text-f1-gray">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-f1-pink-500 flex-shrink-0" />
-          <span>Crunching the numbers...</span>
-        </div>
-      ) : !funStats ? (
-        <p className="text-f1-gray text-sm">Stats unavailable</p>
-      ) : (
-        <>
-          {/* Row 1: Driver performance */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-
-            <StatCard emoji="🏆" title="Race Wins" isEmpty={funStats.wins.length === 0}>
-              <div className="space-y-2">
-                {funStats.wins.map((d) => (
-                  <DriverChip key={d.name} name={d.name} team={d.team}
-                    count={d.count} suffix={`win${d.count !== 1 ? 's' : ''}`} />
-                ))}
-              </div>
-            </StatCard>
-
-            <StatCard emoji="⚡" title="Pole Positions" isEmpty={funStats.poles.length === 0}>
-              <div className="space-y-2">
-                {funStats.poles.map((d) => (
-                  <DriverChip key={d.name} name={d.name} team={d.team}
-                    count={d.count} suffix={`pole${d.count !== 1 ? 's' : ''}`} />
-                ))}
-              </div>
-            </StatCard>
-
-            <StatCard emoji="⏱️" title="Fastest Qualifying Lap" isEmpty={!funStats.bestLap}>
-              {funStats.bestLap && (() => {
-                const tc = getTeamColor(funStats.bestLap!.team);
-                return (
-                  <div>
-                    <p className={`font-mono font-black text-3xl ${tc.text} mb-1`}>
-                      {funStats.bestLap.lap_time}
-                    </p>
-                    <p className="font-bold text-white">{funStats.bestLap.name}</p>
-                    <p className="text-xs text-gray-500">{funStats.bestLap.team}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Round {funStats.bestLap.round} — {funStats.bestLap.race_name}
-                    </p>
-                  </div>
-                );
-              })()}
-            </StatCard>
-          </div>
-
-          {/* Row 2: Poule stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-
-            <StatCard emoji="🔮" title="Crystal Ball — Most P1 Predictions Correct"
-              isEmpty={funStats.crystalBall.length === 0}>
-              <div className="space-y-2">
-                {funStats.crystalBall.map((u, i) => (
-                  <div key={u.nickname} className="flex items-center gap-3 py-1">
-                    <span className={`text-sm font-black w-6 text-center ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
-                    }`}>{i + 1}</span>
-                    <span className="font-semibold text-white flex-1">{u.nickname}</span>
-                    <span className="font-mono text-f1-pink-500 font-black">
-                      {u.count}× correct
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </StatCard>
-
-            <StatCard emoji="📈" title="Most Consistent Predictor"
-              isEmpty={funStats.consistency.length === 0}>
-              <div className="space-y-2">
-                {funStats.consistency.map((u, i) => (
-                  <div key={u.nickname} className="flex items-center gap-3 py-1">
-                    <span className={`text-sm font-black w-6 text-center ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
-                    }`}>{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-white">{u.nickname}</p>
-                      <p className="text-xs text-gray-500">{u.races} races · best: {u.best_race} pts</p>
-                    </div>
-                    <span className="font-mono text-green-400 font-black">
-                      {u.avg_points} avg
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </StatCard>
-          </div>
-
-          {/* Row 3: Fun individual facts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <StatCard emoji="😱" title="Biggest Upset" isEmpty={!funStats.biggestUpset}>
-              {funStats.biggestUpset && (() => {
-                const upset = funStats.biggestUpset!;
-                const tc = getTeamColor(upset.winner_team);
-                return (
-                  <div>
-                    <p className="text-white font-bold mb-1">{upset.race_name}</p>
-                    <div className={`flex items-center gap-2 my-2 border-l-4 px-3 py-2 bg-gray-900 ${tc.border}`}>
-                      <span className={`font-black text-lg ${tc.text}`}>{upset.winner_acronym}</span>
-                      <span className="text-white text-sm">{upset.winner_name} won</span>
-                    </div>
-                    <p className="text-gray-400 text-sm">
-                      Only{' '}
-                      <span className="text-f1-pink-500 font-bold">{upset.correct}</span>
-                      {' '}of{' '}
-                      <span className="font-bold text-white">{upset.total}</span>
-                      {' '}players predicted it
-                      {' '}({Number(upset.accuracy_pct).toFixed(1)}% accuracy)
-                    </p>
-                  </div>
-                );
-              })()}
-            </StatCard>
-
-            <StatCard emoji="❤️" title="Fan Favorite — Most Picked as Winner"
-              isEmpty={funStats.predictedWinners.length === 0}>
-              <div className="space-y-2">
-                {funStats.predictedWinners.slice(0, 3).map((d) => (
-                  <DriverChip key={d.name} name={d.name} team={d.team}
-                    count={d.count} suffix="picks" />
-                ))}
-                {funStats.predictedWinners.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center">No predictions yet</p>
-                )}
-              </div>
-            </StatCard>
-          </div>
-        </>
-      )}
-
       {/* Race Selector */}
       <div className="mb-6">
         <label className="block text-sm font-semibold text-f1-gray mb-2">Select Race</label>
@@ -577,6 +438,144 @@ const Stats = () => {
             </>
           )}
         </div>
+      )}
+
+      {/* ── Fun Stats Section ──────────────────────────────────────────────── */}
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold text-white mb-1">Season Highlights</h2>
+        <p className="text-f1-gray text-sm">Fun facts and stats from the 2026 season so far</p>
+      </div>
+
+      {loadingFun ? (
+        <div className="flex items-center gap-3 py-8 text-f1-gray">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-f1-pink-500 flex-shrink-0" />
+          <span>Crunching the numbers...</span>
+        </div>
+      ) : !funStats ? (
+        <p className="text-f1-gray text-sm">Stats unavailable</p>
+      ) : (
+        <>
+          {/* Poule stats: prediction accuracy */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+            <StatCard emoji="🔮" title="Crystal Ball — Most P1 Predictions Correct"
+              isEmpty={funStats.crystalBall.length === 0}>
+              <div className="space-y-2">
+                {funStats.crystalBall.map((u, i) => (
+                  <div key={u.nickname} className="flex items-center gap-3 py-1">
+                    <span className={`text-sm font-black w-6 text-center ${
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
+                    }`}>{i + 1}</span>
+                    <span className="font-semibold text-white flex-1">{u.nickname}</span>
+                    <span className="font-mono text-f1-pink-500 font-black">
+                      {u.count}× correct
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="📈" title="Most Consistent Predictor"
+              isEmpty={funStats.consistency.length === 0}>
+              <div className="space-y-2">
+                {funStats.consistency.map((u, i) => (
+                  <div key={u.nickname} className="flex items-center gap-3 py-1">
+                    <span className={`text-sm font-black w-6 text-center ${
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
+                    }`}>{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white">{u.nickname}</p>
+                      <p className="text-xs text-gray-500">{u.races} races · best: {u.best_race} pts</p>
+                    </div>
+                    <span className="font-mono text-green-400 font-black">
+                      {u.avg_points} avg
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </StatCard>
+          </div>
+
+          {/* Poule stats: fan favorite & biggest upset */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <StatCard emoji="❤️" title="Fan Favorite — Most Picked as Winner"
+              isEmpty={funStats.predictedWinners.length === 0}>
+              <div className="space-y-2">
+                {funStats.predictedWinners.slice(0, 3).map((d) => (
+                  <DriverChip key={d.name} name={d.name} team={d.team}
+                    count={d.count} suffix="picks" />
+                ))}
+                {funStats.predictedWinners.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center">No predictions yet</p>
+                )}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="😱" title="Biggest Upset" isEmpty={!funStats.biggestUpset}>
+              {funStats.biggestUpset && (() => {
+                const upset = funStats.biggestUpset!;
+                const tc = getTeamColor(upset.winner_team);
+                return (
+                  <div>
+                    <p className="text-white font-bold mb-1">{upset.race_name}</p>
+                    <div className={`flex items-center gap-2 my-2 border-l-4 px-3 py-2 bg-gray-900 ${tc.border}`}>
+                      <span className={`font-black text-lg ${tc.text}`}>{upset.winner_acronym}</span>
+                      <span className="text-white text-sm">{upset.winner_name} won</span>
+                    </div>
+                    <p className="text-gray-400 text-sm">
+                      Only{' '}
+                      <span className="text-f1-pink-500 font-bold">{upset.correct}</span>
+                      {' '}of{' '}
+                      <span className="font-bold text-white">{upset.total}</span>
+                      {' '}players predicted it
+                      {' '}({Number(upset.accuracy_pct).toFixed(1)}% accuracy)
+                    </p>
+                  </div>
+                );
+              })()}
+            </StatCard>
+          </div>
+
+          {/* Driver performance */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+            <StatCard emoji="🏆" title="Race Wins" isEmpty={funStats.wins.length === 0}>
+              <div className="space-y-2">
+                {funStats.wins.map((d) => (
+                  <DriverChip key={d.name} name={d.name} team={d.team}
+                    count={d.count} suffix={`win${d.count !== 1 ? 's' : ''}`} />
+                ))}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="⚡" title="Pole Positions" isEmpty={funStats.poles.length === 0}>
+              <div className="space-y-2">
+                {funStats.poles.map((d) => (
+                  <DriverChip key={d.name} name={d.name} team={d.team}
+                    count={d.count} suffix={`pole${d.count !== 1 ? 's' : ''}`} />
+                ))}
+              </div>
+            </StatCard>
+
+            <StatCard emoji="⏱️" title="Fastest Qualifying Lap" isEmpty={!funStats.bestLap}>
+              {funStats.bestLap && (() => {
+                const tc = getTeamColor(funStats.bestLap!.team);
+                return (
+                  <div>
+                    <p className={`font-mono font-black text-3xl ${tc.text} mb-1`}>
+                      {funStats.bestLap.lap_time}
+                    </p>
+                    <p className="font-bold text-white">{funStats.bestLap.name}</p>
+                    <p className="text-xs text-gray-500">{funStats.bestLap.team}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Round {funStats.bestLap.round} — {funStats.bestLap.race_name}
+                    </p>
+                  </div>
+                );
+              })()}
+            </StatCard>
+          </div>
+        </>
       )}
 
     </div>
