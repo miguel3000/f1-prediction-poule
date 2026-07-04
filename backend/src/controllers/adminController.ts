@@ -415,17 +415,54 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
         const predictionTable = isSprint ? 'sprint_predictions' : 'predictions';
 
-        // Clear cache so we always get fresh data from Jolpi
+        // Clear Jolpi cache so we get fresh data
         jolpiService.clearRaceCache(race.season, race.round);
 
-        // Fetch appropriate results from Jolpi API
-        const jolpiResults = isSprint
-          ? await jolpiService.getSprintResults(race.season, race.round)
-          : await jolpiService.getRaceResults(race.season, race.round);
+        // ── Try OpenF1 first (results available within ~10 min of session end) ─
+        let normalizedResults: Array<{ number: string; position: string; points: string; status: string }> = [];
+        let dataSource = 'none';
 
-        if (jolpiResults.length === 0) {
+        try {
+          const sessionKey = isSprint
+            ? await openF1Service.getSprintSessionKey(race.season, race.race_date)
+            : await openF1Service.getRaceSessionKey(race.season, race.race_date);
+
+          if (sessionKey) {
+            const of1Results = await openF1Service.getRaceResults(sessionKey);
+            if (of1Results.length > 0) {
+              normalizedResults = of1Results.map(r => ({
+                number: String(r.driver_number),
+                position: String(r.position),
+                points: String(r.points),
+                status: r.dsq ? 'DSQ' : r.dnf ? 'DNF' : r.dns ? 'DNS' : 'Finished',
+              }));
+              dataSource = 'openf1';
+            }
+          }
+        } catch (err) {
+          console.log(`[ADMIN] OpenF1 unavailable for ${race.race_name}, trying Jolpi`);
+        }
+
+        // ── Fall back to Jolpi if OpenF1 had no data yet ─────────────────────
+        if (normalizedResults.length === 0) {
+          const jolpiResults = isSprint
+            ? await jolpiService.getSprintResults(race.season, race.round)
+            : await jolpiService.getRaceResults(race.season, race.round);
+
+          if (jolpiResults.length > 0) {
+            normalizedResults = (jolpiResults as any[]).map(r => ({
+              number: r.number,
+              position: r.position,
+              points: r.points ?? '0',
+              status: r.status ?? 'Finished',
+            }));
+            dataSource = 'jolpi';
+          }
+        }
+
+        if (normalizedResults.length === 0) {
           console.log(`[ADMIN] No results available yet for ${race.race_name} (Round ${race.round})`);
-          raceLog.push(`⚠ ${race.race_name}: no API data yet`);
+          raceLog.push(`⚠ ${race.race_name}: no API data yet (tried OpenF1 + Jolpi)`);
           racesSkipped++;
           continue;
         }
@@ -448,8 +485,8 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         // Clear and re-insert results
         await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
 
-        // Batch fetch drivers
-        const driverNumbers = jolpiResults.map((r: any) => parseInt(r.number));
+        // Batch fetch drivers by number
+        const driverNumbers = normalizedResults.map(r => parseInt(r.number));
         const driversResult = await query(
           'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
           [driverNumbers, race.season]
@@ -461,7 +498,7 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         const insertParams: any[] = [];
         let paramIndex = 1;
 
-        for (const result of jolpiResults) {
+        for (const result of normalizedResults) {
           const driverId = driverMap.get(parseInt(result.number));
           if (driverId) {
             insertValues.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
@@ -489,8 +526,8 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         await calculateRacePoints(race.id);
         racesProcessed++;
 
-        const topThree = jolpiResults.slice(0, 3).map((r: any) => `P${r.position}:#${r.number}`).join(', ');
-        raceLog.push(`✓ ${race.race_name} (${isSprint ? 'Sprint' : 'Main'}): ${insertValues.length} results — ${topThree}`);
+        const topThree = normalizedResults.slice(0, 3).map(r => `P${r.position}:#${r.number}`).join(', ');
+        raceLog.push(`✓ ${race.race_name} (${isSprint ? 'Sprint' : 'Main'}) [${dataSource}]: ${insertValues.length} results — ${topThree}`);
         console.log(`[ADMIN] Synced ${race.race_name}: ${insertValues.length} results`);
 
       } catch (error: any) {

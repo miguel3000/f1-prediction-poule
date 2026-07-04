@@ -219,7 +219,7 @@ interface SprintPredictionInterfaceProps {
   raceDate?: string;
 }
 
-const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredictionInterfaceProps) => {
+const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfaceProps) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [qualifyingDrivers, setQualifyingDrivers] = useState<Driver[]>([]);
@@ -250,7 +250,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
 
   const fetchData = async () => {
     try {
-      const qualifyingResponse = await getQualifyingOrder(mainRaceId || raceId);
+      const qualifyingResponse = await getQualifyingOrder(raceId);
       const { drivers, source, hasQualifyingResults: hasQuali } = qualifyingResponse.data;
       setQualifyingDrivers(drivers);
       setOrderSource(source || '');
@@ -349,6 +349,7 @@ const SprintPredictionInterface = ({ raceId, mainRaceId, raceDate }: SprintPredi
 
   const filledCount = predictions.filter(Boolean).length;
   const orderLabel =
+    orderSource === 'sprint_qualifying' ? 'Sprint Quali' :
     orderSource === 'qualifying' ? 'Qualifying' :
     orderSource === 'previous_race' ? 'Prev. Race' : 'Championship';
 

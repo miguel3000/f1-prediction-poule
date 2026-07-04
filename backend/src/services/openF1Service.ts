@@ -1,9 +1,12 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { f1Cache, CACHE_TTL } from '../utils/cache';
 
 dotenv.config();
 
 const OPENF1_API_URL = process.env.OPENF1_API_URL || 'https://api.openf1.org/v1';
+
+const sessionKeyCache: Record<string, number | null> = {};
 
 export interface OpenF1Meeting {
   meeting_key: number;
@@ -107,25 +110,56 @@ function secondsToTimeStr(s: number | undefined): string | null {
   return `${mins}:${secs}`;
 }
 
-export const getQualifyingSessionKey = async (year: number, raceDateIso: string): Promise<number | null> => {
+// Generic session key finder — matches by session name + proximity to a target date
+export const findSessionKey = async (
+  year: number,
+  sessionName: string,
+  targetDateIso: string,
+  windowHours: number = 24
+): Promise<number | null> => {
+  const cacheKey = `of1_session:${year}:${sessionName}:${targetDateIso}`;
+  if (cacheKey in sessionKeyCache) return sessionKeyCache[cacheKey];
+
   try {
     const response = await axios.get(`${OPENF1_API_URL}/sessions`, {
-      params: { session_name: 'Qualifying', year }
+      params: { session_name: sessionName, year }
     });
     const sessions: OpenF1Session[] = response.data;
-    const raceTime = new Date(raceDateIso).getTime();
-    // Qualifying is 1–2 days before the race; find the closest session before raceDate
+    const targetTime = new Date(targetDateIso).getTime();
+    const windowMs = windowHours * 60 * 60 * 1000;
+
     const candidates = sessions
-      .filter(s => {
-        const diff = raceTime - new Date(s.date_start).getTime();
-        return diff > 0 && diff < 4 * 24 * 60 * 60 * 1000; // within 4 days before race
-      })
-      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime());
-    return candidates[0]?.session_key ?? null;
+      .filter(s => Math.abs(new Date(s.date_start).getTime() - targetTime) < windowMs)
+      .sort((a, b) =>
+        Math.abs(new Date(a.date_start).getTime() - targetTime) -
+        Math.abs(new Date(b.date_start).getTime() - targetTime)
+      );
+
+    const key = candidates[0]?.session_key ?? null;
+    sessionKeyCache[cacheKey] = key;
+    return key;
   } catch (error) {
-    console.error('Error finding qualifying session key from OpenF1:', error);
+    console.error(`Error finding OpenF1 session key for ${sessionName}:`, error);
     return null;
   }
+};
+
+export const getQualifyingSessionKey = async (year: number, raceDateIso: string): Promise<number | null> => {
+  // Qualifying is 1–2 days before the race
+  return findSessionKey(year, 'Qualifying', raceDateIso, 72);
+};
+
+export const getRaceSessionKey = async (year: number, raceDateIso: string): Promise<number | null> => {
+  return findSessionKey(year, 'Race', raceDateIso, 12);
+};
+
+export const getSprintSessionKey = async (year: number, sprintDateIso: string): Promise<number | null> => {
+  return findSessionKey(year, 'Sprint', sprintDateIso, 12);
+};
+
+export const getSprintQualifyingSessionKey = async (year: number, sprintDateIso: string): Promise<number | null> => {
+  // Sprint qualifying is 1–2 days before the sprint race
+  return findSessionKey(year, 'Sprint Qualifying', sprintDateIso, 72);
 };
 
 export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1QualifyingResult[]> => {
@@ -149,6 +183,52 @@ export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1Qu
       }));
   } catch (error) {
     console.error('Error fetching qualifying results from OpenF1:', error);
+    return [];
+  }
+};
+
+export interface OpenF1RaceResult {
+  session_key: number;
+  driver_number: number;
+  position: number;
+  points: number;
+  dnf: boolean;
+  dsq: boolean;
+  dns: boolean;
+}
+
+// Fetch race or sprint race results for a session
+export const getRaceResults = async (sessionKey: number): Promise<OpenF1RaceResult[]> => {
+  const cacheKey = `of1_race_results:${sessionKey}`;
+  const cached = f1Cache.get<OpenF1RaceResult[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await axios.get(`${OPENF1_API_URL}/session_result`, {
+      params: { session_key: sessionKey }
+    });
+    const raw: any[] = response.data;
+    if (!raw || raw.length === 0) return [];
+
+    const results = raw
+      .sort((a, b) => a.position - b.position)
+      .map(r => ({
+        session_key: r.session_key,
+        driver_number: r.driver_number,
+        position: r.position,
+        points: r.points ?? 0,
+        dnf: r.dnf ?? false,
+        dsq: r.dsq ?? false,
+        dns: r.dns ?? false,
+      }));
+
+    // Only cache completed sessions (all 20 drivers present)
+    if (results.length >= 15) {
+      f1Cache.set(cacheKey, results, CACHE_TTL.COMPLETED_SESSION);
+    }
+    return results;
+  } catch (error) {
+    console.error('Error fetching race results from OpenF1:', error);
     return [];
   }
 };

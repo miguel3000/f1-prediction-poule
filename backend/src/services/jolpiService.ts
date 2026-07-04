@@ -12,6 +12,7 @@ const cacheKey = {
   driverStandings: (season: number) => `standings:${season}`,
   raceResults: (season: number, round: number) => `race:${season}:${round}`,
   qualifying: (season: number, round: number) => `quali:${season}:${round}`,
+  sprintQualifying: (season: number, round: number) => `sprint_quali:${season}:${round}`,
   sprint: (season: number, round: number) => `sprint:${season}:${round}`,
   practice: (season: number, round: number, session: number) => `fp${session}:${season}:${round}`,
   drivers: (season: number) => `drivers:${season}`,
@@ -162,6 +163,35 @@ export const getQualifyingResults = async (season: number, round: number): Promi
   }
 };
 
+export interface JolpiSprintQualifyingResult {
+  number: string;
+  position: string;
+  Driver: JolpiDriver;
+  Constructor: {
+    constructorId: string;
+    name: string;
+  };
+  SQ1?: string;
+  SQ2?: string;
+  SQ3?: string;
+}
+
+export const getSprintQualifyingResults = async (season: number, round: number): Promise<JolpiSprintQualifyingResult[]> => {
+  const key = cacheKey.sprintQualifying(season, round);
+  const cached = f1Cache.get<JolpiSprintQualifyingResult[]>(key);
+  if (cached) return cached;
+
+  try {
+    const response = await axios.get(`${JOLPI_API_URL}/${season}/${round}/sprintQualifying.json`);
+    const results = response.data.MRData.RaceTable.Races[0]?.SprintQualifyingResults || [];
+    f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
+    return results;
+  } catch (error) {
+    console.error('Error fetching sprint qualifying results from Jolpi:', error);
+    return [];
+  }
+};
+
 // Get sprint results for a specific round
 export const getSprintResults = async (season: number, round: number): Promise<JolpiResult[]> => {
   const key = cacheKey.sprint(season, round);
@@ -198,6 +228,7 @@ export const clearRaceCache = (season: number, round: number): void => {
   f1Cache.delete(cacheKey.raceResults(season, round));
   f1Cache.delete(cacheKey.sprint(season, round));
   f1Cache.delete(cacheKey.qualifying(season, round));
+  f1Cache.delete(cacheKey.sprintQualifying(season, round));
 };
 
 export interface JolpiPracticeResult {

@@ -29,6 +29,9 @@ RUN npm run build
 FROM node:18-alpine
 WORKDIR /app
 
+# Install Python3 for FastF1 sync script (pip install fastf1 on first use)
+RUN apk add --no-cache python3 py3-pip
+
 # Copy backend package files and install production dependencies only
 COPY backend/package*.json ./
 RUN npm install --production
@@ -44,6 +47,9 @@ COPY --from=frontend-build /app/frontend/dist ./frontend
 
 # Create uploads directory
 RUN mkdir -p ./uploads
+
+# Copy FastF1 sync script
+COPY backend/scripts/fastf1_sync.py /app/scripts/fastf1_sync.py
 
 # Set up cron for automatic syncing
 # Copy cron-related files

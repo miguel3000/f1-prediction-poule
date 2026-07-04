@@ -109,10 +109,18 @@ const Homepage = () => {
     <div>
       <CircuitBackground circuitName={mainRace?.circuit_name ?? nextRace?.circuit_name} />
       <Banner
-        nextRaceDate={new Date(mainRace?.race_date ?? nextRace.race_date)}
+        nextRaceDate={
+          hasSprint && activeTab === 'sprint' && sprintRace
+            ? new Date(sprintRace.race_date)
+            : new Date(mainRace?.race_date ?? nextRace.race_date)
+        }
         nextRaceName={mainRace?.race_name ?? nextRace.race_name}
-        qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
-        isSprint={false}
+        qualifyingDate={
+          hasSprint && activeTab === 'sprint'
+            ? undefined
+            : mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined
+        }
+        isSprint={!!(hasSprint && activeTab === 'sprint')}
       />
 
       {/* Sprint/Main Toggle Tabs (only shown for sprint weekends) */}
