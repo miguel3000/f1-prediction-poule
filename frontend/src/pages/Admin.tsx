@@ -740,7 +740,9 @@ const Admin = () => {
                 {/* Synced races summary */}
                 <div>
                   <p className="font-medium text-white mb-2">Past races in DB ({diagnosis.syncedRaces.length} total):</p>
-                  <div className="overflow-x-auto">
+
+                  {/* Desktop table */}
+                  <div className="hidden sm:block overflow-x-auto">
                     <table className="text-xs w-full">
                       <thead>
                         <tr className="border-b border-f1-neutral-700 text-f1-gray">
@@ -766,6 +768,25 @@ const Admin = () => {
                         })}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile cards */}
+                  <div className="sm:hidden space-y-2">
+                    {diagnosis.syncedRaces.map(r => {
+                      const count = r.race_type === 'sprint' ? r.sprint_result_count : r.main_result_count;
+                      return (
+                        <div key={r.id} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-3 text-xs">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-medium text-white">Round {r.round}: {r.race_name}</span>
+                            <span className={r.race_type === 'sprint' ? 'text-f1-pink-400' : 'text-blue-400'}>{r.race_type}</span>
+                          </div>
+                          <div className="flex justify-between text-f1-gray">
+                            <span className={r.status === 'completed' ? 'text-green-400' : r.status === 'provisional' ? 'text-yellow-400' : 'text-f1-gray'}>{r.status}</span>
+                            <span className={count > 0 ? 'text-green-400' : 'text-red-400'}>{count} rows</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -863,7 +884,8 @@ const Admin = () => {
               <span className="text-white font-bold">{predictionStatus.total}</span> players have predicted{' '}
               {predictionStatus.raceName}.
             </p>
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-f1-neutral-700">
@@ -888,6 +910,25 @@ const Admin = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-2">
+              {predictionStatus.users.map(user => (
+                <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{user.nickname}</p>
+                      <p className="text-xs text-f1-gray truncate">{user.email}</p>
+                    </div>
+                    {user.hasPredicted ? (
+                      <span className="shrink-0 text-xs bg-green-600/30 text-green-400 px-2 py-1 rounded">✓ Predicted</span>
+                    ) : (
+                      <span className="shrink-0 text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded">Not yet</span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ) : null}
@@ -1098,7 +1139,8 @@ const Admin = () => {
         {/* Email Types */}
         <div className="bg-f1-neutral-800 p-5 rounded-lg mb-6">
           <h4 className="font-bold text-f1-pink-500 mb-3">Email Types</h4>
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-f1-neutral-700">
@@ -1125,6 +1167,21 @@ const Admin = () => {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2 text-sm">
+            {[
+              { name: 'Prediction Confirmation', color: 'text-white', trigger: 'User saves prediction', contents: 'List of predicted positions' },
+              { name: 'Provisional Results', color: 'text-yellow-400', trigger: '~5 min after race', contents: 'Race results, prediction breakdown, points earned' },
+              { name: 'Final Results', color: 'text-green-400', trigger: '24+ hours after race', contents: 'Final points, changes highlighted if any' },
+            ].map(email => (
+              <div key={email.name} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-3">
+                <p className={`font-medium ${email.color}`}>{email.name}</p>
+                <p className="text-f1-gray text-xs mt-1">Trigger: {email.trigger}</p>
+                <p className="text-f1-gray text-xs">Contents: {email.contents}</p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1247,7 +1304,9 @@ const Admin = () => {
             <p className="mt-4 text-f1-gray">Loading users...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-f1-neutral-700">
@@ -1328,6 +1387,69 @@ const Admin = () => {
               </div>
             )}
           </div>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3">
+            {/* Admin user card - cannot be deleted */}
+            <div className="bg-yellow-900/10 border border-yellow-900/40 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="font-medium text-yellow-400">{credentials?.username || 'Admin'}</span>
+                <span className="text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5 rounded">ADMIN</span>
+              </div>
+              <button
+                onClick={() => {
+                  setAdminPasswordModal(true);
+                  setNewPassword('');
+                  setPasswordStatus('idle');
+                  setPasswordMessage(null);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+              >
+                Change Password
+              </button>
+            </div>
+
+            {users.map((user) => (
+              <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{user.nickname}</p>
+                    <p className="text-xs text-f1-gray truncate">{user.email}</p>
+                  </div>
+                  <p className="text-f1-pink-500 font-bold shrink-0 ml-2">{user.total_points}</p>
+                </div>
+                <p className="text-xs text-f1-gray mb-3">
+                  ID {user.id} · Joined {new Date(user.created_at).toLocaleDateString()}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setPasswordModal({ userId: user.id, nickname: user.nickname });
+                      setNewPassword('');
+                      setPasswordStatus('idle');
+                      setPasswordMessage(null);
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                  >
+                    Set Password
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(user.id, user.nickname)}
+                    className="flex-1 bg-red-600 hover:bg-f1-pink-600 text-white px-3 py-2 rounded text-sm transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {users.length === 0 && !loading && (
+              <div className="text-center py-8 text-f1-gray">
+                No users found
+              </div>
+            )}
+          </div>
+          </>
         )}
 
         <div className="mt-6 text-sm text-f1-gray">
