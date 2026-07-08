@@ -272,22 +272,17 @@ export const calculateRacePoints = async (raceId: number) => {
         [predictionIds]
       );
 
-      // Batch update user points (aggregate points per user first)
-      const userPointsMap = new Map<number, number>();
-      for (const update of predictionUpdates) {
-        userPointsMap.set(update.userId, (userPointsMap.get(update.userId) || 0) + update.points);
-      }
-
-      // Single query to update all user points
-      const userIds = Array.from(userPointsMap.keys());
-      const userPointsCases = Array.from(userPointsMap.entries())
-        .map(([userId, points]) => `WHEN ${userId} THEN total_points + ${points}`)
-        .join(' ');
+      // Recompute total_points from source of truth (predictions + sprint_predictions)
+      // for affected users, rather than incrementing. This keeps calculateRacePoints
+      // idempotent: re-running it for the same race can never double-count points.
+      const userIds = Array.from(new Set(predictionUpdates.map(p => p.userId)));
 
       await query(
-        `UPDATE users
-         SET total_points = CASE id ${userPointsCases} END
-         WHERE id = ANY($1)`,
+        `UPDATE users u
+         SET total_points =
+           COALESCE((SELECT SUM(points_earned) FROM predictions WHERE user_id = u.id), 0) +
+           COALESCE((SELECT SUM(points_earned) FROM sprint_predictions WHERE user_id = u.id), 0)
+         WHERE u.id = ANY($1)`,
         [userIds]
       );
     }

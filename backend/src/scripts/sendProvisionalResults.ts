@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
+import { calculateRacePoints } from '../controllers/leaderboardController';
 import {
   sendProvisionalResults,
   RaceResultForEmail,
@@ -103,7 +104,11 @@ async function processProvisionalResults() {
           [race.id]
         );
 
-        // Get all predictions for this race with user info
+        // Persist points now so the Season Progression graph reflects this race
+        // immediately instead of waiting for the next-day final results processing.
+        await calculateRacePoints(race.id);
+
+        // Get all predictions for this race with user info (now including points_earned)
         const predictionsResult = await query(
           `SELECT p.*, u.email, u.nickname
            FROM ${predictionTable} p
@@ -117,9 +122,9 @@ async function processProvisionalResults() {
         // Send email to each user who made a prediction
         for (const prediction of predictionsResult.rows) {
           try {
-            // Calculate provisional points for this prediction
+            // Build per-driver breakdown for the email (points_earned itself is already
+            // persisted by calculateRacePoints above, so use that as the authoritative total)
             const userPredictionResults: UserPredictionResult[] = [];
-            let totalPoints = 0;
 
             for (let predictedPos = 1; predictedPos <= maxPositions; predictedPos++) {
               const predictedDriverId = prediction[`position_${predictedPos}`];
@@ -153,7 +158,6 @@ async function processProvisionalResults() {
                 }
               }
 
-              totalPoints += pointsEarned;
               userPredictionResults.push({
                 predictedPosition: predictedPos,
                 driverName,
@@ -170,7 +174,7 @@ async function processProvisionalResults() {
               race.race_name,
               raceResultsForEmail,
               userPredictionResults,
-              totalPoints
+              prediction.points_earned
             );
 
           } catch (emailError) {

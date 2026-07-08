@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
-import { calculateRacePoints } from './leaderboardController';
 
 // Get qualifying order for a race (with fallback to previous race results)
 export const getQualifyingOrder = async (req: Request, res: Response) => {
@@ -351,80 +350,5 @@ export const syncRaces = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Sync races error:', error);
     res.status(500).json({ error: 'Failed to sync races' });
-  }
-};
-
-export const syncRaceResults = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    // Get race info
-    const raceResult = await query('SELECT * FROM races WHERE id = $1', [id]);
-
-    if (raceResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Race not found' });
-    }
-
-    const race = raceResult.rows[0];
-
-    // Fetch results from Jolpi API
-    const jolpiResults = await jolpiService.getRaceResults(race.season, race.round);
-
-    if (jolpiResults.length === 0) {
-      return res.status(404).json({ error: 'No results found for this race' });
-    }
-
-    // Clear existing results for this race
-    await query('DELETE FROM race_results WHERE race_id = $1', [id]);
-
-    // Batch fetch all drivers by their numbers (single query instead of N queries)
-    const driverNumbers = jolpiResults.map((r: any) => parseInt(r.number));
-    const driversResult = await query(
-      'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
-      [driverNumbers, race.season]
-    );
-    const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
-
-    // Build batch insert values
-    const insertValues: any[] = [];
-    const insertParams: any[] = [];
-    let paramIndex = 1;
-
-    for (const result of jolpiResults) {
-      const driverNumber = parseInt(result.number);
-      const driverId = driverMap.get(driverNumber);
-
-      if (driverId) {
-        insertValues.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
-        insertParams.push(id, driverId, parseInt(result.position), parseFloat(result.points), result.status);
-        paramIndex += 5;
-      }
-    }
-
-    // Single batch insert for all results
-    if (insertValues.length > 0) {
-      await query(
-        `INSERT INTO race_results (race_id, driver_id, position, points, status)
-         VALUES ${insertValues.join(', ')}`,
-        insertParams
-      );
-    }
-
-    // Update race status to completed
-    await query(
-      'UPDATE races SET status = $1 WHERE id = $2',
-      ['completed', id]
-    );
-
-    // Calculate points for all predictions
-    await calculateRacePoints(parseInt(id));
-
-    res.json({
-      message: 'Race results synchronized and points calculated successfully',
-      resultsCount: jolpiResults.length
-    });
-  } catch (error) {
-    console.error('Sync race results error:', error);
-    res.status(500).json({ error: 'Failed to sync race results' });
   }
 };

@@ -413,7 +413,6 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
       try {
         const isSprint = race.race_type === 'sprint';
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
-        const predictionTable = isSprint ? 'sprint_predictions' : 'predictions';
 
         // Clear Jolpi cache so we get fresh data
         jolpiService.clearRaceCache(race.season, race.round);
@@ -465,21 +464,6 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
           raceLog.push(`⚠ ${race.race_name}: no API data yet (tried OpenF1 + Jolpi)`);
           racesSkipped++;
           continue;
-        }
-
-        // When force-syncing, subtract existing prediction points before recalculation
-        if (force) {
-          const existingPoints = await query(
-            `SELECT user_id, points_earned FROM ${predictionTable} WHERE race_id = $1 AND points_earned > 0`,
-            [race.id]
-          );
-          for (const p of existingPoints.rows) {
-            await query(
-              'UPDATE users SET total_points = GREATEST(0, total_points - $1) WHERE id = $2',
-              [p.points_earned, p.user_id]
-            );
-          }
-          await query(`UPDATE ${predictionTable} SET points_earned = 0 WHERE race_id = $1`, [race.id]);
         }
 
         // Clear and re-insert results

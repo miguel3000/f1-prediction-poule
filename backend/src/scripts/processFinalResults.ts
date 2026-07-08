@@ -88,33 +88,10 @@ async function processFinalResults() {
           }
         }
 
-        // Get old prediction points for comparison
-        const oldPredictions = await query(
-          `SELECT user_id, points_earned FROM ${predictionTable} WHERE race_id = $1`,
-          [race.id]
-        );
-        const oldPointsMap = new Map(oldPredictions.rows.map((p: any) => [p.user_id, p.points_earned]));
-
-        // Reset prediction points to 0 first
-        await query(
-          `UPDATE ${predictionTable} SET points_earned = 0 WHERE race_id = $1`,
-          [race.id]
-        );
-
-        // Recalculate all points with final results
-        // Note: calculateRacePoints adds new points to user totals
+        // Recalculate all points with final results. calculateRacePoints() overwrites
+        // points_earned and recomputes total_points from source of truth, so this is
+        // safe to run even though points were already set during provisional processing.
         await calculateRacePoints(race.id);
-
-        // Now adjust user totals: subtract old points that were already counted
-        // This avoids double-counting since calculateRacePoints already added new points
-        for (const [userId, oldPoints] of oldPointsMap) {
-          if (oldPoints > 0) {
-            await query(
-              'UPDATE users SET total_points = total_points - $1 WHERE id = $2',
-              [oldPoints, userId]
-            );
-          }
-        }
 
         // Update race status to completed
         await query(

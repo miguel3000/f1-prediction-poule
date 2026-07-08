@@ -12,7 +12,8 @@
     "sync:results": "npx ts-node src/scripts/syncRaceResults.ts",
     "results:provisional": "npx ts-node src/scripts/sendProvisionalResults.ts",
     "results:final": "npx ts-node src/scripts/processFinalResults.ts",
-    "predictions:copy-missing": "npx ts-node src/scripts/copyMissingPredictions.ts"
+    "predictions:copy-missing": "npx ts-node src/scripts/copyMissingPredictions.ts",
+    "points:repair-totals": "npx ts-node src/scripts/repairTotalPoints.ts"
   },
   "keywords": ["f1", "formula1", "predictions"],
   "author": "",

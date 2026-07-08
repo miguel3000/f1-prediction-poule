@@ -6,8 +6,7 @@ import {
   getUpcomingRaces,
   getRaceResults,
   getQualifyingOrder,
-  syncRaces,
-  syncRaceResults
+  syncRaces
 } from '../controllers/raceController';
 import { authenticate } from '../middleware/auth';
 
@@ -20,6 +19,5 @@ router.get('/:id', getRace);
 router.get('/:id/results', getRaceResults);
 router.get('/:id/qualifying', getQualifyingOrder);
 router.post('/sync', authenticate, syncRaces); // Protected: admin use
-router.post('/:id/sync-results', authenticate, syncRaceResults); // Protected: admin use
 
 export default router;
