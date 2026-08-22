@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as jolpiService from '../services/jolpiService';
+import * as openF1Service from '../services/openF1Service';
 import { query } from '../config/database';
 
 
@@ -208,20 +209,61 @@ export const getSprintQualifyingResultsFromApi = async (req: Request, res: Respo
       })));
     }
 
-    // Fallback: fetch from Jolpi sprintQualifying endpoint
-    const results = await jolpiService.getSprintQualifyingResults(season, roundNum);
-    if (!results || results.length === 0) return res.json([]);
+    // Fallback: Jolpi/Ergast has no Sprint Qualifying endpoint at all (confirmed:
+    // /sprintQualifying.json 400s for every round). OpenF1 does carry this session,
+    // so look it up there and cache it into qualifying_results for next time.
+    const sprintRaceResult = await query(
+      `SELECT id, race_date FROM races WHERE season = $1 AND round = $2 AND race_type = 'sprint'`,
+      [season, roundNum]
+    );
 
-    res.json(results.map((r: any) => ({
-      position: parseInt(r.position),
-      driverNumber: r.number,
-      driverName: `${r.Driver.givenName} ${r.Driver.familyName}`,
-      driverCode: r.Driver.code,
-      team: r.Constructor?.name || 'Unknown',
-      q1: r.SQ1 || null,
-      q2: r.SQ2 || null,
-      q3: r.SQ3 || null,
-    })));
+    if (sprintRaceResult.rows.length === 0) return res.json([]);
+
+    const sprintRace = sprintRaceResult.rows[0];
+    const sessionKey = await openF1Service.getSprintQualifyingSessionKey(season, sprintRace.race_date);
+
+    if (!sessionKey) return res.json([]);
+
+    const openF1Results = await openF1Service.getQualifyingResults(sessionKey);
+    if (openF1Results.length === 0) return res.json([]);
+
+    const driverNumbers = openF1Results.map(r => r.driver_number);
+    const driversResult = await query(
+      'SELECT id, driver_number, name, name_acronym, team FROM drivers WHERE driver_number = ANY($1) AND season = $2',
+      [driverNumbers, season]
+    );
+    const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
+
+    const formattedResults = [];
+    for (const r of openF1Results) {
+      const driver = driverMap.get(r.driver_number);
+      if (!driver) continue;
+
+      await query(
+        `INSERT INTO qualifying_results (race_id, driver_id, position, q1, q2, q3)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (race_id, driver_id) DO UPDATE SET
+           position = EXCLUDED.position,
+           q1 = EXCLUDED.q1,
+           q2 = EXCLUDED.q2,
+           q3 = EXCLUDED.q3`,
+        [sprintRace.id, driver.id, r.position, r.q1, r.q2, r.q3]
+      );
+
+      formattedResults.push({
+        position: r.position,
+        driverNumber: String(r.driver_number),
+        driverName: driver.name,
+        driverCode: driver.name_acronym || '',
+        team: driver.team,
+        q1: r.q1,
+        q2: r.q2,
+        q3: r.q3,
+      });
+    }
+
+    formattedResults.sort((a, b) => a.position - b.position);
+    res.json(formattedResults);
   } catch (error) {
     console.error('Get sprint qualifying results error:', error);
     res.status(500).json({ error: 'Failed to get sprint qualifying results' });
