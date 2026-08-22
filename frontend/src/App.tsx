@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
+import BottomTabBar from './components/BottomTabBar';
 import Footer from './components/Footer';
 import Homepage from './pages/Homepage';
 import RaceOverview from './pages/RaceOverview';
@@ -20,7 +21,7 @@ import { AuthContext } from './context/AuthContext';
 import { getProfile } from './services/api';
 
 function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
@@ -57,11 +58,11 @@ function App() {
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
       <Router>
-        <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: '#080808' }}>
-          <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} />
-          <Navigation isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: '#121012' }}>
+          <Header onMoreToggle={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
+          <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />
 
-          <main className="container mx-auto px-4 py-8 relative z-10 flex-grow">
+          <main className="container mx-auto px-4 py-6 md:py-8 pb-24 md:pb-8 relative z-10 flex-grow">
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/races" element={<RaceOverview />} />
@@ -80,6 +81,7 @@ function App() {
           </main>
 
           <Footer />
+          <BottomTabBar onMoreClick={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
         </div>
       </Router>
     </AuthContext.Provider>

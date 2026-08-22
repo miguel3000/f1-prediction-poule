@@ -32,15 +32,26 @@ body {
   font-family: 'Saira', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #080808;
+  background-color: #121012;
+  background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(230, 0, 126, 0.08), transparent);
+  background-repeat: no-repeat;
   color: #FFFFFF;
+}
+
+/* Hide scrollbar for horizontally-scrollable segmented controls, keep it functional */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 * { box-sizing: border-box; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0E0E0E; }
+::-webkit-scrollbar-track { background: #191517; }
 ::-webkit-scrollbar-thumb { background: #E6007E; }
 ::-webkit-scrollbar-thumb:hover { background: #FF40A0; }
 
@@ -55,12 +66,12 @@ body {
   /* Left-bar timing tower accent */
   .timing-row {
     border-left: 3px solid #E6007E;
-    background: #0E0E0E;
+    background: #191517;
   }
 
   .timing-row-muted {
-    border-left: 3px solid #1E1E1E;
-    background: #0A0A0A;
+    border-left: 3px solid #2A2427;
+    background: #161217;
   }
 }
 
@@ -96,8 +107,8 @@ body {
 
 /* Footer */
 .footer-solid {
-  background-color: #0A0A0A;
-  border-top: 1px solid #1E1E1E;
+  background-color: #161217;
+  border-top: 1px solid #2A2427;
   position: relative;
   z-index: 30;
 }

@@ -2,7 +2,7 @@ const PrivacyPolicy = () => {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="card-f1 p-8">
-        <h1 className="text-4xl font-bold mb-6 text-gradient-red">Privacy Policy</h1>
+        <h1 className="text-4xl font-bold mb-6 text-gradient-pink">Privacy Policy</h1>
 
         <p className="text-f1-gray mb-6">
           <strong>Last Updated:</strong> January 30, 2026

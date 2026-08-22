@@ -4,6 +4,7 @@ import Banner from '../components/Banner';
 import CircuitBackground from '../components/CircuitBackground';
 import PredictionInterface from '../components/PredictionInterface';
 import SprintPredictionInterface from '../components/SprintPredictionInterface';
+import SegmentedTabs from '../components/SegmentedTabs';
 import { getUpcomingRaces } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -127,27 +128,15 @@ const Homepage = () => {
 
       {/* Sprint/Main Toggle Tabs (only shown for sprint weekends) */}
       {hasSprint && (
-        <div className="flex gap-2 mt-4 mb-2">
-          <button
-            onClick={() => setActiveTab('sprint')}
-            className={`flex-1 py-2 px-4 font-bold text-sm transition-colors ${
-              activeTab === 'sprint'
-                ? 'bg-f1-pink-500 text-white'
-                : 'bg-f1-neutral-850 text-f1-neutral-400 hover:bg-f1-neutral-800'
-            }`}
-          >
-            SPRINT
-          </button>
-          <button
-            onClick={() => setActiveTab('main')}
-            className={`flex-1 py-2 px-4 font-bold text-sm transition-colors ${
-              activeTab === 'main'
-                ? 'bg-f1-pink-500 text-white'
-                : 'bg-f1-neutral-850 text-f1-neutral-400 hover:bg-f1-neutral-800'
-            }`}
-          >
-            MAIN RACE
-          </button>
+        <div className="mt-4 mb-2">
+          <SegmentedTabs
+            options={[
+              { value: 'sprint', label: 'Sprint' },
+              { value: 'main', label: 'Main Race' },
+            ]}
+            value={activeTab}
+            onChange={setActiveTab}
+          />
         </div>
       )}
 

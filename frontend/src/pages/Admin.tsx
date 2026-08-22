@@ -440,7 +440,7 @@ const Admin = () => {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="card-f1 max-w-md w-full">
-          <h1 className="text-3xl font-bold mb-6 text-center text-gradient-red">
+          <h1 className="text-3xl font-bold mb-6 text-center text-gradient-pink">
             Admin Panel
           </h1>
 
@@ -491,7 +491,7 @@ const Admin = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl md:text-display-xl font-bold text-gradient-red">
+        <h1 className="text-4xl md:text-display-xl font-bold text-gradient-pink">
           Admin Panel
         </h1>
         {/* v2 */}

@@ -10,6 +10,7 @@ import {
   getFunStats,
 } from '../services/api';
 import { getTeamColor } from '../utils/teamColors';
+import SegmentedTabs from '../components/SegmentedTabs';
 
 interface Race {
   id: number;
@@ -102,13 +103,13 @@ const DriverChip = ({ name, team, count, suffix = '' }: {
 }) => {
   const tc = getTeamColor(team);
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 border-l-4 bg-gray-900 ${tc.border}`}>
+    <div className={`flex items-center gap-2 px-3 py-2 border-l-4 bg-f1-neutral-850 ${tc.border}`}>
       <span className={`font-mono font-black text-xl tabular-nums ${tc.text}`}>{count}</span>
       <div className="min-w-0">
         <p className="font-bold text-white text-sm truncate">{name}</p>
-        <p className="text-xs text-gray-500">{team}</p>
+        <p className="text-xs text-f1-gray">{team}</p>
       </div>
-      {suffix && <span className="text-xs text-gray-500 ml-auto flex-shrink-0">{suffix}</span>}
+      {suffix && <span className="text-xs text-f1-gray ml-auto flex-shrink-0">{suffix}</span>}
     </div>
   );
 };
@@ -117,14 +118,14 @@ const DriverChip = ({ name, team, count, suffix = '' }: {
 const StatCard = ({ emoji, title, children, isEmpty }: {
   emoji: string; title: string; children: React.ReactNode; isEmpty?: boolean;
 }) => (
-  <div className="bg-gray-800 rounded-lg overflow-hidden">
-    <div className="px-4 py-3 bg-gray-900 border-b border-gray-700 flex items-center gap-2">
+  <div className="card-f1 p-0 overflow-hidden">
+    <div className="px-4 py-3 bg-f1-neutral-850 border-b border-f1-neutral-800 flex items-center gap-2">
       <span className="text-lg">{emoji}</span>
       <h3 className="font-bold text-sm text-white uppercase tracking-widest">{title}</h3>
     </div>
     <div className="p-4">
       {isEmpty
-        ? <p className="text-gray-500 text-sm text-center py-2">No data yet this season</p>
+        ? <p className="text-f1-gray text-sm text-center py-2">No data yet this season</p>
         : children}
     </div>
   </div>
@@ -208,9 +209,9 @@ const Stats = () => {
 
   const getPositionColor = (pos: number) => {
     if (pos === 1) return 'bg-yellow-500 text-black';
-    if (pos === 2) return 'bg-gray-300 text-black';
+    if (pos === 2) return 'bg-f1-neutral-300 text-black';
     if (pos === 3) return 'bg-f1-pink-500 text-white';
-    return 'bg-gray-700 text-white';
+    return 'bg-f1-neutral-700 text-white';
   };
 
   const sessionLabel: Record<SessionType, string> = {
@@ -243,36 +244,39 @@ const Stats = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-4xl font-bold mb-6 text-center text-gradient-red">
+      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-pink">
         2026 Season Statistics
       </h1>
 
       {/* Season Summary */}
       {seasonStats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-f1-pink-500">{seasonStats.races.completed_races}</p>
-            <p className="text-sm text-f1-gray">Races Completed</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+          <div className="card-f1 p-4 text-center">
+            <p className="text-3xl font-black font-mono tabular-nums text-f1-pink-500">{seasonStats.races.completed_races}</p>
+            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Races Completed</p>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-f1-pink-500">{seasonStats.races.completed_sprints}</p>
-            <p className="text-sm text-f1-gray">Sprints Completed</p>
+          <div className="card-f1 p-4 text-center">
+            <p className="text-3xl font-black font-mono tabular-nums text-f1-pink-500">{seasonStats.races.completed_sprints}</p>
+            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Sprints Completed</p>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-green-500">{seasonStats.predictions.main_predictions}</p>
-            <p className="text-sm text-f1-gray">Race Predictions</p>
+          <div className="card-f1 p-4 text-center">
+            <p className="text-3xl font-black font-mono tabular-nums text-green-400">{seasonStats.predictions.main_predictions}</p>
+            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Race Predictions</p>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-blue-500">{seasonStats.predictions.sprint_predictions}</p>
-            <p className="text-sm text-f1-gray">Sprint Predictions</p>
+          <div className="card-f1 p-4 text-center">
+            <p className="text-3xl font-black font-mono tabular-nums text-f1-teal-400">{seasonStats.predictions.sprint_predictions}</p>
+            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Sprint Predictions</p>
           </div>
         </div>
       )}
 
       {/* ── Fun Stats Section ──────────────────────────────────────────────── */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-white mb-1">Season Highlights</h2>
-        <p className="text-f1-gray text-sm">Fun facts and stats from the 2026 season so far</p>
+      <div className="mb-4 flex items-center gap-3">
+        <div className="w-1 h-6 bg-f1-pink-500 flex-shrink-0" />
+        <div>
+          <h2 className="text-xl font-bold text-white uppercase tracking-wide">Season Highlights</h2>
+          <p className="text-f1-gray text-xs">Fun facts and stats from the 2026 season so far</p>
+        </div>
       </div>
       {loadingFun ? (
         <div className="flex items-center gap-3 py-8 text-f1-gray">
@@ -292,7 +296,7 @@ const Stats = () => {
                 {funStats.crystalBall.map((u, i) => (
                   <div key={u.nickname} className="flex items-center gap-3 py-1">
                     <span className={`text-sm font-black w-6 text-center ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-f1-neutral-300' : i === 2 ? 'text-f1-pink-400' : 'text-f1-gray'
                     }`}>{i + 1}</span>
                     <span className="font-semibold text-white flex-1">{u.nickname}</span>
                     <span className="font-mono text-f1-pink-500 font-black">
@@ -309,11 +313,11 @@ const Stats = () => {
                 {funStats.consistency.map((u, i) => (
                   <div key={u.nickname} className="flex items-center gap-3 py-1">
                     <span className={`text-sm font-black w-6 text-center ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-f1-pink-400' : 'text-gray-500'
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-f1-neutral-300' : i === 2 ? 'text-f1-pink-400' : 'text-f1-gray'
                     }`}>{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white">{u.nickname}</p>
-                      <p className="text-xs text-gray-500">{u.races} races · best: {u.best_race} pts</p>
+                      <p className="text-xs text-f1-gray">{u.races} races · best: {u.best_race} pts</p>
                     </div>
                     <span className="font-mono text-green-400 font-black">
                       {u.avg_points} avg
@@ -334,7 +338,7 @@ const Stats = () => {
                     count={d.count} suffix="picks" />
                 ))}
                 {funStats.predictedWinners.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center">No predictions yet</p>
+                  <p className="text-f1-gray text-sm text-center">No predictions yet</p>
                 )}
               </div>
             </StatCard>
@@ -346,11 +350,11 @@ const Stats = () => {
                 return (
                   <div>
                     <p className="text-white font-bold mb-1">{upset.race_name}</p>
-                    <div className={`flex items-center gap-2 my-2 border-l-4 px-3 py-2 bg-gray-900 ${tc.border}`}>
+                    <div className={`flex items-center gap-2 my-2 border-l-4 px-3 py-2 bg-f1-neutral-850 ${tc.border}`}>
                       <span className={`font-black text-lg ${tc.text}`}>{upset.winner_acronym}</span>
                       <span className="text-white text-sm">{upset.winner_name} won</span>
                     </div>
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-f1-gray text-sm">
                       Only{' '}
                       <span className="text-f1-pink-500 font-bold">{upset.correct}</span>
                       {' '}of{' '}
@@ -367,12 +371,12 @@ const Stats = () => {
       )}
 
       {/* Race Selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-f1-gray mb-2">Select Race</label>
+      <div className="mb-4 mt-10">
+        <label className="block text-xs font-bold text-f1-gray uppercase tracking-wider mb-2">Select Race</label>
         <select
           value={selectedRound || ''}
           onChange={(e) => setSelectedRound(parseInt(e.target.value))}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-f1-pink-500 focus:outline-none"
+          className="input-f1 w-full"
         >
           {uniqueRounds.map(round => {
             const race = races.find(r => r.round === round && r.race_type === 'main');
@@ -387,28 +391,22 @@ const Stats = () => {
 
       {/* Session Tabs */}
       {selectedRound && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {sessions.map((session) => (
-            <button
-              key={session}
-              onClick={() => setSelectedSession(session)}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                selectedSession === session
-                  ? 'bg-f1-pink-500 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              {sessionLabel[session]}
-            </button>
-          ))}
+        <div className="mb-4">
+          <SegmentedTabs
+            options={sessions.map(s => ({ value: s, label: sessionLabel[s] }))}
+            value={selectedSession}
+            onChange={setSelectedSession}
+            scrollable
+          />
         </div>
       )}
 
       {/* Session Results Table */}
       {selectedRound && (
-        <div className="bg-gray-800 rounded-lg overflow-hidden mb-8">
-          <div className="p-4 border-b border-gray-700">
-            <h2 className="text-xl font-bold">
+        <div className="card-f1 p-0 overflow-hidden mb-8">
+          <div className="p-4 border-b border-f1-neutral-800 flex items-center gap-2">
+            <span className={`w-1 h-5 flex-shrink-0 ${selectedSession === 'sprint' || selectedSession === 'sprint_qualifying' ? 'bg-f1-teal-400' : 'bg-f1-pink-500'}`} />
+            <h2 className="text-lg font-bold">
               {getSelectedRace()?.race_name} — {sessionLabel[selectedSession]}
             </h2>
           </div>
@@ -425,7 +423,7 @@ const Stats = () => {
               {/* Desktop/tablet: full table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-900">
+                  <thead className="bg-f1-neutral-850">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pos</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
@@ -450,9 +448,9 @@ const Stats = () => {
                       )}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700">
+                  <tbody className="divide-y divide-f1-neutral-800">
                     {sessionResults.map((result, index) => (
-                      <tr key={index} className="hover:bg-gray-700/50">
+                      <tr key={index} className="hover:bg-f1-neutral-850/60 transition-colors">
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${getPositionColor(result.position)}`}>
                             {result.position}
@@ -497,7 +495,7 @@ const Stats = () => {
               </div>
 
               {/* Mobile: stacked cards, no horizontal scrolling */}
-              <div className="md:hidden divide-y divide-gray-700">
+              <div className="md:hidden divide-y divide-f1-neutral-800">
                 {sessionResults.map((result, index) => (
                   <div key={index} className="flex items-center gap-3 px-4 py-3">
                     <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold flex-shrink-0 ${getPositionColor(result.position)}`}>
@@ -568,8 +566,8 @@ const Stats = () => {
                     {funStats.bestLap.lap_time}
                   </p>
                   <p className="font-bold text-white">{funStats.bestLap.name}</p>
-                  <p className="text-xs text-gray-500">{funStats.bestLap.team}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-f1-gray">{funStats.bestLap.team}</p>
+                  <p className="text-xs text-f1-gray mt-1">
                     Round {funStats.bestLap.round} — {funStats.bestLap.race_name}
                   </p>
                 </div>

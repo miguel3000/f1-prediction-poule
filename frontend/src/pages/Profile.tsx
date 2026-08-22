@@ -14,7 +14,7 @@ const Profile = () => {
   if (!user || !token) {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
-        <h1 className="text-3xl font-bold mb-4 text-gradient-red">Profile</h1>
+        <h1 className="text-3xl font-bold mb-4 text-gradient-pink">Profile</h1>
         <p className="text-f1-gray mb-6">You need to be logged in to view your profile.</p>
         <a href="/auth" className="btn-f1-primary">
           Login
@@ -96,7 +96,7 @@ const Profile = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-red">
+      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-pink">
         Profile
       </h1>
 

@@ -128,7 +128,7 @@ const DriverStandings = () => {
 
   return (
     <div>
-      <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-gradient-red">
+      <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-gradient-pink">
         2026 Driver's Championship
       </h1>
 

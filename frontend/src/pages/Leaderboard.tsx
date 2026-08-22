@@ -102,7 +102,7 @@ const Leaderboard = () => {
 
   return (
     <div>
-      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-red">Championship</h1>
+      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-pink">Championship</h1>
 
       {/* Season Points Chart */}
       <div className="max-w-5xl mx-auto mb-10">

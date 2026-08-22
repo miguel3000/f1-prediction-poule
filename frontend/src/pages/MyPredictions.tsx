@@ -73,7 +73,7 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4 text-gradient-red">My Predictions</h1>
+          <h1 className="text-4xl font-bold mb-4 text-gradient-pink">My Predictions</h1>
           <p className="text-f1-gray mb-8 text-lg">
             Please log in to view your predictions
           </p>
@@ -118,7 +118,7 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="card-f1 p-12 max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4 text-gradient-red">My Predictions</h1>
+          <h1 className="text-4xl font-bold mb-4 text-gradient-pink">My Predictions</h1>
           <p className="text-f1-gray mb-8 text-lg">
             You haven't made any predictions yet
           </p>
@@ -159,7 +159,7 @@ const MyPredictions = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-4xl md:text-display-xl font-bold text-gradient-red">
+        <h1 className="text-4xl md:text-display-xl font-bold text-gradient-pink">
           My Predictions
         </h1>
       </div>

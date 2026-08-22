@@ -35,7 +35,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
 
   if (!nextRaceDate || !nextRaceName) {
     return (
-      <div className="w-full py-5 px-4 border-b border-f1-neutral-800 text-center" style={{ backgroundColor: '#0E0E0E' }}>
+      <div className="w-full py-5 px-4 border-b border-f1-neutral-800 text-center" style={{ backgroundColor: '#191517' }}>
         <p className="text-f1-neutral-500 font-mono text-xs uppercase tracking-widest">Fetching race data...</p>
       </div>
     );
@@ -48,7 +48,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   const { hours, minutes, seconds, past } = showQualifying ? qualiLeft : raceLeft;
 
   return (
-    <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#0E0E0E' }}>
+    <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
       {/* Top label bar */}
       <div className="border-b border-f1-neutral-800 px-4 py-1.5 flex items-center gap-3">
         <div className="w-2 h-2 bg-f1-pink-500" style={{ borderRadius: 0 }} />

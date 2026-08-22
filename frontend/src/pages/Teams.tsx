@@ -161,7 +161,7 @@ const Teams = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-4xl font-bold mb-2 text-center text-gradient-red">
+      <h1 className="text-4xl font-bold mb-2 text-center text-gradient-pink">
         2026 F1 Teams
       </h1>
       <p className="text-center text-f1-gray mb-8">
