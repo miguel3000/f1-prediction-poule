@@ -85,7 +85,7 @@ const DriverStandings = () => {
   const getPositionColor = (position: number) => {
     if (position === 1) return 'bg-yellow-500 text-black';
     if (position === 2) return 'bg-gray-300 text-black';
-    if (position === 3) return 'bg-f1-pink-500 text-white';
+    if (position === 3) return 'bg-f1-pink-gradient text-white';
     return 'bg-gray-700 text-white';
   };
 

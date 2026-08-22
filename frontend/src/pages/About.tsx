@@ -194,7 +194,7 @@ const About = () => {
             <p className="mb-4">Join thousands of F1 fans competing for leaderboard glory!</p>
             <a
               href="/"
-              className="inline-block bg-f1-pink-500 hover:bg-f1-pink-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              className="inline-block bg-f1-pink-gradient hover:brightness-110 text-white font-bold py-3 px-6 rounded-lg transition-all"
             >
               Go to Homepage
             </a>

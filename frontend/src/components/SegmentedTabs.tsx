@@ -20,7 +20,7 @@ function SegmentedTabs<T extends string>({ options, value, onChange, scrollable 
           onClick={() => onChange(opt.value)}
           className={`flex-shrink-0 ${scrollable ? 'snap-start' : 'flex-1'} px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
             value === opt.value
-              ? 'bg-f1-pink-500 text-white shadow-f1-glow'
+              ? 'bg-f1-pink-gradient text-white shadow-f1-glow'
               : 'text-f1-neutral-400 hover:text-white hover:bg-f1-neutral-800'
           }`}
         >

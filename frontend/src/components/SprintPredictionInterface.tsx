@@ -374,7 +374,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
             )}
             <button
               onClick={() => setShowConfirmModal(false)}
-              className="w-full py-3 bg-f1-pink-500 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+              className="w-full py-3 bg-f1-pink-gradient hover:brightness-110 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
               Close
             </button>
@@ -394,7 +394,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
             <p className="text-f1-neutral-500 text-xs mt-4">You can still view your saved prediction below.</p>
             <button
               onClick={() => setLockNoticeDismissed(true)}
-              className="w-full py-3 mt-6 bg-f1-pink-500 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+              className="w-full py-3 mt-6 bg-f1-pink-gradient hover:brightness-110 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
               Close
             </button>
@@ -404,8 +404,8 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
 
       <div className="flex flex-col gap-3">
 
-        {/* Sprint badge — keep orange pill for sprint identity */}
-        <div className="flex items-center justify-center gap-2 bg-f1-pink-500 text-white py-1.5 px-4 rounded-full text-xs font-black tracking-widest uppercase mx-auto">
+        {/* Sprint badge — teal marks it apart from main-race pink */}
+        <div className="flex items-center justify-center gap-2 bg-f1-teal-500 text-white py-1.5 px-4 rounded-full text-xs font-black tracking-widest uppercase mx-auto">
           ⚡ Sprint Race
         </div>
 
@@ -519,7 +519,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
         {/* Progress bar — keep orange for sprint identity */}
         <div className="w-full h-1 bg-f1-neutral-800 overflow-hidden">
           <div
-            className="h-full bg-f1-pink-500 transition-all duration-300"
+            className="h-full bg-f1-pink-gradient transition-all duration-300"
             style={{ width: `${(filledCount / 8) * 100}%` }}
           />
         </div>
@@ -531,7 +531,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
           className={`w-full py-3.5 font-black text-sm tracking-widest uppercase transition-all ${
             filledCount < 8
               ? 'bg-f1-neutral-800 text-f1-neutral-600 cursor-not-allowed'
-              : 'bg-f1-pink-500 text-white active:scale-95 shadow-lg shadow-f1-glow'
+              : 'bg-f1-pink-gradient hover:brightness-110 text-white active:scale-95 shadow-lg shadow-f1-glow'
           }`}
         >
           {submitting ? 'Submitting...' : filledCount < 8 ? `${8 - filledCount} slots remaining` : 'Confirm Sprint Prediction'}

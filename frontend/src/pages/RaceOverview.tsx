@@ -117,7 +117,7 @@ const RaceOverview = () => {
                 : 'bg-gray-800 hover:bg-gray-700'
             } ${
               selectedRace?.id === race.id
-                ? isSprint(race) ? 'ring-2 ring-f1-pink-500' : 'ring-2 ring-f1-pink-500'
+                ? isSprint(race) ? 'ring-2 ring-f1-teal-500' : 'ring-2 ring-f1-pink-500'
                 : ''
             } ${
               race.status === 'completed' || race.status === 'provisional' ? 'opacity-60' : ''
@@ -127,7 +127,7 @@ const RaceOverview = () => {
               <div className="flex items-center gap-2">
                 <h3 className="text-xl font-bold">Round {race.round}</h3>
                 {isSprint(race) && (
-                  <span className="text-xs px-2 py-0.5 rounded bg-f1-pink-500 text-white font-bold">
+                  <span className="text-xs px-2 py-0.5 rounded bg-f1-teal-500 text-white font-bold">
                     SPRINT
                   </span>
                 )}
@@ -137,7 +137,7 @@ const RaceOverview = () => {
               </span>
             </div>
 
-            <h4 className={`text-lg font-semibold mb-2 ${isSprint(race) ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
+            <h4 className={`text-lg font-semibold mb-2 ${isSprint(race) ? 'text-f1-teal-400' : 'text-f1-pink-500'}`}>
               {race.race_name}
             </h4>
             <p className="text-sm text-f1-gray mb-1">📍 {race.circuit_name}</p>
@@ -158,16 +158,16 @@ const RaceOverview = () => {
       {selectedRace && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className={`rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8 ${
-            isSprint(selectedRace) ? 'bg-gray-800 border-2 border-f1-pink-500/50' : 'bg-gray-800'
+            isSprint(selectedRace) ? 'bg-gray-800 border-2 border-f1-teal-500/50' : 'bg-gray-800'
           }`}>
             <div className="flex justify-between items-start mb-6">
               <div>
                 <div className="flex items-center gap-3">
-                  <h2 className={`text-3xl font-bold ${isSprint(selectedRace) ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
+                  <h2 className={`text-3xl font-bold ${isSprint(selectedRace) ? 'text-f1-teal-400' : 'text-f1-pink-500'}`}>
                     {selectedRace.race_name}
                   </h2>
                   {isSprint(selectedRace) && (
-                    <span className="text-sm px-3 py-1 rounded bg-f1-pink-500 text-white font-bold">
+                    <span className="text-sm px-3 py-1 rounded bg-f1-teal-500 text-white font-bold">
                       SPRINT
                     </span>
                   )}
@@ -230,10 +230,10 @@ const RaceOverview = () => {
                 </p>
                 <button
                   onClick={() => navigate('/')}
-                  className={`text-white px-6 py-3 rounded-lg font-bold ${
+                  className={`text-white px-6 py-3 rounded-lg font-bold transition-all ${
                     isSprint(selectedRace)
-                      ? 'bg-f1-pink-500 hover:bg-f1-pink-500'
-                      : 'bg-f1-pink-500 hover:bg-f1-pink-600'
+                      ? 'bg-f1-teal-500 hover:brightness-110'
+                      : 'bg-f1-pink-gradient hover:brightness-110'
                   }`}
                 >
                   Make Your {isSprint(selectedRace) ? 'Sprint ' : ''}Prediction

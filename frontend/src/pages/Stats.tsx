@@ -210,7 +210,7 @@ const Stats = () => {
   const getPositionColor = (pos: number) => {
     if (pos === 1) return 'bg-yellow-500 text-black';
     if (pos === 2) return 'bg-f1-neutral-300 text-black';
-    if (pos === 3) return 'bg-f1-pink-500 text-white';
+    if (pos === 3) return 'bg-f1-pink-gradient text-white';
     return 'bg-f1-neutral-700 text-white';
   };
 

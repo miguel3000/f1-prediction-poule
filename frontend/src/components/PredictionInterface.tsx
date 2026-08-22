@@ -369,7 +369,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
             )}
             <button
               onClick={() => setShowConfirmModal(false)}
-              className="w-full py-3 bg-f1-pink-500 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+              className="w-full py-3 bg-f1-pink-gradient hover:brightness-110 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
               Close
             </button>
@@ -389,7 +389,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
             <p className="text-f1-neutral-500 text-xs mt-4">You can still view your saved prediction below.</p>
             <button
               onClick={() => setLockNoticeDismissed(true)}
-              className="w-full py-3 mt-6 bg-f1-pink-500 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-transform"
+              className="w-full py-3 mt-6 bg-f1-pink-gradient hover:brightness-110 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
               Close
             </button>
@@ -511,7 +511,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
         {/* Progress bar */}
         <div className="w-full h-1 bg-f1-neutral-800 overflow-hidden">
           <div
-            className="h-full bg-f1-pink-500 transition-all duration-300"
+            className="h-full bg-f1-pink-gradient transition-all duration-300"
             style={{ width: `${(filledCount / 10) * 100}%` }}
           />
         </div>
@@ -523,7 +523,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
           className={`w-full py-3.5 font-black text-sm tracking-widest uppercase transition-all ${
             filledCount < 10
               ? 'bg-f1-neutral-800 text-f1-neutral-600 cursor-not-allowed'
-              : 'bg-f1-pink-500 text-white active:scale-95 shadow-f1-glow'
+              : 'bg-f1-pink-gradient hover:brightness-110 text-white active:scale-95 shadow-f1-glow'
           }`}
         >
           {submitting ? 'Submitting...' : filledCount < 10 ? `${10 - filledCount} slots remaining` : 'Confirm Prediction'}

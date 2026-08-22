@@ -179,11 +179,11 @@ const MyPredictions = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
+                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-teal-400' : 'text-f1-pink-500'}`}>
                       {prediction.race_name}
                     </h2>
                     {isSprint && (
-                      <span className="text-xs px-2 py-1 rounded bg-f1-pink-500 text-white font-bold">
+                      <span className="text-xs px-2 py-1 rounded bg-f1-teal-500 text-white font-bold">
                         SPRINT
                       </span>
                     )}
@@ -247,9 +247,9 @@ const MyPredictions = () => {
                 <div className="mt-4 pt-4 border-t border-f1-neutral-700">
                   <button
                     onClick={() => navigate('/')}
-                    className={`w-full py-3 rounded-lg font-bold transition-colors ${
+                    className={`w-full py-3 rounded-lg font-bold transition-all ${
                       isSprint
-                        ? 'bg-f1-pink-500 hover:bg-f1-pink-500 text-white'
+                        ? 'bg-f1-teal-500 hover:brightness-110 text-white'
                         : 'btn-f1-primary'
                     }`}
                   >
