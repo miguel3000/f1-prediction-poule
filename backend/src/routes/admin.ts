@@ -31,7 +31,7 @@ router.post('/cronjobs/sync-driver-standings', authenticateAdmin, triggerDriverS
 router.post('/cronjobs/sync-drivers', authenticateAdmin, syncDrivers);
 // ?force=true to re-sync races that already have results (recalculates points)
 router.post('/cronjobs/sync-qualifying', authenticateAdmin, triggerQualifyingSync)
-// ?force=true to re-sync races that already have results (recalculates points)
+// ?force=true to re-sync all past races (recalculates points); ?raceId=<id> to target one specific race
 router.post('/cronjobs/sync-race-results', authenticateAdmin, triggerRaceResultsSync);
 
 // Sync status polling + diagnostics

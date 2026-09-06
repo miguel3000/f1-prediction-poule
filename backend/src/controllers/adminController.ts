@@ -350,25 +350,40 @@ export const getSyncDiagnosis = async (req: Request, res: Response) => {
 };
 
 // Manually trigger race results sync
-// Pass ?force=true to re-sync races that already have results (recalculates points)
+// Pass ?force=true to re-sync ALL past races that already have results (recalculates points)
+// Pass ?raceId=<id> to target one specific race regardless of force/existing-results state
 export const triggerRaceResultsSync = async (req: Request, res: Response) => {
   if (cronJobStatus.syncRaceResults.isRunning) {
     return res.status(409).json({ error: 'Sync is already running' });
   }
 
   const force = req.query.force === 'true';
+  const raceIdRaw = req.query.raceId as string | undefined;
+  const raceId = raceIdRaw ? parseInt(raceIdRaw, 10) : null;
+
+  if (raceIdRaw && (raceId === null || isNaN(raceId) || raceId <= 0)) {
+    return res.status(400).json({ error: 'raceId must be a positive integer' });
+  }
 
   cronJobStatus.syncRaceResults.isRunning = true;
   cronJobStatus.syncRaceResults.lastStatus = 'running';
 
   // Respond immediately; sync runs in background
-  res.json({ message: 'Race results sync started', status: 'running', force });
+  res.json({ message: 'Race results sync started', status: 'running', force, raceId });
 
   try {
     const season = 2026;
 
     let racesResult;
-    if (force) {
+    if (raceId) {
+      // Target one specific race — picking it is itself the "please recalculate" signal
+      racesResult = await query(
+        `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
+         FROM races r
+         WHERE r.season = $1 AND r.id = $2 AND r.race_date < NOW()`,
+        [season, raceId]
+      );
+    } else if (force) {
       // Force: grab ALL past races regardless of existing results
       racesResult = await query(
         `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
@@ -399,7 +414,9 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
     if (races.length === 0) {
       cronJobStatus.syncRaceResults.lastRun = new Date();
       cronJobStatus.syncRaceResults.lastStatus = 'success';
-      cronJobStatus.syncRaceResults.lastMessage = 'No races found to sync. All past races already have results. Use Force Re-sync to recalculate points.';
+      cronJobStatus.syncRaceResults.lastMessage = raceId
+        ? 'Race not found, or it has not happened yet.'
+        : 'No races found to sync. All past races already have results. Use Force Re-sync to recalculate points.';
       cronJobStatus.syncRaceResults.isRunning = false;
       return;
     }

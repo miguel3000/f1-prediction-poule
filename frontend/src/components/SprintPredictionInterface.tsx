@@ -125,11 +125,12 @@ interface GridSlotProps {
   onDrop: (item: DragItem, targetPosition: number) => void;
   onDragStart: (position: number) => void;
   onTap: (position: number) => void;
+  onClear: (position: number) => void;
   isHeld?: boolean;
   hasHeld?: boolean;
 }
 
-const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHeld }: GridSlotProps) => {
+const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, onClear, isHeld, hasHeld }: GridSlotProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: () => { haptics.light(); onDragStart(position); return { driver, source: 'grid' as const, sourceIndex: position - 1 }; },
@@ -183,6 +184,11 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, isHeld, hasHel
               {lastName(driver)}
             </span>
             {isHeld && <span className="text-f1-pink-400 text-xs flex-shrink-0">↕</span>}
+            <button
+              onClick={(e) => { e.stopPropagation(); onClear(position); }}
+              className="text-f1-neutral-500 hover:text-red-400 text-xs px-1 flex-shrink-0 leading-none"
+              aria-label={`Remove ${lastName(driver)} from position ${position}`}
+            >✕</button>
           </>
         ) : (
           <span className={`text-[9px] mx-auto tracking-wider uppercase ${hasHeld ? 'text-f1-neutral-500' : 'text-f1-neutral-700'}`}>
@@ -332,6 +338,14 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
     }
   };
 
+  const handleClearSlot = (position: number) => {
+    const idx = position - 1;
+    const next = [...predictions];
+    next[idx] = null;
+    setPredictions(next);
+    if (heldIndex === idx) setHeldIndex(null);
+  };
+
   const handleSubmit = async () => {
     if (predictions.some(d => d === null)) { setMessage('Please fill all 8 positions first'); return; }
     setSubmitting(true);
@@ -459,7 +473,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
         <p className="text-center text-[10px] text-f1-neutral-600 tracking-wider uppercase">
           {heldIndex !== null
             ? 'Tap a slot to place · Tap same slot to cancel'
-            : 'Tap to add · Tap slot to hold & reorder · Drag to swap'}
+            : 'Tap to add · Tap slot to hold & reorder · Tap ✕ to remove'}
         </p>
 
         {/* Two-column area */}
@@ -509,6 +523,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
                 onDrop={(item, pos) => { setHeldIndex(null); handleDrop(item, pos); }}
                 onDragStart={(pos) => { if (heldIndex === pos - 1) setHeldIndex(null); }}
                 onTap={handleTapGridSlot}
+                onClear={handleClearSlot}
                 isHeld={heldIndex === position - 1}
                 hasHeld={heldIndex !== null}
               />

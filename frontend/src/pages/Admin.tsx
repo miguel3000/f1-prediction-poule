@@ -51,6 +51,7 @@ const Admin = () => {
   const [syncStatus, setSyncStatus] = useState<{ [key: string]: 'idle' | 'loading' | 'success' | 'error' }>({});
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [forceResync, setForceResync] = useState(false);
+  const [selectedResyncRaceId, setSelectedResyncRaceId] = useState<number | ''>('');
   const [showDiagnosis, setShowDiagnosis] = useState(false);
   const [diagnosis, setDiagnosis] = useState<DiagnosisResult | null>(null);
   const [diagnosisLoading, setDiagnosisLoading] = useState(false);
@@ -341,17 +342,25 @@ const Admin = () => {
     const auth = btoa(`${credentials.username}:${credentials.password}`);
     const headers = { 'Authorization': `Basic ${auth}` };
 
+    const resyncRace = type === 'results' && selectedResyncRaceId !== ''
+      ? predictionRaces.find(r => r.id === selectedResyncRaceId)
+      : undefined;
+
     const endpoint = type === 'standings'
       ? '/api/admin/cronjobs/sync-driver-standings'
       : type === 'drivers'
       ? '/api/admin/cronjobs/sync-drivers'
       : type === 'qualifying'
       ? `/api/admin/cronjobs/sync-qualifying${forceResync ? '?force=true' : ''}`
+      : resyncRace
+      ? `/api/admin/cronjobs/sync-race-results?raceId=${resyncRace.id}`
       : `/api/admin/cronjobs/sync-race-results${forceResync ? '?force=true' : ''}`;
 
     setSyncStatus(prev => ({ ...prev, [type]: 'loading' }));
     setSyncMessage(type === 'results'
-      ? `Sync started${forceResync ? ' (force mode)' : ''}… polling for result…`
+      ? resyncRace
+        ? `Recalculating ${resyncRace.race_name}… polling for result…`
+        : `Sync started${forceResync ? ' (force mode)' : ''}… polling for result…`
       : type === 'qualifying'
       ? 'Fetching qualifying results from Jolpi…'
       : 'Driver standings sync started…');
@@ -645,17 +654,41 @@ const Admin = () => {
               Fetch race &amp; sprint results from Jolpi API, update race statuses, and recalculate prediction points for all users.
             </p>
 
-            {/* Force re-sync toggle */}
-            <label className="flex items-center gap-2 text-sm text-f1-gray mb-3 cursor-pointer select-none">
+            {/* Single-race recalculate picker */}
+            <label className="block text-xs text-f1-gray mb-1">
+              Recalculate a single race (e.g. after a post-race result correction)
+            </label>
+            <select
+              value={selectedResyncRaceId}
+              onChange={e => setSelectedResyncRaceId(e.target.value ? parseInt(e.target.value) : '')}
+              className="w-full bg-f1-neutral-900 border border-f1-neutral-700 rounded px-3 py-2 text-sm text-white focus:border-f1-pink-500 focus:outline-none mb-3"
+            >
+              <option value="">Whole season (default)</option>
+              {predictionRaces.map(race => (
+                <option key={race.id} value={race.id}>
+                  Round {race.round}: {race.race_name}{race.race_type === 'sprint' ? ' (Sprint)' : ''}
+                </option>
+              ))}
+            </select>
+
+            {/* Force re-sync toggle — not needed when a specific race is picked above */}
+            <label className={`flex items-center gap-2 text-sm mb-3 select-none ${
+              selectedResyncRaceId !== '' ? 'text-f1-gray/40 cursor-not-allowed' : 'text-f1-gray cursor-pointer'
+            }`}>
               <input
                 type="checkbox"
                 checked={forceResync}
+                disabled={selectedResyncRaceId !== ''}
                 onChange={e => setForceResync(e.target.checked)}
                 className="w-4 h-4 accent-orange-500"
               />
               <span>
                 <span className="text-f1-pink-400 font-medium">Force re-sync</span>
-                <span className="text-xs ml-1">(re-calculates points for races already synced)</span>
+                <span className="text-xs ml-1">
+                  {selectedResyncRaceId !== ''
+                    ? '(not needed — picking a race above always recalculates it)'
+                    : '(re-calculates points for races already synced)'}
+                </span>
               </span>
             </label>
 
@@ -679,6 +712,8 @@ const Admin = () => {
                 </span>
               ) : syncStatus.results === 'success' ? (
                 'Done!'
+              ) : selectedResyncRaceId !== '' ? (
+                `Recalculate ${predictionRaces.find(r => r.id === selectedResyncRaceId)?.race_name ?? 'race'}`
               ) : (
                 forceResync ? 'Force Re-sync All Races' : 'Sync Results & Calculate Points'
               )}
