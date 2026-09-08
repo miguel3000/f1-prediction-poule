@@ -169,7 +169,7 @@ const About = () => {
               We'd love to hear from you! Whether you have questions, feedback, or need support:
             </p>
             <ul className="list-none ml-4 space-y-1">
-              <li><strong>Email:</strong> <a href="mailto:matt.gloudemans@gmail.com" className="text-f1-pink-500 hover:underline">matt.gloudemans@gmail.com</a></li>
+              <li><strong>Email:</strong> <a href="mailto:jameshuntf1prediction@gmail.com" className="text-f1-pink-500 hover:underline">jameshuntf1prediction@gmail.com</a></li>
               <li><strong>Website:</strong> http://localhost:5000</li>
             </ul>
             <p className="mt-3">

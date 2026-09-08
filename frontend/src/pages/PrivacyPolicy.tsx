@@ -166,7 +166,7 @@ const PrivacyPolicy = () => {
               If you have any questions about this Privacy Policy or our privacy practices, please contact us:
             </p>
             <ul className="list-none ml-4 space-y-1">
-              <li><strong>Email:</strong> matt.gloudemans@gmail.com</li>
+              <li><strong>Email:</strong> jameshuntf1prediction@gmail.com</li>
               <li><strong>Website:</strong> http://localhost:5000</li>
             </ul>
           </section>

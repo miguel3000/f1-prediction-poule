@@ -13,7 +13,7 @@ const Footer = () => {
             <Link to="/rules" className="hover:text-f1-pink-500 transition-colors">Rules</Link>
             <Link to="/about" className="hover:text-f1-pink-500 transition-colors">About</Link>
             <Link to="/privacy" className="hover:text-f1-pink-500 transition-colors">Privacy</Link>
-            <a href="mailto:matt.gloudemans@gmail.com" className="hover:text-f1-pink-500 transition-colors">Contact</a>
+            <a href="mailto:jameshuntf1prediction@gmail.com" className="hover:text-f1-pink-500 transition-colors">Contact</a>
           </div>
           <p className="text-center md:text-right max-w-md">
             Unofficial fan project, not associated with Formula 1® companies. F1, FORMULA ONE and related
