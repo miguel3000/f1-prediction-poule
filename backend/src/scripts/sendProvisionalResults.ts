@@ -3,6 +3,7 @@ import * as jolpiService from '../services/jolpiService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
 import {
   sendProvisionalResults,
+  sendAdminAlert,
   RaceResultForEmail,
   UserPredictionResult
 } from '../services/emailService';
@@ -21,14 +22,15 @@ async function processProvisionalResults() {
     console.log('[CRON] Starting provisional results processing...');
     const season = 2026;
 
-    // Find races that finished ~5 minutes ago (between 3-10 min window to catch it)
-    // and haven't had provisional results sent yet
+    // Find races that finished at least 5 minutes ago and haven't had provisional
+    // results sent yet. Widened to a 6-hour retry window (two effective 3h passes)
+    // since the results API isn't always ready within the first 3 hours.
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
        FROM races r
        WHERE r.season = $1
          AND r.race_date < NOW() - INTERVAL '5 minutes'
-         AND r.race_date > NOW() - INTERVAL '3 hours'
+         AND r.race_date > NOW() - INTERVAL '6 hours'
          AND r.provisional_results_sent = FALSE
          AND r.status = 'upcoming'
        ORDER BY r.race_date DESC`,
@@ -186,6 +188,35 @@ async function processProvisionalResults() {
 
       } catch (error) {
         console.error(`[CRON] ✗ Error processing ${race.race_name}:`, error);
+      }
+    }
+
+    // Races that aged out of the 6-hour retry window above without ever getting
+    // provisional results sent — the API never had data in time. Alert once per race
+    // so it doesn't get silently picked up later by the weekly catch-all sync with
+    // nobody ever having been notified (this is how the Italian GP slipped through).
+    const staleResult = await query(
+      `SELECT id, race_name, round
+       FROM races
+       WHERE season = $1
+         AND race_date <= NOW() - INTERVAL '6 hours'
+         AND status = 'upcoming'
+         AND provisional_results_sent = FALSE
+         AND provisional_alert_sent = FALSE`,
+      [season]
+    );
+
+    for (const race of staleResult.rows) {
+      const sent = await sendAdminAlert(
+        `No results after 6h — ${race.race_name}`,
+        `Round ${race.round} (${race.race_name}) still has no results from the API 6 hours ` +
+        `after the race started. Provisional results were never sent to players. ` +
+        `Check Jolpi/OpenF1 manually, or use the "Sync Race Results" / "Send Last Race ` +
+        `Results" buttons in Pitlane once results are available.`
+      );
+      if (sent) {
+        await query('UPDATE races SET provisional_alert_sent = TRUE WHERE id = $1', [race.id]);
+        console.log(`[CRON] ⚠ Alerted admin — no results yet for ${race.race_name}`);
       }
     }
 

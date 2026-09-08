@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS races (
   race_type VARCHAR(20) DEFAULT 'main', -- 'sprint' or 'main'
   status VARCHAR(50) DEFAULT 'upcoming', -- upcoming, in_progress, provisional, completed
   provisional_results_sent BOOLEAN DEFAULT FALSE,
+  provisional_alert_sent BOOLEAN DEFAULT FALSE,
   final_results_processed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

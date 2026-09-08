@@ -460,3 +460,33 @@ export const sendBroadcastEmail = async (
     return false;
   }
 };
+
+// Internal ops alert — e.g. results still unavailable from the API after the retry window
+export const sendAdminAlert = async (subject: string, message: string): Promise<boolean> => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.error('ADMIN_EMAIL not configured — cannot send admin alert:', subject);
+    return false;
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: adminEmail,
+    subject: `[Poule Position Alert] ${subject}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #E10600;">Poule Position — Ops Alert</h2>
+        <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Admin alert sent:', subject);
+    return true;
+  } catch (error) {
+    console.error('Error sending admin alert:', error);
+    return false;
+  }
+};

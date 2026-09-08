@@ -62,6 +62,12 @@ const runMigration = async () => {
     await query(`ALTER TABLE drivers ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
     console.log('image_url column ensured.');
 
+    // Add provisional_alert_sent column to races table (tracks whether we've already
+    // emailed the admin that results were still unavailable after the retry window)
+    console.log('Checking for provisional_alert_sent column...');
+    await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS provisional_alert_sent BOOLEAN DEFAULT FALSE`);
+    console.log('provisional_alert_sent column ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);
