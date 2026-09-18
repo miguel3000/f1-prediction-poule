@@ -425,9 +425,7 @@ const Stats = () => {
                 <table className="w-full">
                   <thead className="bg-f1-neutral-850">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pos</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Team</th>
+                      <th className="px-0 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
                       {isQualiSession ? (
                         <>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
@@ -450,20 +448,21 @@ const Stats = () => {
                   </thead>
                   <tbody className="divide-y divide-f1-neutral-800">
                     {sessionResults.map((result, index) => (
-                      <tr key={index} className="hover:bg-f1-neutral-850/60 transition-colors">
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-bold ${getPositionColor(result.position)}`}>
-                            {result.position}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-f1-yellow-500 font-bold">#{result.driverNumber}</span>
-                            <span className="font-semibold">{result.driverName}</span>
-                            <span className="text-xs text-f1-gray hidden sm:inline">({result.driverCode})</span>
+                      <tr key={index}>
+                        <td className="p-0">
+                          <div className="flex items-stretch">
+                            <span className={`w-12 shrink-0 flex items-center justify-center font-f1-badge font-bold text-lg ${getPositionColor(result.position)}`}>
+                              {result.position}
+                            </span>
+                            <div className="flex-1 min-w-0 bg-f1-blue flex flex-col justify-center px-3 py-2">
+                              <span className="font-f1-badge text-f1-yellow-400 text-[10px]">#{result.driverNumber}</span>
+                              <p className="font-f1 font-bold text-white text-base sm:text-lg uppercase tracking-wide leading-tight truncate">
+                                {result.driverName}
+                              </p>
+                              <p className="text-[10px] text-blue-100/70 uppercase tracking-wide truncate">{result.team}</p>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-f1-gray text-sm">{result.team}</td>
                         {isQualiSession ? (
                           <>
                             <td className="px-4 py-3 font-mono text-sm">{result.q1 || '—'}</td>
@@ -495,37 +494,39 @@ const Stats = () => {
               </div>
 
               {/* Mobile: stacked cards, no horizontal scrolling */}
-              <div className="md:hidden divide-y divide-f1-neutral-800">
+              <div className="md:hidden space-y-2 p-2">
                 {sessionResults.map((result, index) => (
-                  <div key={index} className="flex items-center gap-3 px-4 py-3">
-                    <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-bold flex-shrink-0 ${getPositionColor(result.position)}`}>
+                  <div key={index} className="flex items-stretch">
+                    <span className={`w-12 shrink-0 flex items-center justify-center font-f1-badge font-bold text-lg ${getPositionColor(result.position)}`}>
                       {result.position}
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-f1-yellow-500 font-bold text-sm">#{result.driverNumber}</span>
-                        <span className="font-semibold truncate">{result.driverName}</span>
+                    <div className="flex-1 min-w-0 bg-f1-blue flex items-center justify-between gap-3 px-3 py-2">
+                      <div className="min-w-0">
+                        <span className="font-f1-badge text-f1-yellow-400 text-[10px]">#{result.driverNumber}</span>
+                        <p className="font-f1 font-bold text-white text-lg uppercase tracking-wide leading-tight truncate">
+                          {result.driverName}
+                        </p>
+                        <p className="text-[10px] text-blue-100/70 uppercase tracking-wide truncate">{result.team}</p>
                       </div>
-                      <p className="text-xs text-f1-gray truncate">{result.team}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      {isQualiSession ? (
-                        <p className="font-mono text-sm text-f1-yellow-500 font-bold">{result.q3 || result.q2 || result.q1 || '—'}</p>
-                      ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
-                        <>
-                          <p className="font-bold text-sm">{result.points ?? '—'} pts</p>
-                          <span className={`text-xs px-2 py-0.5 ${
-                            result.status === 'Finished' ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
-                          }`}>
-                            {result.status}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-mono text-sm">{result.time || 'No time'}</p>
-                          <p className="text-xs text-f1-gray">{result.laps} laps</p>
-                        </>
-                      )}
+                      <div className="text-right shrink-0">
+                        {isQualiSession ? (
+                          <p className="font-mono text-sm text-f1-yellow-400 font-bold">{result.q3 || result.q2 || result.q1 || '—'}</p>
+                        ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
+                          <>
+                            <p className="font-bold text-sm text-white">{result.points ?? '—'} pts</p>
+                            <span className={`text-xs px-2 py-0.5 ${
+                              result.status === 'Finished' ? 'bg-green-600/30 text-green-300' : 'bg-red-600/30 text-red-300'
+                            }`}>
+                              {result.status}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-mono text-sm text-white">{result.time || 'No time'}</p>
+                            <p className="text-[10px] text-blue-100/70">{result.laps} laps</p>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
