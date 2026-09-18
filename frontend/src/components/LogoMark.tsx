@@ -25,7 +25,6 @@ const LogoMark = ({ variant = 'full', className = '' }: LogoMarkProps) => {
     <svg viewBox="0 0 520 150" className={className} role="img" aria-label="Poule Position">
       {/* Speed streak — motion cue trailing the badge */}
       <g fill="#ffcc00" opacity="0.5">
-        <polygon points="6,120 24,120 46,34 28,34" />
         <polygon points="18,120 36,120 58,34 40,34" />
       </g>
       <g transform="skewX(-10)">
