@@ -43,6 +43,13 @@ const ordinal = (n: number) => {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
+const getRankColor = (rank: number) => {
+  if (rank === 1) return 'bg-yellow-500 text-black';
+  if (rank === 2) return 'bg-gray-300 text-black';
+  if (rank === 3) return 'bg-f1-yellow-500 text-black';
+  return 'bg-gray-700 text-white';
+};
+
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [seasonRaces, setSeasonRaces] = useState<SeasonRace[]>([]);
@@ -171,78 +178,59 @@ const Leaderboard = () => {
             <p className="text-f1-gray text-lg">No users have made predictions yet</p>
           </div>
         ) : (
-          <div className="overflow-x-auto border border-gray-700">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-800 text-f1-gray text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3 w-12 text-center">#</th>
-                  <th className="px-4 py-3">Player</th>
-                  <th className="px-4 py-3 text-right">Total Points</th>
-                  <th className="px-4 py-3 text-right">Last Race</th>
-                  <th className="px-4 py-3 text-right hidden md:table-cell">Most Points (Race)</th>
-                  <th className="px-4 py-3 text-right">Diff to Leader</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.map((entry) => (
-                  <tr
-                    key={entry.id}
-                    className={`border-t border-gray-700 ${
-                      Number(entry.rank) % 2 === 0 ? 'bg-gray-900' : 'bg-gray-800/50'
-                    } ${Number(entry.rank) <= 3 ? 'font-semibold' : ''}`}
-                  >
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-bold ${
-                        Number(entry.rank) === 1 ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-gray-900' :
-                        Number(entry.rank) === 2 ? 'bg-gradient-to-br from-gray-200 to-gray-400 text-gray-900' :
-                        Number(entry.rank) === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
-                        'text-f1-gray'
-                      }`}>
-                        {entry.rank}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {entry.avatar_url ? (
-                          <img
-                            src={entry.avatar_url}
-                            alt={entry.nickname}
-                            className="w-8 h-8 border border-gray-600 object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 bg-f1-neutral-700 flex items-center justify-center border border-gray-600 text-sm">
-                            👤
-                          </div>
-                        )}
-                        <span className="text-white">{entry.nickname}</span>
+          <div className="space-y-2">
+            {leaderboard.map((entry) => (
+              <div key={entry.id} className="flex items-stretch">
+                {/* Rank badge — flat square, podium colors only */}
+                <div
+                  className={`w-14 shrink-0 flex items-center justify-center font-f1-badge font-bold text-2xl ${getRankColor(
+                    Number(entry.rank)
+                  )}`}
+                >
+                  {entry.rank}
+                </div>
+
+                {/* Name bar — big blue block, nickname as large as possible */}
+                <div className="flex-1 min-w-0 bg-f1-blue flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0 flex items-center gap-3">
+                    {entry.avatar_url ? (
+                      <img
+                        src={entry.avatar_url}
+                        alt={entry.nickname}
+                        className="w-9 h-9 shrink-0 object-cover"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 shrink-0 bg-f1-blue-dark flex items-center justify-center text-sm">
+                        👤
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="text-f1-yellow-500 font-bold text-lg">{entry.total_points}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="text-white">{entry.last_race_points}</span>
-                      {entry.last_race_rank && (
-                        <span className="text-f1-gray text-xs ml-1">({ordinal(entry.last_race_rank)})</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right hidden md:table-cell">
-                      <span className="text-white">{entry.best_race_points}</span>
-                      {entry.best_race_name && (
-                        <span className="text-f1-gray text-xs ml-1">({entry.best_race_name})</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {Number(entry.rank) === 1 ? (
-                        <span className="text-yellow-400 font-bold text-xs">LEADER</span>
-                      ) : (
-                        <span className="text-f1-gray">-{entry.diff_to_leader}</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-f1 font-bold text-white text-xl sm:text-2xl uppercase tracking-wide leading-tight truncate">
+                        {entry.nickname}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-3 text-xs text-blue-100/70">
+                        <span>
+                          Last: {entry.last_race_points}
+                          {entry.last_race_rank && ` (${ordinal(entry.last_race_rank)})`}
+                        </span>
+                        {entry.best_race_name && (
+                          <span className="hidden md:inline">
+                            Best: {entry.best_race_points} ({entry.best_race_name})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <p className="text-2xl sm:text-3xl font-f1-badge font-bold text-f1-yellow-400">{entry.total_points}</p>
+                    <p className="text-[10px] text-blue-100/70 uppercase tracking-widest">
+                      {Number(entry.rank) === 1 ? 'Leader' : `-${entry.diff_to_leader}`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

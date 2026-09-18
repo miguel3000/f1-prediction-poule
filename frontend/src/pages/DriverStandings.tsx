@@ -150,41 +150,39 @@ const DriverStandings = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {drivers.map((driver, index) => {
               const position = index + 1;
               return (
-                <div
-                  key={driver.id}
-                  className="card-f1-interactive p-4 flex items-center gap-4"
-                >
+                <div key={driver.id} className="flex items-stretch">
+                  {/* Position badge — flat square, podium colors only */}
                   <div
-                    className={`w-12 h-12 flex items-center justify-center font-bold text-xl ${getPositionColor(
+                    className={`w-14 shrink-0 flex items-center justify-center font-f1-badge font-bold text-2xl ${getPositionColor(
                       position
                     )}`}
                   >
                     {position}
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="text-f1-yellow-500 font-bold text-sm">#{driver.driver_number}</span>
-                      <h3 className="text-lg font-bold">{driver.name}</h3>
+                  {/* Name bar — big blue block, surname as large as possible */}
+                  <div className="flex-1 min-w-0 bg-f1-blue flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-f1-badge text-f1-yellow-400 text-xs">#{driver.driver_number}</span>
+                        {driver.nationality && (
+                          <span className="text-xs">{getFlagEmoji(driver.nationality)}</span>
+                        )}
+                      </div>
+                      <h3 className="font-f1 font-bold text-white text-xl sm:text-2xl uppercase tracking-wide leading-tight truncate">
+                        {driver.name}
+                      </h3>
+                      <p className="text-xs text-blue-100/70 uppercase tracking-wide truncate">{driver.team}</p>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-sm text-f1-gray">{driver.team}</p>
-                      {driver.nationality && (
-                        <span className="flex items-center gap-1 text-sm bg-f1-neutral-800 px-2 py-0.5">
-                          <span>{getFlagEmoji(driver.nationality)}</span>
-                          <span className="text-f1-gray">{driver.nationality}</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">{driver.total_points}</p>
-                    <p className="text-xs text-f1-gray">POINTS</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-2xl sm:text-3xl font-f1-badge font-bold text-f1-yellow-400">{driver.total_points}</p>
+                      <p className="text-[10px] text-blue-100/70 uppercase tracking-widest">Points</p>
+                    </div>
                   </div>
                 </div>
               );
