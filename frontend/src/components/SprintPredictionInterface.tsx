@@ -52,14 +52,14 @@ const DriverAvatar = ({ driver, size = 'md' }: { driver: Driver; size?: 'sm' | '
       <img
         src={driver.image_url}
         alt={driver.name}
-        className={`${dim} rounded-full object-cover flex-shrink-0 border-2 ${teamColor.border} bg-f1-neutral-800`}
+        className={`${dim} object-cover flex-shrink-0 border-2 ${teamColor.border} bg-f1-neutral-800`}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
     );
   }
 
   return (
-    <div className={`${dim} rounded-full flex-shrink-0 flex items-center justify-center font-black border-2 ${teamColor.border} bg-f1-neutral-800 text-white`}>
+    <div className={`${dim} flex-shrink-0 flex items-center justify-center font-black border-2 ${teamColor.border} bg-f1-neutral-800 text-white`}>
       {acronym(driver)}
     </div>
   );
@@ -149,16 +149,16 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, onClear, isHel
 
   const posColor = position === 1 ? 'text-yellow-400' :
     position === 2 ? 'text-gray-300' :
-    position === 3 ? 'text-f1-pink-400' :
+    position === 3 ? 'text-f1-yellow-400' :
     'text-f1-neutral-600';
 
-  // Sprint drop zones use orange, held state uses pink (action UI state)
+  // Held state uses the flat yellow accent (action UI state)
   const slotClass = isHeld
-    ? 'border-f1-pink-500 bg-f1-pink-900/20 ring-1 ring-f1-pink-500/40 opacity-75 cursor-pointer'
+    ? 'border-f1-yellow-500 bg-f1-yellow-900/20 ring-1 ring-f1-yellow-500/40 opacity-75 cursor-pointer'
     : isOver && canDrop
-    ? 'border-f1-pink-500 bg-f1-pink-500/10 scale-[1.02]'
+    ? 'border-f1-yellow-500 bg-f1-yellow-500/10 scale-[1.02]'
     : isDragging
-    ? 'opacity-40 border-f1-pink-500 scale-95 bg-f1-neutral-850'
+    ? 'opacity-40 border-f1-yellow-500 scale-95 bg-f1-neutral-850'
     : hasHeld
     ? driver && teamColor
       ? `${teamColor.border} bg-f1-neutral-850/80 cursor-pointer ring-1 ring-white/20`
@@ -180,10 +180,10 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, onClear, isHel
         {driver ? (
           <>
             <DriverAvatar driver={driver} size="sm" />
-            <span className={`font-f1 font-bold text-[11px] tracking-widest truncate flex-1 ${isHeld ? 'text-f1-pink-400' : 'text-white'}`}>
+            <span className={`font-f1 font-bold text-[11px] tracking-widest truncate flex-1 ${isHeld ? 'text-f1-yellow-400' : 'text-white'}`}>
               {lastName(driver)}
             </span>
-            {isHeld && <span className="text-f1-pink-400 text-xs flex-shrink-0">↕</span>}
+            {isHeld && <span className="text-f1-yellow-400 text-xs flex-shrink-0">↕</span>}
             <button
               onClick={(e) => { e.stopPropagation(); onClear(position); }}
               className="text-f1-neutral-500 hover:text-red-400 text-xs px-1 flex-shrink-0 leading-none"
@@ -212,7 +212,7 @@ const RemoveZone = ({ onDrop, children }: RemoveZoneProps) => {
   });
 
   return (
-    <div ref={drop} className={`transition-all ${isOver && canDrop ? 'ring-2 ring-f1-pink-500 bg-f1-pink-900/20' : ''}`}>
+    <div ref={drop} className={`transition-all ${isOver && canDrop ? 'ring-2 ring-f1-yellow-500 bg-f1-yellow-900/20' : ''}`}>
       {children}
     </div>
   );
@@ -373,8 +373,8 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
       {/* Confirmation modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-f1-neutral-900 border border-f1-pink-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
-            <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-f1-neutral-900 border border-f1-yellow-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
+            <div className="w-16 h-16 bg-green-600 flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
@@ -388,7 +388,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
             )}
             <button
               onClick={() => setShowConfirmModal(false)}
-              className="w-full py-3 bg-f1-pink-gradient hover:brightness-110 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
+              className="w-full py-3 bg-f1-yellow-500 hover:brightness-110 text-black font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
               Close
             </button>
@@ -399,16 +399,16 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
       {/* Deadline overlay */}
       {isLocked && !lockNoticeDismissed && (
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-40 p-4">
-          <div className="bg-f1-neutral-900 border border-f1-pink-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
+          <div className="bg-f1-neutral-900 border border-f1-yellow-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="text-4xl mb-4">🏁</div>
-            <h2 className="text-2xl font-black text-f1-pink-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
+            <h2 className="text-2xl font-black text-f1-yellow-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
             <p className="text-f1-neutral-300 text-sm">
               The deadline for this sprint has passed. The race has started or is about to start.
             </p>
             <p className="text-f1-neutral-500 text-xs mt-4">You can still view your saved prediction below.</p>
             <button
               onClick={() => setLockNoticeDismissed(true)}
-              className="w-full py-3 mt-6 bg-f1-pink-gradient hover:brightness-110 text-white font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
+              className="w-full py-3 mt-6 bg-f1-yellow-500 hover:brightness-110 text-black font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
               Close
             </button>
@@ -419,7 +419,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
       <div className="flex flex-col gap-3">
 
         {/* Sprint badge — teal marks it apart from main-race pink */}
-        <div className="flex items-center justify-center gap-2 bg-f1-teal-500 text-white py-1.5 px-4 rounded-full text-xs font-black tracking-widest uppercase mx-auto">
+        <div className="flex items-center justify-center gap-2 bg-f1-teal-500 text-white py-1.5 px-4 text-xs font-black tracking-widest uppercase mx-auto">
           ⚡ Sprint Race
         </div>
 
@@ -427,7 +427,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
         <div className="grid grid-cols-2 gap-2 px-1">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-[10px] font-bold text-f1-pink-500 uppercase tracking-widest">{orderLabel}</p>
+              <p className="text-[10px] font-bold text-f1-yellow-500 uppercase tracking-widest">{orderLabel}</p>
               {!hasQualifyingResults && (
                 <button
                   onClick={fetchData}
@@ -443,13 +443,13 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
                 onClick={() => setShowQualiDetails(!showQualiDetails)}
                 className="text-[10px] text-green-400 flex items-center gap-1 mt-0.5"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                <span className="w-1.5 h-1.5 bg-green-500 inline-block" />
                 {showQualiDetails ? 'Hide times' : 'Lap times'}
               </button>
             )}
           </div>
           <div className="flex items-start justify-between">
-            <p className="text-[10px] font-bold text-f1-pink-500 uppercase tracking-widest">Sprint Grid</p>
+            <p className="text-[10px] font-bold text-f1-yellow-500 uppercase tracking-widest">Sprint Grid</p>
             <span className="text-[10px] text-f1-neutral-500 font-bold tabular-nums">{filledCount}/8</span>
           </div>
         </div>
@@ -496,13 +496,13 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
             {/* Holding dock */}
             <div className={`flex items-center gap-2 px-2 py-1.5 border transition-all ${
               heldIndex !== null
-                ? 'border-f1-pink-500/50 bg-f1-pink-950/30'
+                ? 'border-f1-yellow-500/50 bg-f1-yellow-950/30'
                 : 'border-dashed border-f1-neutral-700/40 bg-transparent'
             }`}>
               {heldIndex !== null && predictions[heldIndex] ? (
                 <>
                   <DriverAvatar driver={predictions[heldIndex]!} size="sm" />
-                  <span className="font-f1 font-bold text-f1-pink-400 text-[11px] tracking-widest truncate flex-1">
+                  <span className="font-f1 font-bold text-f1-yellow-400 text-[11px] tracking-widest truncate flex-1">
                     {lastName(predictions[heldIndex]!)}
                   </span>
                   <button
@@ -531,22 +531,22 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
           </div>
         </div>
 
-        {/* Progress bar — keep orange for sprint identity */}
+        {/* Progress bar — flat yellow, matches the main submit button */}
         <div className="w-full h-1 bg-f1-neutral-800 overflow-hidden">
           <div
-            className="h-full bg-f1-pink-gradient transition-all duration-300"
+            className="h-full bg-f1-yellow-500 transition-all duration-300"
             style={{ width: `${(filledCount / 8) * 100}%` }}
           />
         </div>
 
-        {/* Submit — keep orange for sprint identity */}
+        {/* Submit — flat yellow, matches the main submit button */}
         <button
           onClick={handleSubmit}
           disabled={submitting || filledCount < 8}
           className={`w-full py-3.5 font-black text-sm tracking-widest uppercase transition-all ${
             filledCount < 8
               ? 'bg-f1-neutral-800 text-f1-neutral-600 cursor-not-allowed'
-              : 'bg-f1-pink-gradient hover:brightness-110 text-white active:scale-95 shadow-lg shadow-f1-glow'
+              : 'bg-f1-yellow-500 hover:brightness-110 text-black active:scale-95'
           }`}
         >
           {submitting ? 'Submitting...' : filledCount < 8 ? `${8 - filledCount} slots remaining` : 'Confirm Sprint Prediction'}

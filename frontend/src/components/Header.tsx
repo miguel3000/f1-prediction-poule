@@ -49,11 +49,11 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-pink-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
+                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
                     <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{label}</span>
                     <span
                       className={`absolute left-3 right-3 -bottom-[1px] h-0.5 transition-all duration-200 ${
-                        isActive ? 'bg-f1-pink-500 shadow-f1-glow' : 'bg-transparent'
+                        isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
                       }`}
                     />
                   </>
@@ -67,11 +67,11 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
               >
                 {({ isActive }) => (
                   <>
-                    <PredictionIcon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-pink-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
+                    <PredictionIcon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
                     <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>Predictions</span>
                     <span
                       className={`absolute left-3 right-3 -bottom-[1px] h-0.5 transition-all duration-200 ${
-                        isActive ? 'bg-f1-pink-500 shadow-f1-glow' : 'bg-transparent'
+                        isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
                       }`}
                     />
                   </>
@@ -90,20 +90,20 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                   className="hidden md:block text-right cursor-pointer"
                   onClick={() => navigate('/profile')}
                 >
-                  <p className="text-sm font-bold text-white hover:text-f1-pink-400 transition-colors leading-tight">{user.nickname}</p>
-                  <p className="text-xs text-f1-pink-500 font-mono font-semibold tabular-nums leading-tight">{user.total_points} PTS</p>
+                  <p className="text-sm font-bold text-white hover:text-f1-yellow-400 transition-colors leading-tight">{user.nickname}</p>
+                  <p className="text-xs text-f1-yellow-500 font-mono font-semibold tabular-nums leading-tight">{user.total_points} PTS</p>
                 </div>
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
                     alt={user.nickname}
-                    className="w-9 h-9 border-2 border-f1-pink-500 cursor-pointer object-cover"
+                    className="w-9 h-9 border-2 border-f1-yellow-500 cursor-pointer object-cover"
                     style={{ borderRadius: 0 }}
                     onClick={() => navigate('/profile')}
                   />
                 ) : (
                   <div
-                    className="w-9 h-9 border border-f1-neutral-700 bg-f1-neutral-850 flex items-center justify-center text-sm font-black cursor-pointer hover:border-f1-pink-500 transition-colors"
+                    className="w-9 h-9 border border-f1-neutral-700 bg-f1-neutral-850 flex items-center justify-center text-sm font-black cursor-pointer hover:border-f1-yellow-500 transition-colors"
                     onClick={() => navigate('/profile')}
                   >
                     {user.nickname.charAt(0).toUpperCase()}
@@ -111,7 +111,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 )}
                 <button
                   onClick={logout}
-                  className="hidden md:block text-xs text-f1-neutral-500 hover:text-f1-pink-400 transition-colors font-bold uppercase tracking-wider"
+                  className="hidden md:block text-xs text-f1-neutral-500 hover:text-f1-yellow-400 transition-colors font-bold uppercase tracking-wider"
                 >
                   Out
                 </button>
@@ -126,7 +126,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
               onClick={onMoreToggle}
               className={`p-2 transition-colors border ${
                 moreActive
-                  ? 'text-f1-pink-500 border-f1-pink-500'
+                  ? 'text-f1-yellow-500 border-f1-yellow-500'
                   : 'text-f1-neutral-400 border-f1-neutral-800 hover:text-white hover:border-f1-neutral-600'
               }`}
               aria-label="More"

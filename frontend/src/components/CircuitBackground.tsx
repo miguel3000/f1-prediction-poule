@@ -22,7 +22,7 @@ const CircuitBackground = ({ circuitName }: CircuitBackgroundProps) => {
         <path
           d={path}
           fill="none"
-          stroke="#E6007E"
+          stroke="#FFCC00"
           strokeWidth="28"
           strokeLinejoin="round"
           strokeLinecap="round"

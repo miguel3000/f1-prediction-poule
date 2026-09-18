@@ -85,7 +85,7 @@ const DriverStandings = () => {
   const getPositionColor = (position: number) => {
     if (position === 1) return 'bg-yellow-500 text-black';
     if (position === 2) return 'bg-gray-300 text-black';
-    if (position === 3) return 'bg-f1-pink-gradient text-white';
+    if (position === 3) return 'bg-f1-yellow-500 text-black';
     return 'bg-gray-700 text-white';
   };
 
@@ -120,7 +120,7 @@ const DriverStandings = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading driver standings...</p>
       </div>
     );
@@ -128,7 +128,7 @@ const DriverStandings = () => {
 
   return (
     <div>
-      <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-gradient-pink">
+      <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-f1-yellow-500">
         2026 Driver's Championship
       </h1>
 
@@ -159,7 +159,7 @@ const DriverStandings = () => {
                   className="card-f1-interactive p-4 flex items-center gap-4"
                 >
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl ${getPositionColor(
+                    className={`w-12 h-12 flex items-center justify-center font-bold text-xl ${getPositionColor(
                       position
                     )}`}
                   >
@@ -168,13 +168,13 @@ const DriverStandings = () => {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-f1-pink-500 font-bold text-sm">#{driver.driver_number}</span>
+                      <span className="text-f1-yellow-500 font-bold text-sm">#{driver.driver_number}</span>
                       <h3 className="text-lg font-bold">{driver.name}</h3>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-sm text-f1-gray">{driver.team}</p>
                       {driver.nationality && (
-                        <span className="flex items-center gap-1 text-sm bg-f1-neutral-800 px-2 py-0.5 rounded">
+                        <span className="flex items-center gap-1 text-sm bg-f1-neutral-800 px-2 py-0.5">
                           <span>{getFlagEmoji(driver.nationality)}</span>
                           <span className="text-f1-gray">{driver.nationality}</span>
                         </span>

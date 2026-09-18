@@ -73,7 +73,7 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4 text-gradient-pink">My Predictions</h1>
+          <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">My Predictions</h1>
           <p className="text-f1-gray mb-8 text-lg">
             Please log in to view your predictions
           </p>
@@ -91,7 +91,7 @@ const MyPredictions = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto shadow-f1-glow"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading your predictions...</p>
       </div>
     );
@@ -118,7 +118,7 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="card-f1 p-12 max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4 text-gradient-pink">My Predictions</h1>
+          <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">My Predictions</h1>
           <p className="text-f1-gray mb-8 text-lg">
             You haven't made any predictions yet
           </p>
@@ -137,19 +137,19 @@ const MyPredictions = () => {
     switch (status) {
       case 'completed':
         return (
-          <span className="text-xs px-3 py-1 rounded-full bg-green-600 text-white font-semibold">
+          <span className="text-xs px-3 py-1 bg-green-600 text-white font-semibold">
             COMPLETED
           </span>
         );
       case 'in_progress':
         return (
-          <span className="text-xs px-3 py-1 rounded-full bg-yellow-600 text-white font-semibold">
+          <span className="text-xs px-3 py-1 bg-yellow-600 text-white font-semibold">
             IN PROGRESS
           </span>
         );
       default:
         return (
-          <span className="text-xs px-3 py-1 rounded-full bg-gray-600 text-white font-semibold">
+          <span className="text-xs px-3 py-1 bg-gray-600 text-white font-semibold">
             UPCOMING
           </span>
         );
@@ -159,7 +159,7 @@ const MyPredictions = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-4xl md:text-display-xl font-bold text-gradient-pink">
+        <h1 className="text-4xl md:text-display-xl font-bold text-f1-yellow-500">
           My Predictions
         </h1>
       </div>
@@ -170,20 +170,20 @@ const MyPredictions = () => {
           return (
             <div
               key={`${prediction.race_type}-${prediction.id}`}
-              className={`p-6 rounded-lg transition-all ${
+              className={`p-6 transition-all ${
                 isSprint
-                  ? 'bg-f1-pink-900/20 border border-f1-pink-500/50 hover:bg-f1-pink-400/30'
+                  ? 'bg-f1-yellow-900/20 border border-f1-yellow-500/50 hover:bg-f1-yellow-400/30'
                   : 'card-f1 hover:shadow-f1-glow'
               }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-teal-400' : 'text-f1-pink-500'}`}>
+                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-teal-400' : 'text-f1-yellow-500'}`}>
                       {prediction.race_name}
                     </h2>
                     {isSprint && (
-                      <span className="text-xs px-2 py-1 rounded bg-f1-teal-500 text-white font-bold">
+                      <span className="text-xs px-2 py-1 bg-f1-teal-500 text-white font-bold">
                         SPRINT
                       </span>
                     )}
@@ -200,7 +200,7 @@ const MyPredictions = () => {
                 <div className="flex flex-col items-end gap-2">
                   {getStatusBadge(prediction.status)}
                   {prediction.points !== undefined && (
-                    <div className={`text-2xl font-bold ${isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
+                    <div className={`text-2xl font-bold ${isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500'}`}>
                       {prediction.points} pts
                     </div>
                   )}
@@ -213,14 +213,14 @@ const MyPredictions = () => {
                   return (
                     <div
                       key={index}
-                      className={`p-3 rounded border ${
+                      className={`p-3 border ${
                         isSprint
-                          ? 'bg-f1-pink-900/20 border-f1-pink-500/30'
+                          ? 'bg-f1-yellow-900/20 border-f1-yellow-500/30'
                           : 'bg-f1-neutral-800 border-f1-neutral-700'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold text-sm ${isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500'}`}>
+                        <span className={`font-bold text-sm ${isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500'}`}>
                           P{index + 1}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -233,7 +233,7 @@ const MyPredictions = () => {
                           <span className="text-f1-gray">
                             {pts.actualPosition ? `→ P${pts.actualPosition}` : '→ DNF'}
                           </span>
-                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-f1-pink-400' : 'text-f1-pink-500')) : 'text-f1-gray'}`}>
+                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500')) : 'text-f1-gray'}`}>
                             {pts.pointsEarned > 0 ? `+${pts.pointsEarned}${pts.hasBonus ? ' ★' : ''}` : '0'}
                           </span>
                         </div>
@@ -247,7 +247,7 @@ const MyPredictions = () => {
                 <div className="mt-4 pt-4 border-t border-f1-neutral-700">
                   <button
                     onClick={() => navigate('/')}
-                    className={`w-full py-3 rounded-lg font-bold transition-all ${
+                    className={`w-full py-3 font-bold transition-all ${
                       isSprint
                         ? 'bg-f1-teal-500 hover:brightness-110 text-white'
                         : 'btn-f1-primary'

@@ -5,7 +5,7 @@ interface SegmentedTabsProps<T extends string> {
   scrollable?: boolean;
 }
 
-// App-style segmented control: pink active pill, horizontally scrollable with snap
+// App-style segmented control: yellow active pill, horizontally scrollable with snap
 // when there are more options than fit on screen (used for session tabs on Stats).
 function SegmentedTabs<T extends string>({ options, value, onChange, scrollable }: SegmentedTabsProps<T>) {
   return (
@@ -20,7 +20,7 @@ function SegmentedTabs<T extends string>({ options, value, onChange, scrollable 
           onClick={() => onChange(opt.value)}
           className={`flex-shrink-0 ${scrollable ? 'snap-start' : 'flex-1'} px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
             value === opt.value
-              ? 'bg-f1-pink-gradient text-white shadow-f1-glow'
+              ? 'bg-f1-yellow-500 text-black'
               : 'text-f1-neutral-400 hover:text-white hover:bg-f1-neutral-800'
           }`}
         >

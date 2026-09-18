@@ -2,9 +2,11 @@ const Teams = () => {
   const teams = [
     {
       name: 'McLaren',
-      color: 'bg-f1-pink-500',
-      textColor: 'text-f1-pink-400',
-      borderColor: 'border-f1-pink-500/50',
+      // McLaren's actual livery color — literal hex, not the app's f1-yellow
+      // brand token (this used to coincidentally share that token's old pink value).
+      color: 'bg-[#E6007E]',
+      textColor: 'text-[#FF40A0]',
+      borderColor: 'border-[#E6007E]/50',
       engine: 'Mercedes',
       drivers: [
         { number: 4, name: 'Lando Norris', role: 'Race Driver' },
@@ -161,7 +163,7 @@ const Teams = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-4xl font-bold mb-2 text-center text-gradient-pink">
+      <h1 className="text-4xl font-bold mb-2 text-center text-f1-yellow-500">
         2026 F1 Teams
       </h1>
       <p className="text-center text-f1-gray mb-8">
@@ -172,13 +174,13 @@ const Teams = () => {
         {teams.map((team) => (
           <div
             key={team.name}
-            className={`bg-f1-neutral-800 rounded-lg overflow-hidden border ${team.borderColor}`}
+            className={`bg-f1-neutral-800 overflow-hidden border ${team.borderColor}`}
           >
             {/* Team Header */}
             <div className={`${team.color} px-5 py-3 flex items-center justify-between`}>
               <h2 className="text-xl font-bold text-white">{team.name}</h2>
               {team.isNew && (
-                <span className="text-xs bg-white/20 px-2 py-1 rounded text-white font-semibold">
+                <span className="text-xs bg-white/20 px-2 py-1 text-white font-semibold">
                   NEW IN 2026
                 </span>
               )}
@@ -200,7 +202,7 @@ const Teams = () => {
                   {team.drivers.map((driver) => (
                     <div
                       key={driver.number}
-                      className="flex items-center gap-3 bg-f1-neutral-700/50 rounded-lg p-3"
+                      className="flex items-center gap-3 bg-f1-neutral-700/50 p-3"
                     >
                       <span className={`text-2xl font-bold ${team.textColor} w-12 text-center`}>
                         #{driver.number}
@@ -224,7 +226,7 @@ const Teams = () => {
                     {team.reserves.map((driver, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 bg-f1-neutral-700/30 rounded-lg p-2 border border-f1-neutral-700"
+                        className="flex items-center gap-3 bg-f1-neutral-700/30 p-2 border border-f1-neutral-700"
                       >
                         <span className="text-f1-gray text-sm w-12 text-center">-</span>
                         <div>
@@ -250,7 +252,7 @@ const Teams = () => {
             href="https://www.formula1.com/en/teams"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-f1-pink-500 hover:underline"
+            className="text-f1-yellow-500 hover:underline"
           >
             Formula1.com
           </a>
@@ -259,7 +261,7 @@ const Teams = () => {
             href="https://www.the-race.com/formula-1/f1-2026-entry-list-driver-numbers-chassis-engines/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-f1-pink-500 hover:underline"
+            className="text-f1-yellow-500 hover:underline"
           >
             The Race
           </a>

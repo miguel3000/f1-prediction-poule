@@ -51,7 +51,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
       {/* Top label bar */}
       <div className="border-b border-f1-neutral-800 px-4 py-1.5 flex items-center gap-3">
-        <div className="w-2 h-2 bg-f1-pink-500" style={{ borderRadius: 0 }} />
+        <div className="w-2 h-2 bg-f1-yellow-500" style={{ borderRadius: 0 }} />
         <span className="text-f1-neutral-500 font-mono text-[10px] uppercase tracking-[0.25em]">
           {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
         </span>
@@ -64,8 +64,8 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
       <div className="px-4 py-4 flex items-center justify-center gap-4">
         {past ? (
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-f1-pink-500 animate-pulse" />
-            <span className="font-f1 font-black text-f1-pink-500 text-sm uppercase tracking-widest">
+            <div className="w-2 h-2 bg-f1-yellow-500 animate-pulse" />
+            <span className="font-f1 font-black text-f1-yellow-500 text-sm uppercase tracking-widest">
               {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'Race in progress'}
             </span>
           </div>
@@ -82,7 +82,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
                 </div>
                 <p className="text-f1-neutral-600 text-[9px] font-mono uppercase tracking-widest mt-1">HRS</p>
               </div>
-              <span className="text-f1-pink-500 font-black text-2xl pb-5">:</span>
+              <span className="text-f1-yellow-500 font-black text-2xl pb-5">:</span>
               {/* Minutes */}
               <div className="text-center">
                 <div className="bg-f1-neutral-950 border border-f1-neutral-800 px-3 py-2 min-w-[52px]">
@@ -90,13 +90,13 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
                 </div>
                 <p className="text-f1-neutral-600 text-[9px] font-mono uppercase tracking-widest mt-1">MIN</p>
               </div>
-              <span className="text-f1-pink-500 font-black text-2xl pb-5">:</span>
+              <span className="text-f1-yellow-500 font-black text-2xl pb-5">:</span>
               {/* Seconds */}
               <div className="text-center">
-                <div className="bg-f1-neutral-950 border border-f1-pink-500/30 px-3 py-2 min-w-[52px]">
-                  <span className="font-mono font-black text-f1-pink-400 text-3xl tabular-nums">{pad(seconds)}</span>
+                <div className="bg-f1-neutral-950 border border-f1-yellow-500/30 px-3 py-2 min-w-[52px]">
+                  <span className="font-mono font-black text-f1-yellow-400 text-3xl tabular-nums">{pad(seconds)}</span>
                 </div>
-                <p className="text-f1-pink-600 text-[9px] font-mono uppercase tracking-widest mt-1">SEC</p>
+                <p className="text-f1-yellow-600 text-[9px] font-mono uppercase tracking-widest mt-1">SEC</p>
               </div>
             </div>
           </>

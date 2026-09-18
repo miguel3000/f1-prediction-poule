@@ -14,7 +14,7 @@ const Profile = () => {
   if (!user || !token) {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
-        <h1 className="text-3xl font-bold mb-4 text-gradient-pink">Profile</h1>
+        <h1 className="text-3xl font-bold mb-4 text-f1-yellow-500">Profile</h1>
         <p className="text-f1-gray mb-6">You need to be logged in to view your profile.</p>
         <a href="/auth" className="btn-f1-primary">
           Login
@@ -96,7 +96,7 @@ const Profile = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-pink">
+      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">
         Profile
       </h1>
 
@@ -108,10 +108,10 @@ const Profile = () => {
               <img
                 src={user.avatar_url}
                 alt={user.nickname}
-                className="w-32 h-32 rounded-full border-4 border-f1-pink-500 shadow-f1-glow mx-auto object-cover"
+                className="w-32 h-32 border-4 border-f1-yellow-500 mx-auto object-cover"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full border-4 border-f1-neutral-700 bg-f1-neutral-800 mx-auto flex items-center justify-center text-4xl font-bold text-f1-gray">
+              <div className="w-32 h-32 border-4 border-f1-neutral-700 bg-f1-neutral-800 mx-auto flex items-center justify-center text-4xl font-bold text-f1-gray">
                 {user.nickname.charAt(0).toUpperCase()}
               </div>
             )}
@@ -137,7 +137,7 @@ const Profile = () => {
             {user.avatar_url && (
               <button
                 onClick={handleDeleteAvatar}
-                className="bg-f1-neutral-800 hover:bg-f1-pink-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300"
+                className="bg-f1-neutral-800 hover:bg-f1-yellow-600 hover:text-black text-white px-6 py-3 font-bold transition-all duration-300"
               >
                 Remove
               </button>
@@ -151,39 +151,39 @@ const Profile = () => {
 
         {/* Messages */}
         {error && (
-          <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">
+          <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-900/50 border border-green-500 text-green-200 px-4 py-3 rounded">
+          <div className="bg-green-900/50 border border-green-500 text-green-200 px-4 py-3">
             {success}
           </div>
         )}
 
         {/* User Information */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-f1-pink-500">Account Information</h2>
+          <h2 className="text-2xl font-bold text-f1-yellow-500">Account Information</h2>
 
           <div className="grid gap-4">
-            <div className="bg-f1-neutral-800 p-4 rounded-lg">
+            <div className="bg-f1-neutral-800 p-4">
               <p className="text-sm text-f1-gray mb-1">Nickname</p>
               <p className="text-lg font-bold">{user.nickname}</p>
             </div>
 
-            <div className="bg-f1-neutral-800 p-4 rounded-lg">
+            <div className="bg-f1-neutral-800 p-4">
               <p className="text-sm text-f1-gray mb-1">Email</p>
               <p className="text-lg">{user.email}</p>
             </div>
 
-            <div className="bg-f1-neutral-800 p-4 rounded-lg">
+            <div className="bg-f1-neutral-800 p-4">
               <p className="text-sm text-f1-gray mb-1">Total Points</p>
-              <p className="text-2xl font-bold text-f1-pink-500">{user.total_points}</p>
+              <p className="text-2xl font-bold text-f1-yellow-500">{user.total_points}</p>
             </div>
 
             {user.created_at && (
-              <div className="bg-f1-neutral-800 p-4 rounded-lg">
+              <div className="bg-f1-neutral-800 p-4">
                 <p className="text-sm text-f1-gray mb-1">Member Since</p>
                 <p className="text-lg">{new Date(user.created_at).toLocaleDateString()}</p>
               </div>
@@ -201,7 +201,7 @@ const Profile = () => {
           </button>
           <button
             onClick={logout}
-            className="bg-red-600 hover:bg-f1-pink-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-300"
+            className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-6 py-3 font-bold transition-all duration-300"
           >
             Logout
           </button>

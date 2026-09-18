@@ -64,7 +64,7 @@ const Homepage = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin h-16 w-16 border-b-2 border-f1-pink-500 mx-auto shadow-f1-glow" style={{ borderRadius: 0 }}></div>
+        <div className="animate-spin h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" style={{ borderRadius: 0 }}></div>
         <p className="mt-4 text-f1-gray">Loading next race...</p>
       </div>
     );
@@ -80,7 +80,7 @@ const Homepage = () => {
           qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
         />
         <div className="mt-12 max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-gradient-pink">
+          <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-f1-yellow-500">
             Welcome to Poule Position!
           </h2>
           <p className="text-f1-gray mb-8 text-lg">

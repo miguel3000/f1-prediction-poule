@@ -51,7 +51,7 @@ const Auth = () => {
   return (
     <div className="max-w-md mx-auto mt-16">
       <div className="card-f1 p-8 shadow-card-hover">
-        <h2 className="text-3xl font-bold text-center mb-8 text-gradient-pink">
+        <h2 className="text-3xl font-bold text-center mb-8 text-f1-yellow-500">
           {isRegister ? 'Register' : 'Login'}
         </h2>
 
@@ -129,7 +129,7 @@ const Auth = () => {
         </form>
 
         {message && (
-          <div className={`mt-6 p-4 rounded-lg border-2 ${
+          <div className={`mt-6 p-4 border-2 ${
             message.includes('created') || message.includes('successful')
               ? 'bg-green-900/30 border-green-500 text-green-400'
               : 'bg-red-900/30 border-red-500 text-red-400'
@@ -144,7 +144,7 @@ const Auth = () => {
               setIsRegister(!isRegister);
               setMessage('');
             }}
-            className="text-f1-gray hover:text-f1-pink-400 transition-all duration-300 font-semibold"
+            className="text-f1-gray hover:text-f1-yellow-400 transition-all duration-300 font-semibold"
           >
             {isRegister
               ? 'Already have an account? Login'

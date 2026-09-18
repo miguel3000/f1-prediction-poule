@@ -32,9 +32,9 @@ body {
   font-family: 'Saira', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Flat — no background gradient. The 1996-2002 broadcast look this
+     redesign follows never used atmospheric gradients, only flat panels. */
   background-color: #121012;
-  background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(230, 0, 126, 0.08), transparent);
-  background-repeat: no-repeat;
   color: #FFFFFF;
 }
 
@@ -52,20 +52,13 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #191517; }
-::-webkit-scrollbar-thumb { background: #E6007E; }
-::-webkit-scrollbar-thumb:hover { background: #FF40A0; }
+::-webkit-scrollbar-thumb { background: #FFCC00; }
+::-webkit-scrollbar-thumb:hover { background: #FFD11F; }
 
 @layer utilities {
-  .text-gradient-pink {
-    background: linear-gradient(135deg, #FF40A0 0%, #E6007E 50%, #B3005F 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
   /* Left-bar timing tower accent */
   .timing-row {
-    border-left: 3px solid #E6007E;
+    border-left: 3px solid #FFCC00;
     background: #191517;
   }
 
@@ -73,24 +66,18 @@ body {
     border-left: 3px solid #2A2427;
     background: #161217;
   }
-
-  /* Pink gradient fill — buttons, badges, pills, active states */
-  .bg-f1-pink-gradient {
-    background: linear-gradient(135deg, #FF40A0 0%, #E6007E 55%, #C4006B 100%);
-  }
 }
 
 @layer components {
-  /* Primary button */
+  /* Primary button — flat fill, no gradient, no glow */
   .btn-f1-primary {
-    @apply hover:brightness-110 text-white px-8 py-3 font-bold uppercase tracking-widest transition-all duration-200 shadow-f1-glow hover:shadow-f1-glow-lg active:scale-95;
-    background: linear-gradient(135deg, #FF40A0 0%, #E6007E 55%, #C4006B 100%);
+    @apply bg-f1-yellow-500 hover:bg-f1-yellow-400 text-black px-8 py-3 font-bold uppercase tracking-widest transition-all duration-200 active:scale-95;
     border-radius: 0;
   }
 
   /* Secondary button */
   .btn-f1-secondary {
-    @apply bg-f1-neutral-850 hover:bg-f1-neutral-800 text-white px-8 py-3 font-bold uppercase tracking-widest transition-all duration-200 border border-f1-neutral-700 hover:border-f1-pink-500;
+    @apply bg-f1-neutral-850 hover:bg-f1-neutral-800 text-white px-8 py-3 font-bold uppercase tracking-widest transition-all duration-200 border border-f1-neutral-700 hover:border-f1-yellow-500;
     border-radius: 0;
   }
 
@@ -101,12 +88,12 @@ body {
   }
 
   .card-f1-interactive {
-    @apply card-f1 cursor-pointer hover:border-f1-pink-500/40 hover:shadow-f1-glow;
+    @apply card-f1 cursor-pointer hover:border-f1-yellow-500/50;
   }
 
   /* Input */
   .input-f1 {
-    @apply bg-f1-neutral-850 border border-f1-neutral-700 px-4 py-3 text-white placeholder-f1-gray focus:border-f1-pink-500 focus:ring-1 focus:ring-f1-pink-500/30 outline-none transition-all duration-200;
+    @apply bg-f1-neutral-850 border border-f1-neutral-700 px-4 py-3 text-white placeholder-f1-gray focus:border-f1-yellow-500 focus:ring-1 focus:ring-f1-yellow-500/30 outline-none transition-all duration-200;
     border-radius: 0;
   }
 }

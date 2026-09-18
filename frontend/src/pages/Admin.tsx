@@ -449,7 +449,7 @@ const Admin = () => {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="card-f1 max-w-md w-full">
-          <h1 className="text-3xl font-bold mb-6 text-center text-gradient-pink">
+          <h1 className="text-3xl font-bold mb-6 text-center text-f1-yellow-500">
             Admin Panel
           </h1>
 
@@ -479,7 +479,7 @@ const Admin = () => {
             </div>
 
             {error && (
-              <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded">
+              <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3">
                 {error}
               </div>
             )}
@@ -500,7 +500,7 @@ const Admin = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl md:text-display-xl font-bold text-gradient-pink">
+        <h1 className="text-4xl md:text-display-xl font-bold text-f1-yellow-500">
           Admin Panel
         </h1>
         {/* v2 */}
@@ -513,7 +513,7 @@ const Admin = () => {
       </div>
 
       {error && (
-        <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-6">
+        <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 mb-6">
           {error}
         </div>
       )}
@@ -523,7 +523,7 @@ const Admin = () => {
         <h2 className="text-2xl font-bold mb-6">Admin Actions</h2>
 
         {syncMessage && (
-          <div className={`mb-4 px-4 py-3 rounded whitespace-pre-line text-sm ${
+          <div className={`mb-4 px-4 py-3 whitespace-pre-line text-sm ${
             syncStatus.standings === 'error' || syncStatus.results === 'error'
               ? 'bg-red-900/50 border border-red-500 text-red-200'
               : syncStatus.results === 'loading' || syncStatus.standings === 'loading'
@@ -542,7 +542,7 @@ const Admin = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* Sync Drivers & Headshots */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
+          <div className="bg-f1-neutral-800 p-5">
             <h3 className="font-bold text-purple-400 mb-2">Sync Drivers & Headshots</h3>
             <p className="text-sm text-f1-gray mb-4">
               Fetch driver list from OpenF1 API and store headshot URLs for circular avatars on the prediction page.
@@ -550,7 +550,7 @@ const Admin = () => {
             <button
               onClick={() => handleSync('drivers')}
               disabled={syncStatus.drivers === 'loading' || syncStatus.results === 'loading'}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
+              className={`w-full py-3 px-4 font-semibold text-base transition-colors ${
                 syncStatus.drivers === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.drivers === 'success'
@@ -572,7 +572,7 @@ const Admin = () => {
           </div>
 
           {/* Sync Driver Standings */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
+          <div className="bg-f1-neutral-800 p-5">
             <h3 className="font-bold text-blue-400 mb-2">Sync Driver Standings</h3>
             <p className="text-sm text-f1-gray mb-4">
               Fetch latest F1 championship standings from Jolpi API and update driver points.
@@ -580,7 +580,7 @@ const Admin = () => {
             <button
               onClick={() => handleSync('standings')}
               disabled={syncStatus.standings === 'loading' || syncStatus.results === 'loading'}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
+              className={`w-full py-3 px-4 font-semibold text-base transition-colors ${
                 syncStatus.standings === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.standings === 'success'
@@ -602,7 +602,7 @@ const Admin = () => {
           </div>
 
           {/* Sync Qualifying Results */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg border border-yellow-500/30">
+          <div className="bg-f1-neutral-800 p-5 border border-yellow-500/30">
             <h3 className="font-bold text-yellow-400 mb-2">🏁 Sync Qualifying Results</h3>
             <p className="text-sm text-f1-gray mb-4">
               Manually fetch the latest qualifying grid from Jolpi. Use this right after qualifying ends — bypasses the 2-hour cron delay and clears cache.
@@ -616,7 +616,7 @@ const Admin = () => {
                 className="w-4 h-4 accent-orange-500"
               />
               <span>
-                <span className="text-f1-pink-400 font-medium">Force re-sync</span>
+                <span className="text-f1-yellow-400 font-medium">Force re-sync</span>
                 <span className="text-xs ml-1">(overwrite existing qualifying results)</span>
               </span>
             </label>
@@ -624,13 +624,13 @@ const Admin = () => {
             <button
               onClick={() => handleSync('qualifying')}
               disabled={syncStatus.qualifying === 'loading' || syncStatus.results === 'loading'}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
+              className={`w-full py-3 px-4 font-semibold text-base transition-colors ${
                 syncStatus.qualifying === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.qualifying === 'success'
                   ? 'bg-green-600 text-white'
                   : forceResync
-                  ? 'bg-f1-pink-500 hover:bg-f1-pink-500 text-white'
+                  ? 'bg-f1-yellow-500 hover:bg-f1-yellow-500 text-black'
                   : 'bg-yellow-500 hover:bg-yellow-400 text-black'
               }`}
             >
@@ -648,8 +648,8 @@ const Admin = () => {
           </div>
 
           {/* Sync Race Results */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h3 className="font-bold text-f1-pink-500 mb-2">Sync Race Results & Calculate Points</h3>
+          <div className="bg-f1-neutral-800 p-5">
+            <h3 className="font-bold text-f1-yellow-500 mb-2">Sync Race Results & Calculate Points</h3>
             <p className="text-sm text-f1-gray mb-3">
               Fetch race &amp; sprint results from Jolpi API, update race statuses, and recalculate prediction points for all users.
             </p>
@@ -661,7 +661,7 @@ const Admin = () => {
             <select
               value={selectedResyncRaceId}
               onChange={e => setSelectedResyncRaceId(e.target.value ? parseInt(e.target.value) : '')}
-              className="w-full bg-f1-neutral-900 border border-f1-neutral-700 rounded px-3 py-2 text-sm text-white focus:border-f1-pink-500 focus:outline-none mb-3"
+              className="w-full bg-f1-neutral-900 border border-f1-neutral-700 px-3 py-2 text-sm text-white focus:border-f1-yellow-500 focus:outline-none mb-3"
             >
               <option value="">Whole season (default)</option>
               {predictionRaces.map(race => (
@@ -683,7 +683,7 @@ const Admin = () => {
                 className="w-4 h-4 accent-orange-500"
               />
               <span>
-                <span className="text-f1-pink-400 font-medium">Force re-sync</span>
+                <span className="text-f1-yellow-400 font-medium">Force re-sync</span>
                 <span className="text-xs ml-1">
                   {selectedResyncRaceId !== ''
                     ? '(not needed — picking a race above always recalculates it)'
@@ -695,14 +695,14 @@ const Admin = () => {
             <button
               onClick={() => handleSync('results')}
               disabled={syncStatus.results === 'loading'}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-base transition-colors ${
+              className={`w-full py-3 px-4 font-semibold text-base transition-colors ${
                 syncStatus.results === 'loading'
                   ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                   : syncStatus.results === 'success'
                   ? 'bg-green-600 text-white'
                   : forceResync
-                  ? 'bg-f1-pink-500 hover:bg-f1-pink-400 text-white'
-                  : 'bg-f1-pink-500 hover:bg-f1-pink-600 text-white'
+                  ? 'bg-f1-yellow-500 hover:bg-f1-yellow-400 text-black'
+                  : 'bg-f1-yellow-500 hover:bg-f1-yellow-600 text-black'
               }`}
             >
               {syncStatus.results === 'loading' ? (
@@ -723,7 +723,7 @@ const Admin = () => {
             <button
               onClick={handleDiagnosis}
               disabled={diagnosisLoading}
-              className="w-full mt-2 py-1.5 px-4 rounded text-sm font-medium bg-f1-neutral-700 hover:bg-f1-neutral-600 text-f1-gray transition-colors"
+              className="w-full mt-2 py-1.5 px-4 text-sm font-medium bg-f1-neutral-700 hover:bg-f1-neutral-600 text-f1-gray transition-colors"
             >
               {diagnosisLoading ? 'Running diagnosis…' : 'Run Sync Diagnosis'}
             </button>
@@ -732,7 +732,7 @@ const Admin = () => {
 
         {/* Diagnosis panel */}
         {showDiagnosis && (
-          <div className="mt-4 bg-f1-neutral-900 border border-f1-neutral-700 rounded-lg p-5">
+          <div className="mt-4 bg-f1-neutral-900 border border-f1-neutral-700 p-5">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-yellow-400">Sync Diagnosis</h3>
               <button onClick={() => setShowDiagnosis(false)} className="text-f1-gray hover:text-white text-sm">✕ Close</button>
@@ -795,7 +795,7 @@ const Admin = () => {
                             <tr key={r.id} className="border-b border-f1-neutral-800 text-f1-gray">
                               <td className="py-1 pr-3">{r.round}</td>
                               <td className="py-1 pr-3">{r.race_name}</td>
-                              <td className={`py-1 pr-3 ${r.race_type === 'sprint' ? 'text-f1-pink-400' : 'text-blue-400'}`}>{r.race_type}</td>
+                              <td className={`py-1 pr-3 ${r.race_type === 'sprint' ? 'text-f1-yellow-400' : 'text-blue-400'}`}>{r.race_type}</td>
                               <td className={`py-1 pr-3 ${r.status === 'completed' ? 'text-green-400' : r.status === 'provisional' ? 'text-yellow-400' : 'text-f1-gray'}`}>{r.status}</td>
                               <td className={`py-1 ${count > 0 ? 'text-green-400' : 'text-red-400'}`}>{count} rows</td>
                             </tr>
@@ -810,10 +810,10 @@ const Admin = () => {
                     {diagnosis.syncedRaces.map(r => {
                       const count = r.race_type === 'sprint' ? r.sprint_result_count : r.main_result_count;
                       return (
-                        <div key={r.id} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-3 text-xs">
+                        <div key={r.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3 text-xs">
                           <div className="flex justify-between items-center mb-1">
                             <span className="font-medium text-white">Round {r.round}: {r.race_name}</span>
-                            <span className={r.race_type === 'sprint' ? 'text-f1-pink-400' : 'text-blue-400'}>{r.race_type}</span>
+                            <span className={r.race_type === 'sprint' ? 'text-f1-yellow-400' : 'text-blue-400'}>{r.race_type}</span>
                           </div>
                           <div className="flex justify-between text-f1-gray">
                             <span className={r.status === 'completed' ? 'text-green-400' : r.status === 'provisional' ? 'text-yellow-400' : 'text-f1-gray'}>{r.status}</span>
@@ -845,7 +845,7 @@ const Admin = () => {
         </p>
 
         {raceResultsMessage && (
-          <div className={`mb-4 px-4 py-3 rounded ${
+          <div className={`mb-4 px-4 py-3 ${
             raceResultsStatus === 'success'
               ? 'bg-green-900/50 border border-green-500 text-green-200'
               : 'bg-red-900/50 border border-red-500 text-red-200'
@@ -857,12 +857,12 @@ const Admin = () => {
         <button
           onClick={handleSendLastRaceResults}
           disabled={raceResultsStatus === 'loading'}
-          className={`py-3 px-6 rounded font-medium transition-colors ${
+          className={`py-3 px-6 font-medium transition-colors ${
             raceResultsStatus === 'loading'
               ? 'bg-gray-600 cursor-not-allowed text-gray-400'
               : raceResultsStatus === 'success'
               ? 'bg-green-600 text-white'
-              : 'bg-f1-pink-500 hover:bg-f1-pink-600 text-white'
+              : 'bg-f1-yellow-500 hover:bg-f1-yellow-600 text-black'
           }`}
         >
           {raceResultsStatus === 'loading' ? (
@@ -894,7 +894,7 @@ const Admin = () => {
             setPredictionStatusError(null);
             if (raceId) handleFetchPredictionStatus(raceId);
           }}
-          className="w-full bg-f1-neutral-800 border border-f1-neutral-700 rounded px-4 py-3 text-white focus:border-f1-pink-500 focus:outline-none mb-4"
+          className="w-full bg-f1-neutral-800 border border-f1-neutral-700 px-4 py-3 text-white focus:border-f1-yellow-500 focus:outline-none mb-4"
         >
           <option value="">Select a race…</option>
           {predictionRaces.map(race => (
@@ -906,10 +906,10 @@ const Admin = () => {
 
         {predictionStatusLoading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-pink-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-yellow-500 mx-auto"></div>
           </div>
         ) : predictionStatusError ? (
-          <div className="px-4 py-3 rounded bg-red-900/50 border border-red-500 text-red-200">
+          <div className="px-4 py-3 bg-red-900/50 border border-red-500 text-red-200">
             {predictionStatusError}
           </div>
         ) : predictionStatus ? (
@@ -936,9 +936,9 @@ const Admin = () => {
                       <td className="py-3 px-4 text-f1-gray">{user.email}</td>
                       <td className="py-3 px-4">
                         {user.hasPredicted ? (
-                          <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1 rounded">✓ Predicted</span>
+                          <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1">✓ Predicted</span>
                         ) : (
-                          <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded">Not yet</span>
+                          <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1">Not yet</span>
                         )}
                       </td>
                     </tr>
@@ -950,16 +950,16 @@ const Admin = () => {
             {/* Mobile cards */}
             <div className="sm:hidden space-y-2">
               {predictionStatus.users.map(user => (
-                <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-3">
+                <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
                       <p className="font-medium truncate">{user.nickname}</p>
                       <p className="text-xs text-f1-gray truncate">{user.email}</p>
                     </div>
                     {user.hasPredicted ? (
-                      <span className="shrink-0 text-xs bg-green-600/30 text-green-400 px-2 py-1 rounded">✓ Predicted</span>
+                      <span className="shrink-0 text-xs bg-green-600/30 text-green-400 px-2 py-1">✓ Predicted</span>
                     ) : (
-                      <span className="shrink-0 text-xs bg-red-600/30 text-red-400 px-2 py-1 rounded">Not yet</span>
+                      <span className="shrink-0 text-xs bg-red-600/30 text-red-400 px-2 py-1">Not yet</span>
                     )}
                   </div>
                 </div>
@@ -977,7 +977,7 @@ const Admin = () => {
         </p>
 
         {broadcastResult && (
-          <div className={`mb-4 px-4 py-3 rounded ${
+          <div className={`mb-4 px-4 py-3 ${
             broadcastStatus === 'success'
               ? 'bg-green-900/50 border border-green-500 text-green-200'
               : 'bg-red-900/50 border border-red-500 text-red-200'
@@ -1021,7 +1021,7 @@ const Admin = () => {
           <button
             type="submit"
             disabled={broadcastStatus === 'loading' || !broadcastSubject.trim() || !broadcastMessage.trim()}
-            className={`w-full py-3 px-4 rounded font-medium transition-colors ${
+            className={`w-full py-3 px-4 font-medium transition-colors ${
               broadcastStatus === 'loading'
                 ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                 : broadcastStatus === 'success'
@@ -1048,10 +1048,10 @@ const Admin = () => {
         <h2 className="text-2xl font-bold mb-6">Scheduling Logic Documentation</h2>
 
         {/* Visual Timeline */}
-        <div className="bg-f1-neutral-800 p-6 rounded-lg mb-6">
-          <h3 className="text-lg font-bold text-f1-pink-500 mb-4">Race Weekend Timeline</h3>
+        <div className="bg-f1-neutral-800 p-6 mb-6">
+          <h3 className="text-lg font-bold text-f1-yellow-500 mb-4">Race Weekend Timeline</h3>
           <div className="font-mono text-sm text-f1-gray space-y-2">
-            <p className="text-f1-pink-400 font-bold">SUNDAY (Race Day)</p>
+            <p className="text-f1-yellow-400 font-bold">SUNDAY (Race Day)</p>
             <p>12:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
             <p>    │                                                    │</p>
             <p>    ├─ Copy missing predictions (every 2 min until 18:00)│</p>
@@ -1081,8 +1081,8 @@ const Admin = () => {
         {/* Job Details */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Copy Missing Predictions */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h4 className="font-bold text-f1-pink-400 mb-3">1. Copy Missing Predictions</h4>
+          <div className="bg-f1-neutral-800 p-5">
+            <h4 className="font-bold text-f1-yellow-400 mb-3">1. Copy Missing Predictions</h4>
             <p className="text-sm text-f1-gray mb-3">
               Runs for races that locked 1-10 minutes ago. Finds users who have predicted before
               but NOT for this race, and copies their most recent prediction automatically.
@@ -1095,7 +1095,7 @@ const Admin = () => {
           </div>
 
           {/* Provisional Results */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
+          <div className="bg-f1-neutral-800 p-5">
             <h4 className="font-bold text-yellow-400 mb-3">2. Send Provisional Results</h4>
             <p className="text-sm text-f1-gray mb-3">
               Fetches results from Jolpi API, stores in database, calculates points for each
@@ -1109,7 +1109,7 @@ const Admin = () => {
           </div>
 
           {/* Final Results */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
+          <div className="bg-f1-neutral-800 p-5">
             <h4 className="font-bold text-green-400 mb-3">3. Process Final Results</h4>
             <p className="text-sm text-f1-gray mb-3">
               Re-fetches results (may include DQs/penalties), recalculates all points from scratch,
@@ -1123,7 +1123,7 @@ const Admin = () => {
           </div>
 
           {/* Sync Jobs */}
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
+          <div className="bg-f1-neutral-800 p-5">
             <h4 className="font-bold text-blue-400 mb-3">4. Sync Driver Standings & Race Results</h4>
             <p className="text-sm text-f1-gray mb-3">
               Updates F1 championship points and imports race results from Jolpi API.
@@ -1139,29 +1139,29 @@ const Admin = () => {
 
         {/* Points System */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h4 className="font-bold text-f1-pink-500 mb-3">Main Race Points (Top 10)</h4>
+          <div className="bg-f1-neutral-800 p-5">
+            <h4 className="font-bold text-f1-yellow-500 mb-3">Main Race Points (Top 10)</h4>
             <div className="grid grid-cols-5 gap-2 text-center text-sm">
               {[
                 { pos: 'P1', pts: 25 }, { pos: 'P2', pts: 18 }, { pos: 'P3', pts: 15 },
                 { pos: 'P4', pts: 12 }, { pos: 'P5', pts: 10 }, { pos: 'P6', pts: 8 },
                 { pos: 'P7', pts: 6 }, { pos: 'P8', pts: 4 }, { pos: 'P9', pts: 2 }, { pos: 'P10', pts: 1 }
               ].map(({ pos, pts }) => (
-                <div key={pos} className="bg-f1-neutral-700 rounded p-2">
+                <div key={pos} className="bg-f1-neutral-700 p-2">
                   <p className="text-f1-gray text-xs">{pos}</p>
                   <p className="font-bold">{pts}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-f1-neutral-800 p-5 rounded-lg">
-            <h4 className="font-bold text-f1-pink-500 mb-3">Sprint Race Points (Top 8)</h4>
+          <div className="bg-f1-neutral-800 p-5">
+            <h4 className="font-bold text-f1-yellow-500 mb-3">Sprint Race Points (Top 8)</h4>
             <div className="grid grid-cols-4 gap-2 text-center text-sm">
               {[
                 { pos: 'P1', pts: 8 }, { pos: 'P2', pts: 7 }, { pos: 'P3', pts: 6 }, { pos: 'P4', pts: 5 },
                 { pos: 'P5', pts: 4 }, { pos: 'P6', pts: 3 }, { pos: 'P7', pts: 2 }, { pos: 'P8', pts: 1 }
               ].map(({ pos, pts }) => (
-                <div key={pos} className="bg-f1-neutral-700 rounded p-2">
+                <div key={pos} className="bg-f1-neutral-700 p-2">
                   <p className="text-f1-gray text-xs">{pos}</p>
                   <p className="font-bold">{pts}</p>
                 </div>
@@ -1172,8 +1172,8 @@ const Admin = () => {
         </div>
 
         {/* Email Types */}
-        <div className="bg-f1-neutral-800 p-5 rounded-lg mb-6">
-          <h4 className="font-bold text-f1-pink-500 mb-3">Email Types</h4>
+        <div className="bg-f1-neutral-800 p-5 mb-6">
+          <h4 className="font-bold text-f1-yellow-500 mb-3">Email Types</h4>
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
@@ -1211,7 +1211,7 @@ const Admin = () => {
               { name: 'Provisional Results', color: 'text-yellow-400', trigger: '~5 min after race', contents: 'Race results, prediction breakdown, points earned' },
               { name: 'Final Results', color: 'text-green-400', trigger: '24+ hours after race', contents: 'Final points, changes highlighted if any' },
             ].map(email => (
-              <div key={email.name} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-3">
+              <div key={email.name} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
                 <p className={`font-medium ${email.color}`}>{email.name}</p>
                 <p className="text-f1-gray text-xs mt-1">Trigger: {email.trigger}</p>
                 <p className="text-f1-gray text-xs">Contents: {email.contents}</p>
@@ -1221,7 +1221,7 @@ const Admin = () => {
         </div>
 
         {/* Yearly Points Reset */}
-        <div className="bg-f1-neutral-800 p-5 rounded-lg mb-6">
+        <div className="bg-f1-neutral-800 p-5 mb-6">
           <h4 className="font-bold text-purple-400 mb-3">5. Yearly Points Reset</h4>
           <p className="text-sm text-f1-gray mb-3">
             Automatically resets all user points to 0 at the start of each new F1 season.
@@ -1236,14 +1236,14 @@ const Admin = () => {
         </div>
 
         {/* Race Status Flow */}
-        <div className="bg-f1-neutral-800 p-5 rounded-lg">
-          <h4 className="font-bold text-f1-pink-500 mb-3">Race Status Flow</h4>
+        <div className="bg-f1-neutral-800 p-5">
+          <h4 className="font-bold text-f1-yellow-500 mb-3">Race Status Flow</h4>
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="bg-blue-900/50 text-blue-300 px-3 py-1 rounded">upcoming</span>
+            <span className="bg-blue-900/50 text-blue-300 px-3 py-1">upcoming</span>
             <span className="text-f1-gray">→ race ends →</span>
-            <span className="bg-f1-pink-900/20 text-orange-300 px-3 py-1 rounded">provisional</span>
+            <span className="bg-f1-yellow-900/20 text-orange-300 px-3 py-1">provisional</span>
             <span className="text-f1-gray">→ 24 hours →</span>
-            <span className="bg-green-900/50 text-green-300 px-3 py-1 rounded">completed</span>
+            <span className="bg-green-900/50 text-green-300 px-3 py-1">completed</span>
           </div>
           <p className="text-xs text-f1-gray mt-3">
             Provisional status allows for DQs/penalties to be applied before final points are calculated.
@@ -1255,14 +1255,14 @@ const Admin = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* API URLs */}
         <div className="card-f1">
-          <h2 className="text-xl font-bold mb-4 text-f1-pink-500">External APIs</h2>
+          <h2 className="text-xl font-bold mb-4 text-f1-yellow-500">External APIs</h2>
           <div className="space-y-3">
-            <div className="bg-f1-neutral-800 p-4 rounded-lg">
+            <div className="bg-f1-neutral-800 p-4">
               <p className="text-sm text-f1-gray mb-1">OpenF1 API</p>
               <p className="text-xs font-mono break-all">https://api.openf1.org/v1</p>
               <p className="text-xs text-f1-gray mt-1">Driver info, live data</p>
             </div>
-            <div className="bg-f1-neutral-800 p-4 rounded-lg">
+            <div className="bg-f1-neutral-800 p-4">
               <p className="text-sm text-f1-gray mb-1">Jolpi Ergast API</p>
               <p className="text-xs font-mono break-all">https://api.jolpi.ca/ergast/f1</p>
               <p className="text-xs text-f1-gray mt-1">Championship standings, race results</p>
@@ -1272,44 +1272,44 @@ const Admin = () => {
 
         {/* Cron Schedule Info */}
         <div className="card-f1">
-          <h2 className="text-xl font-bold mb-4 text-f1-pink-500">Cron Schedule Summary</h2>
+          <h2 className="text-xl font-bold mb-4 text-f1-yellow-500">Cron Schedule Summary</h2>
           <div className="space-y-2 text-sm">
-            <div className="bg-purple-900/30 border border-purple-500/30 p-3 rounded-lg">
+            <div className="bg-purple-900/30 border border-purple-500/30 p-3">
               <div className="flex justify-between items-center">
                 <span className="text-purple-300 font-medium">Yearly points reset</span>
                 <span className="text-purple-400 font-mono text-xs">0 0 1 1 *</span>
               </div>
               <p className="text-xs text-purple-200/70 mt-1">Every January 1st at midnight</p>
             </div>
-            <div className="bg-f1-neutral-800 p-3 rounded-lg">
+            <div className="bg-f1-neutral-800 p-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Driver standings sync</span>
                 <span className="text-f1-gray font-mono text-xs">0 9 * * 1,4</span>
               </div>
               <p className="text-xs text-f1-gray mt-1">Every Monday & Thursday at 9:00 AM</p>
             </div>
-            <div className="bg-f1-neutral-800 p-3 rounded-lg">
+            <div className="bg-f1-neutral-800 p-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Race results sync</span>
                 <span className="text-f1-gray font-mono text-xs">0 3 * * 1</span>
               </div>
               <p className="text-xs text-f1-gray mt-1">Every Monday at 3:00 AM</p>
             </div>
-            <div className="bg-f1-neutral-800 p-3 rounded-lg">
+            <div className="bg-f1-neutral-800 p-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Copy missing predictions</span>
                 <span className="text-f1-gray font-mono text-xs">*/2 12-18 * * 0</span>
               </div>
               <p className="text-xs text-f1-gray mt-1">Every Sunday, every 2 minutes between 12:00 - 18:00</p>
             </div>
-            <div className="bg-f1-neutral-800 p-3 rounded-lg">
+            <div className="bg-f1-neutral-800 p-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Send provisional results</span>
                 <span className="text-f1-gray font-mono text-xs">*/5 12-20 * * 0</span>
               </div>
               <p className="text-xs text-f1-gray mt-1">Every Sunday, every 5 minutes between 12:00 - 20:00</p>
             </div>
-            <div className="bg-f1-neutral-800 p-3 rounded-lg">
+            <div className="bg-f1-neutral-800 p-3">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Process final results</span>
                 <span className="text-f1-gray font-mono text-xs">0 12-20 * * 1</span>
@@ -1335,7 +1335,7 @@ const Admin = () => {
 
         {loading && users.length === 0 ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-f1-pink-500 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-f1-yellow-500 mx-auto"></div>
             <p className="mt-4 text-f1-gray">Loading users...</p>
           </div>
         ) : (
@@ -1359,7 +1359,7 @@ const Admin = () => {
                   <td className="py-3 px-4 text-yellow-500">-</td>
                   <td className="py-3 px-4 font-medium">
                     <span className="text-yellow-400">{credentials?.username || 'Admin'}</span>
-                    <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5 rounded">ADMIN</span>
+                    <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
                   </td>
                   <td className="py-3 px-4 text-f1-gray">-</td>
                   <td className="py-3 px-4 text-f1-gray">-</td>
@@ -1372,7 +1372,7 @@ const Admin = () => {
                         setPasswordStatus('idle');
                         setPasswordMessage(null);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm transition-colors"
                     >
                       Change Password
                     </button>
@@ -1386,7 +1386,7 @@ const Admin = () => {
                     <td className="py-3 px-4 text-f1-gray">{user.id}</td>
                     <td className="py-3 px-4 font-medium">{user.nickname}</td>
                     <td className="py-3 px-4 text-f1-gray">{user.email}</td>
-                    <td className="py-3 px-4 text-f1-pink-500 font-bold">
+                    <td className="py-3 px-4 text-f1-yellow-500 font-bold">
                       {user.total_points}
                     </td>
                     <td className="py-3 px-4 text-f1-gray text-sm">
@@ -1400,13 +1400,13 @@ const Admin = () => {
                           setPasswordStatus('idle');
                           setPasswordMessage(null);
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm transition-colors"
                       >
                         Set Password
                       </button>
                       <button
                         onClick={() => handleDeleteUser(user.id, user.nickname)}
-                        className="bg-red-600 hover:bg-f1-pink-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                        className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors"
                       >
                         Delete
                       </button>
@@ -1426,10 +1426,10 @@ const Admin = () => {
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
             {/* Admin user card - cannot be deleted */}
-            <div className="bg-yellow-900/10 border border-yellow-900/40 rounded-lg p-4">
+            <div className="bg-yellow-900/10 border border-yellow-900/40 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <span className="font-medium text-yellow-400">{credentials?.username || 'Admin'}</span>
-                <span className="text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5 rounded">ADMIN</span>
+                <span className="text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
               </div>
               <button
                 onClick={() => {
@@ -1438,20 +1438,20 @@ const Admin = () => {
                   setPasswordStatus('idle');
                   setPasswordMessage(null);
                 }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm transition-colors"
               >
                 Change Password
               </button>
             </div>
 
             {users.map((user) => (
-              <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 rounded-lg p-4">
+              <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{user.nickname}</p>
                     <p className="text-xs text-f1-gray truncate">{user.email}</p>
                   </div>
-                  <p className="text-f1-pink-500 font-bold shrink-0 ml-2">{user.total_points}</p>
+                  <p className="text-f1-yellow-500 font-bold shrink-0 ml-2">{user.total_points}</p>
                 </div>
                 <p className="text-xs text-f1-gray mb-3">
                   ID {user.id} · Joined {new Date(user.created_at).toLocaleDateString()}
@@ -1464,13 +1464,13 @@ const Admin = () => {
                       setPasswordStatus('idle');
                       setPasswordMessage(null);
                     }}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm transition-colors"
                   >
                     Set Password
                   </button>
                   <button
                     onClick={() => handleDeleteUser(user.id, user.nickname)}
-                    className="flex-1 bg-red-600 hover:bg-f1-pink-600 text-white px-3 py-2 rounded text-sm transition-colors"
+                    className="flex-1 bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-2 text-sm transition-colors"
                   >
                     Delete
                   </button>
@@ -1495,11 +1495,11 @@ const Admin = () => {
       {/* Admin Password Modal */}
       {adminPasswordModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-f1-neutral-900 rounded-lg p-6 max-w-md w-full mx-4 border border-f1-neutral-700">
+          <div className="bg-f1-neutral-900 p-6 max-w-md w-full mx-4 border border-f1-neutral-700">
             <h3 className="text-xl font-bold mb-4">Change Admin Password</h3>
 
             {passwordMessage && (
-              <div className={`mb-4 px-4 py-3 rounded ${
+              <div className={`mb-4 px-4 py-3 ${
                 passwordStatus === 'success'
                   ? 'bg-green-900/50 border border-green-500 text-green-200'
                   : 'bg-red-900/50 border border-red-500 text-red-200'
@@ -1527,7 +1527,7 @@ const Admin = () => {
                 <button
                   type="submit"
                   disabled={passwordStatus === 'loading' || newPassword.length < 6}
-                  className={`flex-1 py-2 px-4 rounded font-medium transition-colors ${
+                  className={`flex-1 py-2 px-4 font-medium transition-colors ${
                     passwordStatus === 'loading'
                       ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                       : passwordStatus === 'success'
@@ -1540,7 +1540,7 @@ const Admin = () => {
                 <button
                   type="button"
                   onClick={() => setAdminPasswordModal(false)}
-                  className="px-4 py-2 rounded font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+                  className="px-4 py-2 font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
                 >
                   Cancel
                 </button>
@@ -1553,11 +1553,11 @@ const Admin = () => {
       {/* Set Password Modal */}
       {passwordModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-f1-neutral-900 rounded-lg p-6 max-w-md w-full mx-4 border border-f1-neutral-700">
+          <div className="bg-f1-neutral-900 p-6 max-w-md w-full mx-4 border border-f1-neutral-700">
             <h3 className="text-xl font-bold mb-4">Set Password for {passwordModal.nickname}</h3>
 
             {passwordMessage && (
-              <div className={`mb-4 px-4 py-3 rounded ${
+              <div className={`mb-4 px-4 py-3 ${
                 passwordStatus === 'success'
                   ? 'bg-green-900/50 border border-green-500 text-green-200'
                   : 'bg-red-900/50 border border-red-500 text-red-200'
@@ -1585,7 +1585,7 @@ const Admin = () => {
                 <button
                   type="submit"
                   disabled={passwordStatus === 'loading' || newPassword.length < 6}
-                  className={`flex-1 py-2 px-4 rounded font-medium transition-colors ${
+                  className={`flex-1 py-2 px-4 font-medium transition-colors ${
                     passwordStatus === 'loading'
                       ? 'bg-gray-600 cursor-not-allowed text-gray-400'
                       : passwordStatus === 'success'
@@ -1598,7 +1598,7 @@ const Admin = () => {
                 <button
                   type="button"
                   onClick={() => setPasswordModal(null)}
-                  className="px-4 py-2 rounded font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
+                  className="px-4 py-2 font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
                 >
                   Cancel
                 </button>

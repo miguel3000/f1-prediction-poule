@@ -8,18 +8,21 @@ export default {
     extend: {
       colors: {
         f1: {
-          pink: {
-            50:  '#FFE5F4',
-            100: '#FFCCE9',
-            200: '#FF99D3',
-            300: '#FF66BE',
-            400: '#FF40A0',
-            500: '#E6007E',
-            600: '#B3005F',
-            700: '#8C004A',
-            800: '#660036',
-            900: '#4D0028',
-            950: '#33001A',
+          // Primary accent — flat signal yellow, sourced from real 1996-2002
+          // FOM broadcast timing graphics (position badges, gaps, lap times).
+          // Flat only: this era never used gradients or glow.
+          yellow: {
+            50:  '#FFFBEA',
+            100: '#FFF3C4',
+            200: '#FFE58A',
+            300: '#FFDA4D',
+            400: '#FFD11F',
+            500: '#FFCC00',
+            600: '#D9AD00',
+            700: '#B38F00',
+            800: '#8C6F00',
+            900: '#665200',
+            950: '#403300',
           },
           neutral: {
             50:  '#FAFAFA',
@@ -35,20 +38,21 @@ export default {
             900: '#191517',
             950: '#121012',
           },
-          // Secondary accent — teal, cools off the all-pink palette for sprint/info
-          // highlights (Tailwind's teal ramp: friendly, proven contrast on dark).
+          // Secondary accent — the period's own "qualifying gap" light blue
+          // (fan-confirmed alongside the yellow race-gap color). Sprint/info
+          // content uses this instead of yellow, same convention as the era.
           teal: {
-            50:  '#F0FDFA',
-            100: '#CCFBF1',
-            200: '#99F6E4',
-            300: '#5EEAD4',
-            400: '#2DD4BF',
-            500: '#14B8A6',
-            600: '#0D9488',
-            700: '#0F766E',
-            800: '#115E59',
-            900: '#134E4A',
-            950: '#042F2E',
+            50:  '#EAFBFE',
+            100: '#CEF5FC',
+            200: '#9EEBFA',
+            300: '#6FE0F4',
+            400: '#5FD4E8',
+            500: '#33B9D6',
+            600: '#2394AD',
+            700: '#1D7488',
+            800: '#1A5C6D',
+            900: '#184C5A',
+            950: '#0B2D38',
           },
           white: '#FFFFFF',
           gray:  '#5C5860',
@@ -62,7 +66,14 @@ export default {
       },
       fontFamily: {
         'sans': ['Saira', 'Arial', 'sans-serif'],
-        'f1':   ['"Formula1"', 'Saira', 'Arial', 'sans-serif'],
+        // Condensed geometric grotesque — closest faithful match to the
+        // Eurostile/Microgramma family used across the 1996-2002 broadcast
+        // graphics researched for this redesign (Eurostile itself is a
+        // commercial font; this substitutes a free equivalent).
+        'f1':   ['"Big Shoulders Display"', 'Saira', 'Arial', 'sans-serif'],
+        // Badge/number face — used sparingly for position numbers and
+        // short labels, matching the era's squared-terminal look.
+        'f1-badge': ['Michroma', '"Big Shoulders Display"', 'sans-serif'],
         'mono': ['"Courier New"', 'Courier', 'monospace'],
       },
       fontSize: {
@@ -70,24 +81,11 @@ export default {
         'display-2xl': ['4.5rem', { lineHeight: '1',   letterSpacing: '-0.02em' }],
         'body-compact': ['0.875rem', { lineHeight: '1.25' }],
       },
+      // No glow tokens: the 1996-2002 broadcast look this redesign follows
+      // is flat panels only — no gradients, no glow, no rounded corners.
       boxShadow: {
-        'f1-glow':      '0 0 20px rgba(230, 0, 126, 0.5)',
-        'f1-glow-lg':   '0 0 40px rgba(230, 0, 126, 0.6)',
-        'f1-glow-teal': '0 0 20px rgba(20, 184, 166, 0.45)',
         'card':       '0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.4)',
         'card-hover': '0 10px 15px -3px rgba(0,0,0,0.6), 0 4px 6px -2px rgba(0,0,0,0.5)',
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-      },
-      animation: {
-        'pulse-pink': 'pulse-pink 2s ease-in-out infinite',
-      },
-      keyframes: {
-        'pulse-pink': {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(230, 0, 126, 0.4)' },
-          '50%':      { boxShadow: '0 0 40px rgba(230, 0, 126, 0.8)' },
-        },
       },
     },
   },

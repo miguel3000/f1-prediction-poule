@@ -94,7 +94,7 @@ const Leaderboard = () => {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-pink-500 mx-auto"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
         <p className="mt-4 text-f1-gray">Loading leaderboard...</p>
       </div>
     );
@@ -102,22 +102,22 @@ const Leaderboard = () => {
 
   return (
     <div>
-      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-gradient-pink">Championship</h1>
+      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">Championship</h1>
 
       {/* Season Points Chart */}
       <div className="max-w-5xl mx-auto mb-10">
         <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">Season Progression</h2>
 
         {historyLoading ? (
-          <div className="bg-gray-900 rounded-lg p-8 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-pink-500"></div>
+          <div className="bg-gray-900 p-8 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-yellow-500"></div>
           </div>
         ) : seasonRaces.length === 0 ? (
-          <div className="bg-gray-900 rounded-lg p-8 text-center text-f1-gray">
+          <div className="bg-gray-900 p-8 text-center text-f1-gray">
             Season data available after the first race is completed.
           </div>
         ) : (
-          <div className="bg-gray-900 rounded-lg p-4 pt-6 border border-gray-800">
+          <div className="bg-gray-900 p-4 pt-6 border border-gray-800">
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2d2d3a" />
@@ -171,7 +171,7 @@ const Leaderboard = () => {
             <p className="text-f1-gray text-lg">No users have made predictions yet</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-700">
+          <div className="overflow-x-auto border border-gray-700">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-800 text-f1-gray text-xs uppercase tracking-wider">
@@ -192,7 +192,7 @@ const Leaderboard = () => {
                     } ${Number(entry.rank) <= 3 ? 'font-semibold' : ''}`}
                   >
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                      <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-bold ${
                         Number(entry.rank) === 1 ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-gray-900' :
                         Number(entry.rank) === 2 ? 'bg-gradient-to-br from-gray-200 to-gray-400 text-gray-900' :
                         Number(entry.rank) === 3 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white' :
@@ -207,10 +207,10 @@ const Leaderboard = () => {
                           <img
                             src={entry.avatar_url}
                             alt={entry.nickname}
-                            className="w-8 h-8 rounded-full border border-gray-600 object-cover"
+                            className="w-8 h-8 border border-gray-600 object-cover"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-f1-neutral-700 flex items-center justify-center border border-gray-600 text-sm">
+                          <div className="w-8 h-8 bg-f1-neutral-700 flex items-center justify-center border border-gray-600 text-sm">
                             👤
                           </div>
                         )}
@@ -218,7 +218,7 @@ const Leaderboard = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className="text-f1-pink-500 font-bold text-lg">{entry.total_points}</span>
+                      <span className="text-f1-yellow-500 font-bold text-lg">{entry.total_points}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className="text-white">{entry.last_race_points}</span>
