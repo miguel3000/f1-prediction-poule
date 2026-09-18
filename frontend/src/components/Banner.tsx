@@ -60,47 +60,32 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
         </span>
       </div>
 
-      {/* Countdown row */}
-      <div className="px-4 py-4 flex items-center justify-center gap-4">
+      {/* Countdown — one continuous digital readout, not separate boxed units */}
+      <div className="bg-f1-neutral-950 px-4 py-5 flex flex-col items-center gap-1">
         {past ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 py-2">
             <div className="w-2 h-2 bg-f1-yellow-500 animate-pulse" />
-            <span className="font-f1 font-black text-f1-yellow-500 text-sm uppercase tracking-widest">
-              {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'Race in progress'}
+            <span className="font-f1-badge font-bold text-f1-yellow-500 text-sm uppercase tracking-widest">
+              {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
             </span>
           </div>
         ) : (
           <>
-            <span className="text-f1-neutral-500 font-mono text-[10px] uppercase tracking-[0.2em] hidden sm:block">
+            <span className="text-f1-neutral-500 font-f1-badge text-[9px] uppercase tracking-[0.3em]">
               {targetLabel} in
             </span>
-            <div className="flex items-end gap-1">
-              {/* Hours */}
-              <div className="text-center">
-                <div className="bg-f1-neutral-950 border border-f1-neutral-800 px-3 py-2 min-w-[52px]">
-                  <span className="font-mono font-black text-white text-3xl tabular-nums">{pad(hours)}</span>
-                </div>
-                <p className="text-f1-neutral-600 text-[9px] font-mono uppercase tracking-widest mt-1">HRS</p>
-              </div>
-              <span className="text-f1-yellow-500 font-black text-2xl pb-5">:</span>
-              {/* Minutes */}
-              <div className="text-center">
-                <div className="bg-f1-neutral-950 border border-f1-neutral-800 px-3 py-2 min-w-[52px]">
-                  <span className="font-mono font-black text-white text-3xl tabular-nums">{pad(minutes)}</span>
-                </div>
-                <p className="text-f1-neutral-600 text-[9px] font-mono uppercase tracking-widest mt-1">MIN</p>
-              </div>
-              <span className="text-f1-yellow-500 font-black text-2xl pb-5">:</span>
-              {/* Seconds */}
-              <div className="text-center">
-                <div className="bg-f1-neutral-950 border border-f1-yellow-500/30 px-3 py-2 min-w-[52px]">
-                  <span className="font-mono font-black text-f1-yellow-400 text-3xl tabular-nums">{pad(seconds)}</span>
-                </div>
-                <p className="text-f1-yellow-600 text-[9px] font-mono uppercase tracking-widest mt-1">SEC</p>
-              </div>
+            <div className="font-f1-badge font-bold text-f1-yellow-500 text-5xl sm:text-6xl tabular-nums leading-none">
+              {pad(hours)}<span className="text-white">:</span>{pad(minutes)}<span className="text-white">:</span>{pad(seconds)}
             </div>
           </>
         )}
+      </div>
+
+      {/* Sponsor-style footer strip — same convention as every panel in the brandbook */}
+      <div className="bg-f1-blue text-center py-1">
+        <span className="font-f1-badge text-white text-[9px] uppercase tracking-[0.25em]">
+          Poule Position &middot; Official Timing
+        </span>
       </div>
     </div>
   );

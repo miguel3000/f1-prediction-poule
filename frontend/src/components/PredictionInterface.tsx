@@ -42,29 +42,24 @@ const acronym = (driver: Driver) =>
 
 const lastName = (driver: Driver) => driver.name.split(' ').pop() || driver.name_acronym || '???';
 
-// ── Driver avatar ─────────────────────────────────────────────────────────
-const DriverAvatar = ({ driver, size = 'md' }: { driver: Driver; size?: 'sm' | 'md' }) => {
-  const teamColor = getTeamColor(driver.team);
-  const dim = size === 'sm' ? 'w-8 h-8 text-[9px]' : 'w-10 h-10 text-[10px]';
-
-  if (driver.image_url) {
-    return (
-      <img
-        src={driver.image_url}
-        alt={driver.name}
-        className={`${dim} object-cover flex-shrink-0 border-2 ${teamColor.border} bg-f1-neutral-800`}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-      />
-    );
-  }
-
-  const initials = acronym(driver);
-  return (
-    <div className={`${dim} flex-shrink-0 flex items-center justify-center font-black border-2 ${teamColor.border} bg-f1-neutral-800 text-white`}>
-      {initials}
+// ── Driver number badge + name bar — the era's core motif: a flat yellow
+// square with the car number, immediately followed by a blue bar carrying
+// the surname as large as the row allows. Replaces driver photos entirely.
+const DriverChip = ({ driver, big = false, trailing }: { driver: Driver; big?: boolean; trailing?: React.ReactNode }) => (
+  <>
+    <div className={`${big ? 'w-11' : 'w-9'} h-full flex-shrink-0 bg-f1-yellow-500 flex items-center justify-center`}>
+      <span className={`font-f1-badge font-bold text-black tabular-nums ${big ? 'text-sm' : 'text-xs'}`}>
+        {driver.driver_number}
+      </span>
     </div>
-  );
-};
+    <div className="flex-1 min-w-0 h-full bg-f1-blue flex items-center px-2 gap-1">
+      <span className={`flex-1 min-w-0 font-f1 font-black text-white uppercase tracking-wide truncate leading-none ${big ? 'text-lg' : 'text-sm'}`}>
+        {lastName(driver)}
+      </span>
+      {trailing}
+    </div>
+  </>
+);
 
 // ── Driver card (left column) ──────────────────────────────────────────────
 interface QualifyingDriverCardProps {
@@ -88,33 +83,23 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCar
       ref={drag}
       onClick={() => !isSelected && onTap(driver)}
       className={`
-        flex items-center gap-2 px-2 py-1.5 border-l-4 transition-all select-none
+        flex items-stretch h-10 border-l-4 transition-all select-none
         ${teamColor.border}
         ${isSelected
-          ? 'opacity-30 cursor-default bg-f1-neutral-850'
+          ? 'opacity-30 cursor-default'
           : isDragging
-          ? 'opacity-40 bg-f1-neutral-850'
-          : 'bg-f1-neutral-850 active:scale-95 cursor-grab'}
+          ? 'opacity-40'
+          : 'active:scale-[0.98] cursor-grab'}
       `}
     >
-      <DriverAvatar driver={driver} size="md" />
+      <DriverChip driver={driver} big />
 
-      <div className="flex-1 min-w-0">
-        <span className="font-f1 font-bold text-white text-[11px] tracking-widest block truncate">
-          {lastName(driver)}
-        </span>
-        <span className="text-[9px] font-mono">
-          {driver.q3 || driver.q2 || driver.q1
-            ? <span className="text-green-400">{driver.q3 || driver.q2 || driver.q1}</span>
-            : <span className="text-f1-neutral-500">#{driver.driver_number}</span>
-          }
-        </span>
+      <div className="w-7 flex-shrink-0 bg-f1-neutral-850 flex items-center justify-center">
+        {isSelected
+          ? <span className="text-green-400 text-sm font-bold">✓</span>
+          : <span className="text-f1-neutral-600 text-lg font-light">+</span>
+        }
       </div>
-
-      {isSelected
-        ? <span className="text-green-400 text-sm font-bold pr-1 flex-shrink-0">✓</span>
-        : <span className="text-f1-neutral-600 text-lg font-light pr-1 flex-shrink-0">+</span>
-      }
     </div>
   );
 };
@@ -175,23 +160,24 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, onClear, isHel
       <div
         ref={ref}
         onClick={() => onTap(position)}
-        className={`flex-1 h-12 border-l-4 flex items-center gap-2 px-2 transition-all ${slotClass}`}
+        className={`flex-1 h-11 border-l-4 flex items-stretch transition-all ${slotClass}`}
       >
         {driver ? (
-          <>
-            <DriverAvatar driver={driver} size="sm" />
-            <span className={`font-f1 font-bold text-[11px] tracking-widest truncate flex-1 ${isHeld ? 'text-f1-yellow-400' : 'text-white'}`}>
-              {lastName(driver)}
-            </span>
-            {isHeld && <span className="text-f1-yellow-400 text-xs flex-shrink-0">↕</span>}
-            <button
-              onClick={(e) => { e.stopPropagation(); onClear(position); }}
-              className="text-f1-neutral-500 hover:text-red-400 text-xs px-1 flex-shrink-0 leading-none"
-              aria-label={`Remove ${lastName(driver)} from position ${position}`}
-            >✕</button>
-          </>
+          <DriverChip
+            driver={driver}
+            trailing={
+              <>
+                {isHeld && <span className="text-f1-yellow-300 text-xs flex-shrink-0">↕</span>}
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClear(position); }}
+                  className="text-white/60 hover:text-red-300 text-xs px-1 flex-shrink-0 leading-none"
+                  aria-label={`Remove ${lastName(driver)} from position ${position}`}
+                >✕</button>
+              </>
+            }
+          />
         ) : (
-          <span className={`text-[9px] mx-auto tracking-wider uppercase ${hasHeld ? 'text-f1-yellow-600' : 'text-f1-neutral-700'}`}>
+          <span className={`m-auto text-[9px] tracking-wider uppercase ${hasHeld ? 'text-f1-yellow-600' : 'text-f1-neutral-700'}`}>
             {hasHeld ? 'place here' : 'empty'}
           </span>
         )}
@@ -486,24 +472,23 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
           {/* Right: grid / timing tower */}
           <div className="bg-f1-neutral-900 py-2 px-2 border border-f1-neutral-800 flex flex-col gap-1">
             {/* Holding dock */}
-            <div className={`flex items-center gap-2 px-2 py-1.5 border transition-all ${
+            <div className={`h-9 flex items-stretch border transition-all ${
               heldIndex !== null
-                ? 'border-f1-yellow-500/50 bg-f1-yellow-950/30'
+                ? 'border-f1-yellow-500/50'
                 : 'border-dashed border-f1-neutral-700/40 bg-transparent'
             }`}>
               {heldIndex !== null && predictions[heldIndex] ? (
-                <>
-                  <DriverAvatar driver={predictions[heldIndex]!} size="sm" />
-                  <span className="font-f1 font-bold text-f1-yellow-400 text-[11px] tracking-widest truncate flex-1">
-                    {lastName(predictions[heldIndex]!)}
-                  </span>
-                  <button
-                    onClick={() => setHeldIndex(null)}
-                    className="text-f1-neutral-500 hover:text-white text-xs px-1 flex-shrink-0 leading-none"
-                  >✕</button>
-                </>
+                <DriverChip
+                  driver={predictions[heldIndex]!}
+                  trailing={
+                    <button
+                      onClick={() => setHeldIndex(null)}
+                      className="text-white/60 hover:text-white text-xs px-1 flex-shrink-0 leading-none"
+                    >✕</button>
+                  }
+                />
               ) : (
-                <span className="text-f1-neutral-700 text-[9px] mx-auto tracking-wider uppercase">hold</span>
+                <span className="m-auto text-f1-neutral-700 text-[9px] tracking-wider uppercase">hold</span>
               )}
             </div>
             <div className="border-t border-f1-neutral-800" />

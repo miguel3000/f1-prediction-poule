@@ -38,6 +38,15 @@ body {
   color: #FFFFFF;
 }
 
+/* Bottom tab bar is h-16 (64px) + its own safe-area-inset-bottom padding.
+   A static pb-24 (96px) undershoots that on devices with a tall home-indicator
+   inset (iPhone portrait is ~34px, 64+34=98px > 96px) — content at the very
+   bottom of the page ends up a few pixels under the fixed bar. Use a real
+   calc() instead so clearance always exceeds the bar's true height. */
+.pb-tabbar {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
 /* Hide scrollbar for horizontally-scrollable segmented controls, keep it functional */
 .scrollbar-none {
   scrollbar-width: none;

@@ -54,6 +54,13 @@ export default {
             900: '#184C5A',
             950: '#0B2D38',
           },
+          // Name-bar blue — the F1 Digital+ "Master channel" name-row color
+          // (steel blue for the lead row, navy for the chaser). Used as the
+          // fill directly after a yellow number badge across the app.
+          blue: {
+            DEFAULT: '#2D6FAE',
+            dark:    '#122A47',
+          },
           white: '#FFFFFF',
           gray:  '#5C5860',
           // Team colors kept
