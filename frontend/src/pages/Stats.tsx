@@ -250,22 +250,22 @@ const Stats = () => {
 
       {/* Season Summary */}
       {seasonStats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          <div className="card-f1 p-4 text-center">
-            <p className="text-3xl font-black font-mono tabular-nums text-f1-yellow-500">{seasonStats.races.completed_races}</p>
-            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Races Completed</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-10">
+          <div className="bg-f1-blue p-4 text-center">
+            <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.races.completed_races}</p>
+            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Races Completed</p>
           </div>
-          <div className="card-f1 p-4 text-center">
-            <p className="text-3xl font-black font-mono tabular-nums text-f1-yellow-500">{seasonStats.races.completed_sprints}</p>
-            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Sprints Completed</p>
+          <div className="bg-f1-blue p-4 text-center">
+            <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.races.completed_sprints}</p>
+            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Sprints Completed</p>
           </div>
-          <div className="card-f1 p-4 text-center">
-            <p className="text-3xl font-black font-mono tabular-nums text-green-400">{seasonStats.predictions.main_predictions}</p>
-            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Race Predictions</p>
+          <div className="bg-f1-blue p-4 text-center">
+            <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.predictions.main_predictions}</p>
+            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Race Predictions</p>
           </div>
-          <div className="card-f1 p-4 text-center">
-            <p className="text-3xl font-black font-mono tabular-nums text-f1-teal-400">{seasonStats.predictions.sprint_predictions}</p>
-            <p className="text-xs text-f1-gray uppercase tracking-wider mt-1">Sprint Predictions</p>
+          <div className="bg-f1-blue p-4 text-center">
+            <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.predictions.sprint_predictions}</p>
+            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Sprint Predictions</p>
           </div>
         </div>
       )}
