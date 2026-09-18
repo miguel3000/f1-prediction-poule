@@ -36,7 +36,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   if (!nextRaceDate || !nextRaceName) {
     return (
       <div className="w-full py-5 px-4 border-b border-f1-neutral-800 text-center" style={{ backgroundColor: '#191517' }}>
-        <p className="text-f1-neutral-500 font-mono text-xs uppercase tracking-widest">Fetching race data...</p>
+        <p className="text-f1-neutral-500 font-f1-badge text-xs uppercase tracking-widest">Fetching race data...</p>
       </div>
     );
   }
@@ -49,13 +49,13 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
 
   return (
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
-      {/* Top label bar */}
-      <div className="border-b border-f1-neutral-800 px-4 py-1.5 flex items-center gap-3">
-        <div className="w-2 h-2 bg-f1-yellow-500" style={{ borderRadius: 0 }} />
-        <span className="text-f1-neutral-500 font-mono text-[10px] uppercase tracking-[0.25em]">
+      {/* Top label bar — same yellow badge / blue bar motif as the rest of the site */}
+      <div className="bg-f1-blue px-4 py-1.5 flex items-center gap-3">
+        <div className="w-2 h-2 bg-f1-yellow-400 flex-shrink-0" style={{ borderRadius: 0 }} />
+        <span className="text-blue-100/80 font-f1-badge text-[10px] uppercase tracking-[0.25em]">
           {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
         </span>
-        <span className="text-white font-mono text-[10px] uppercase tracking-widest ml-auto">
+        <span className="text-white font-f1-badge text-[10px] uppercase tracking-widest ml-auto truncate">
           {nextRaceName}
         </span>
       </div>
