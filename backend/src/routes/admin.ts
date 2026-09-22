@@ -15,6 +15,7 @@ import {
   changeAdminPassword
 } from '../controllers/adminController';
 import { syncDrivers } from '../controllers/driverController';
+import { syncRaces } from '../controllers/raceController';
 import { authenticateAdmin } from '../middleware/adminAuth';
 
 const router = express.Router();
@@ -33,6 +34,8 @@ router.post('/cronjobs/sync-drivers', authenticateAdmin, syncDrivers);
 router.post('/cronjobs/sync-qualifying', authenticateAdmin, triggerQualifyingSync)
 // ?force=true to re-sync all past races (recalculates points); ?raceId=<id> to target one specific race
 router.post('/cronjobs/sync-race-results', authenticateAdmin, triggerRaceResultsSync);
+// Re-pull the race calendar (dates, qualifying times) from Jolpi — schedule changes don't auto-refresh otherwise
+router.post('/cronjobs/sync-calendar', authenticateAdmin, syncRaces);
 
 // Sync status polling + diagnostics
 router.get('/sync-status', authenticateAdmin, getSyncStatus);

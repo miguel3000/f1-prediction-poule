@@ -336,7 +336,7 @@ const Admin = () => {
     }
   };
 
-  const handleSync = async (type: 'standings' | 'results' | 'drivers' | 'qualifying') => {
+  const handleSync = async (type: 'standings' | 'results' | 'drivers' | 'qualifying' | 'calendar') => {
     if (!credentials) return;
 
     const auth = btoa(`${credentials.username}:${credentials.password}`);
@@ -350,6 +350,8 @@ const Admin = () => {
       ? '/api/admin/cronjobs/sync-driver-standings'
       : type === 'drivers'
       ? '/api/admin/cronjobs/sync-drivers'
+      : type === 'calendar'
+      ? '/api/admin/cronjobs/sync-calendar'
       : type === 'qualifying'
       ? `/api/admin/cronjobs/sync-qualifying${forceResync ? '?force=true' : ''}`
       : resyncRace
@@ -363,6 +365,8 @@ const Admin = () => {
         : `Sync started${forceResync ? ' (force mode)' : ''}… polling for result…`
       : type === 'qualifying'
       ? 'Fetching qualifying results from Jolpi…'
+      : type === 'calendar'
+      ? 'Fetching race calendar from Jolpi…'
       : 'Driver standings sync started…');
 
     try {
@@ -385,10 +389,12 @@ const Admin = () => {
     }
 
     if (type !== 'results') {
-      // Driver standings / drivers sync: show simple success after a short wait
+      // Driver standings / drivers / calendar sync: show simple success after a short wait
       setSyncStatus(prev => ({ ...prev, [type]: 'success' }));
       setSyncMessage(type === 'drivers'
         ? 'Driver sync complete — headshots updated. Run Sync Standings to refresh points.'
+        : type === 'calendar'
+        ? 'Calendar synced — race dates and qualifying times refreshed from Jolpi.'
         : 'Driver standings sync started — check server logs for completion.');
       setTimeout(() => {
         setSyncStatus(prev => ({ ...prev, [type]: 'idle' }));
@@ -567,6 +573,36 @@ const Admin = () => {
                 'Done!'
               ) : (
                 'Sync Drivers & Headshots'
+              )}
+            </button>
+          </div>
+
+          {/* Sync Race Calendar */}
+          <div className="bg-f1-neutral-800 p-5">
+            <h3 className="font-bold text-f1-yellow-400 mb-2">Sync Race Calendar</h3>
+            <p className="text-sm text-f1-gray mb-4">
+              Re-fetch race dates and qualifying times from Jolpi. Run this whenever F1 changes a race weekend's schedule — dates don't refresh on their own otherwise.
+            </p>
+            <button
+              onClick={() => handleSync('calendar')}
+              disabled={syncStatus.calendar === 'loading' || syncStatus.results === 'loading'}
+              className={`w-full py-3 px-4 font-semibold text-base transition-colors ${
+                syncStatus.calendar === 'loading'
+                  ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                  : syncStatus.calendar === 'success'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-f1-yellow-500 hover:bg-f1-yellow-400 text-black'
+              }`}
+            >
+              {syncStatus.calendar === 'loading' ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Syncing...
+                </span>
+              ) : syncStatus.calendar === 'success' ? (
+                'Done!'
+              ) : (
+                'Sync Calendar'
               )}
             </button>
           </div>
