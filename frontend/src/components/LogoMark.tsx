@@ -1,5 +1,5 @@
 interface LogoMarkProps {
-  variant?: 'full' | 'icon';
+  variant?: 'full' | 'icon' | 'square';
   className?: string;
 }
 
@@ -21,26 +21,37 @@ const LogoMark = ({ variant = 'full', className = '' }: LogoMarkProps) => {
     );
   }
 
+  // Square (1:1) lockup — badge stacked over the two name bars, for anywhere a
+  // horizontal wordmark doesn't fit: social avatars, share cards, square tiles.
+  if (variant === 'square') {
+    return (
+      <svg viewBox="0 0 300 300" className={className} role="img" aria-label="Poule Position">
+        <rect width="300" height="300" fill="#0a0a0a" />
+        <g transform="skewX(-10)">
+          <polygon points="58,30 70,30 62,130 50,130" fill="#ffcc00" opacity="0.5" />
+          <rect x="70" y="30" width="160" height="100" fill="#ffcc00" />
+          <text x="150" y="100" fontFamily="Michroma, sans-serif" fontSize="50" fontWeight={700} fill="#000" textAnchor="middle">P1</text>
+          <rect x="70" y="140" width="160" height="40" fill="#3d7dbf" />
+          <text x="84" y="168" fontFamily="'Big Shoulders Display', sans-serif" fontWeight={800} fontSize="26" fill="#fff" letterSpacing="1">POULE</text>
+          <rect x="70" y="190" width="160" height="40" fill="#15304f" />
+          <text x="84" y="218" fontFamily="'Big Shoulders Display', sans-serif" fontWeight={800} fontSize="26" fill="#ffcc00" letterSpacing="1">POSITION</text>
+        </g>
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 520 150" className={className} role="img" aria-label="Poule Position">
-      {/* Speed streak — motion cue trailing the badge */}
-      <g fill="#ffcc00" opacity="0.5">
-        <polygon points="18,120 36,120 58,34 40,34" />
-      </g>
       <g transform="skewX(-10)">
+        {/* Speed streak — flush against the badge's left edge, same height, so it
+            can't poke out past the badge's top/bottom corners after the skew */}
+        <polygon points="26,40 38,40 30,98 18,98" fill="#ffcc00" opacity="0.5" />
         <rect x="38" y="40" width="58" height="58" fill="#ffcc00" />
         <text x="67" y="80" fontFamily="Michroma, sans-serif" fontSize="26" fontWeight={700} fill="#000" textAnchor="middle">P1</text>
-        <rect x="104" y="40" width="220" height="27" fill="#3d7dbf" />
+        <rect x="104" y="40" width="340" height="27" fill="#3d7dbf" />
         <text x="116" y="60" fontFamily="'Big Shoulders Display', sans-serif" fontWeight={800} fontSize="20" fill="#fff" letterSpacing="1">POULE</text>
-        <rect x="104" y="71" width="250" height="27" fill="#15304f" />
+        <rect x="104" y="71" width="370" height="27" fill="#15304f" />
         <text x="116" y="91" fontFamily="'Big Shoulders Display', sans-serif" fontWeight={800} fontSize="20" fill="#ffcc00" letterSpacing="1">POSITION</text>
-      </g>
-      {/* Checkered corner */}
-      <g transform="translate(452,16)">
-        <rect x="0" y="0" width="12" height="12" fill="#fff" /><rect x="12" y="0" width="12" height="12" fill="#0a0a0a" />
-        <rect x="0" y="12" width="12" height="12" fill="#0a0a0a" /><rect x="12" y="12" width="12" height="12" fill="#fff" />
-        <rect x="24" y="0" width="12" height="12" fill="#fff" /><rect x="24" y="12" width="12" height="12" fill="#0a0a0a" />
-        <rect x="0" y="24" width="12" height="12" fill="#0a0a0a" /><rect x="12" y="24" width="12" height="12" fill="#fff" /><rect x="24" y="24" width="12" height="12" fill="#0a0a0a" />
       </g>
     </svg>
   );
