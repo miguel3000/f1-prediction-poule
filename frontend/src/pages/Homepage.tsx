@@ -81,7 +81,7 @@ const Homepage = () => {
           qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
         />
         <div className="mt-12 max-w-2xl mx-auto">
-          <LogoMark variant="full" className="h-12 w-auto mx-auto mb-8" />
+          <LogoMark className="h-12 w-auto mx-auto mb-8" />
           <h2 className="text-3xl md:text-display-xl font-bold mb-4 text-f1-yellow-500">
             Welcome to Poule Position!
           </h2>

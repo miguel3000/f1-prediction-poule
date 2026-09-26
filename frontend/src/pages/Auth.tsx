@@ -51,7 +51,7 @@ const Auth = () => {
 
   return (
     <div className="max-w-md mx-auto mt-16">
-      <LogoMark variant="full" className="h-12 w-auto mx-auto mb-8" />
+      <LogoMark className="h-12 w-auto mx-auto mb-8" />
       <div className="card-f1 p-8 shadow-card-hover">
         <h2 className="text-3xl font-bold text-center mb-8 text-f1-yellow-500">
           {isRegister ? 'Register' : 'Login'}

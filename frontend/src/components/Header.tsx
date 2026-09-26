@@ -30,10 +30,9 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-4 h-16">
 
-          {/* Logo — pinned left, app-icon style */}
+          {/* Logo — pinned left */}
           <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label="Poule Position home">
-            <LogoMark variant="full" className="hidden md:block h-9 w-auto" />
-            <LogoMark variant="icon" className="block md:hidden h-8 w-8" />
+            <LogoMark className="h-10 w-auto" />
           </button>
 
           <div className="w-px h-6 bg-f1-neutral-800 hidden md:block" />
