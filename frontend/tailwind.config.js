@@ -73,6 +73,9 @@ export default {
       },
       fontFamily: {
         'sans': ['Saira', 'Arial', 'sans-serif'],
+        // The actual brand face, from the final logo artwork — used for the
+        // banner motif (skewed bars) wherever it echoes the logo directly.
+        'brand': ['"Bebas Neue"', 'Arial', 'sans-serif'],
         // Condensed geometric grotesque — closest faithful match to the
         // Eurostile/Microgramma family used across the 1996-2002 broadcast
         // graphics researched for this redesign (Eurostile itself is a
