@@ -8,21 +8,20 @@ export default {
     extend: {
       colors: {
         f1: {
-          // Primary accent — flat signal yellow, sourced from real 1996-2002
-          // FOM broadcast timing graphics (position badges, gaps, lap times).
-          // Flat only: this era never used gradients or glow.
+          // Primary accent — the exact yellow from the final logo artwork.
+          // Flat only: no gradients, no glow.
           yellow: {
-            50:  '#FFFBEA',
-            100: '#FFF3C4',
-            200: '#FFE58A',
-            300: '#FFDA4D',
-            400: '#FFD11F',
-            500: '#FFCC00',
-            600: '#D9AD00',
-            700: '#B38F00',
-            800: '#8C6F00',
-            900: '#665200',
-            950: '#403300',
+            50:  '#FFFCED',
+            100: '#FFF6CC',
+            200: '#FFEC8F',
+            300: '#FFE152',
+            400: '#FFD91F',
+            500: '#FFD81A',
+            600: '#D6B200',
+            700: '#AD9000',
+            800: '#8A7200',
+            900: '#665500',
+            950: '#473B00',
           },
           neutral: {
             50:  '#FAFAFA',
@@ -54,12 +53,11 @@ export default {
             900: '#184C5A',
             950: '#0B2D38',
           },
-          // Name-bar blue — the F1 Digital+ "Master channel" name-row color
-          // (steel blue for the lead row, navy for the chaser). Used as the
-          // fill directly after a yellow number badge across the app.
+          // Name-bar blue — exact colors from the logo's POULE/POSITION bars.
+          // Used as the fill directly after a yellow number badge across the app.
           blue: {
-            DEFAULT: '#2D6FAE',
-            dark:    '#122A47',
+            DEFAULT: '#2596C7',
+            dark:    '#005277',
           },
           white: '#FFFFFF',
           gray:  '#5C5860',

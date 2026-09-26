@@ -61,13 +61,13 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #191517; }
-::-webkit-scrollbar-thumb { background: #FFCC00; }
-::-webkit-scrollbar-thumb:hover { background: #FFD11F; }
+::-webkit-scrollbar-thumb { background: #FFD81A; }
+::-webkit-scrollbar-thumb:hover { background: #FFE152; }
 
 @layer utilities {
   /* Left-bar timing tower accent */
   .timing-row {
-    border-left: 3px solid #FFCC00;
+    border-left: 3px solid #FFD81A;
     background: #191517;
   }
 

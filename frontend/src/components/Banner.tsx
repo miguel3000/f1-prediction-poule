@@ -65,7 +65,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
       {/* Top banner — same skewed bar + color as the logo's POULE line */}
       <SkewBar color="#2596c7" className="py-2 gap-3">
-        <div className="w-2 h-2 flex-shrink-0" style={{ backgroundColor: '#ffde17' }} />
+        <div className="w-2 h-2 flex-shrink-0" style={{ backgroundColor: '#ffd81a' }} />
         <span className="text-white/80 font-brand text-sm tracking-wide uppercase">
           {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
         </span>
