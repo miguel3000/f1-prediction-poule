@@ -8,23 +8,23 @@
       }
 
       .cls-2 {
-        fill: #ffde17;
-      }
-
-      .cls-3 {
         fill: #fff;
         font-family: BebasNeueBold, 'Bebas Neue';
         font-size: 45.16px;
       }
 
-      .cls-4 {
+      .cls-3 {
         fill: #2596c7;
+      }
+
+      .cls-4 {
+        fill: #ffd81a;
       }
     </style>
   </defs>
-  <polygon class="cls-2" points="164.64 164.64 0 164.64 38.01 0 202.65 0 164.64 164.64"/>
-  <polygon class="cls-4" points="206.57 76.68 25.03 76.68 34.37 36.24 215.91 36.24 206.57 76.68"/>
+  <polygon class="cls-4" points="164.64 164.64 0 164.64 38.01 0 202.65 0 164.64 164.64"/>
+  <polygon class="cls-3" points="206.57 76.68 25.03 76.68 34.37 36.24 215.91 36.24 206.57 76.68"/>
   <polygon class="cls-1" points="217.13 126.99 14.48 126.99 23.81 86.55 226.46 86.55 217.13 126.99"/>
-  <text class="cls-3" transform="translate(36.44 72.01) scale(.97) skewX(-13)"><tspan x="0" y="0">POULE</tspan></text>
-  <text class="cls-3" transform="translate(25.03 121.89) scale(.97) skewX(-13)"><tspan x="0" y="0">POSITION</tspan></text>
+  <text class="cls-2" transform="translate(33.44 72.01) scale(.97) skewX(-13)"><tspan x="0" y="0">POULE</tspan></text>
+  <text class="cls-2" transform="translate(22.03 121.89) scale(.97) skewX(-13)"><tspan x="0" y="0">POSITION</tspan></text>
 </svg>
