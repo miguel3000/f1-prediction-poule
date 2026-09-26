@@ -23,6 +23,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Brand colors — exact hex from the logo artwork (frontend/src/assets/poule-position-logo.svg)
+const BRAND_NAVY = '#005277';
+const BRAND_BLUE = '#2596C7';
+const BRAND_YELLOW = '#FFD81A';
+
+// Logo header + thin yellow accent bar, reused at the top of every email.
+// The image is hosted on the live site rather than embedded, since most mail
+// clients strip data: URIs and inline SVG from HTML email.
+const emailHeader = `
+  <div style="text-align: center; padding: 24px 0 16px;">
+    <img src="${process.env.FRONTEND_URL}/logo-email.png" alt="Poule Position" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
+  </div>
+  <div style="height: 4px; background-color: ${BRAND_YELLOW}; margin-bottom: 24px;"></div>
+`;
+
 export const sendPredictionConfirmation = async (
   email: string,
   nickname: string,
@@ -35,7 +50,8 @@ export const sendPredictionConfirmation = async (
     subject: `Prediction Confirmed - ${raceName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">Prediction Confirmed!</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">Prediction Confirmed!</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <p>Your prediction for <strong>${escapeHtml(raceName)}</strong> has been saved:</p>
         <ol style="line-height: 2;">
@@ -89,13 +105,14 @@ export const sendProvisionalResults = async (
     subject: `Race Results - ${raceName} (Provisional)`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">Provisional Race Results</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">Provisional Race Results</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <p>The <strong>${escapeHtml(raceName)}</strong> has finished! Here are the provisional results:</p>
 
         <h3 style="color: #333; margin-top: 20px;">Race Results (Top 10)</h3>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <tr style="background-color: #E10600; color: white;">
+          <tr style="background-color: ${BRAND_NAVY}; color: white;">
             <th style="padding: 8px; text-align: left;">Pos</th>
             <th style="padding: 8px; text-align: left;">Driver</th>
             <th style="padding: 8px; text-align: right;">Points</th>
@@ -127,7 +144,7 @@ export const sendProvisionalResults = async (
           `).join('')}
         </table>
 
-        <div style="background-color: #E10600; color: white; padding: 15px; border-radius: 5px; text-align: center;">
+        <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; border-radius: 5px; text-align: center;">
           <strong>Your Total Points: ${totalPoints}</strong>
         </div>
 
@@ -194,7 +211,8 @@ export const sendFinalResults = async (
     subject: `Final Results - ${raceName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">Final Race Results Confirmed</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">Final Race Results Confirmed</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been confirmed.</p>
 
@@ -202,13 +220,13 @@ export const sendFinalResults = async (
 
         ${predictionTable}
 
-        <div style="background-color: #E10600; color: white; padding: 15px; border-radius: 5px; text-align: center;">
+        <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; border-radius: 5px; text-align: center;">
           <strong>Your Final Points: ${totalPoints}</strong>
         </div>
 
         <p style="margin-top: 20px;">
           <a href="${process.env.FRONTEND_URL}/leaderboard"
-             style="display: inline-block; background-color: #333; color: white;
+             style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
                     padding: 12px 24px; text-decoration: none; border-radius: 5px;">
             View Leaderboard
           </a>
@@ -241,12 +259,13 @@ export const sendRaceReminder = async (
     subject: `Reminder: ${raceName} - Submit Your Prediction!`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">Race Day Reminder!</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">Race Day Reminder!</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <p><strong>${escapeHtml(raceName)}</strong> is coming up on ${raceDate.toLocaleDateString()}!</p>
         <p>Don't forget to submit your prediction before the race starts.</p>
         <a href="${process.env.FRONTEND_URL}"
-           style="display: inline-block; background-color: #E10600; color: white;
+           style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
                   padding: 12px 24px; text-decoration: none; border-radius: 5px;
                   margin: 20px 0;">
           Submit Prediction
@@ -280,12 +299,13 @@ export const sendResultsAreInEmail = async (
     subject: `The results are in! - ${raceName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">The results are in!</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">The results are in!</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been processed and the leaderboard has been updated.</p>
         <p>Check out where you stand!</p>
         <a href="${leaderboardUrl}"
-           style="display: inline-block; background-color: #E10600; color: white;
+           style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
                   padding: 12px 24px; text-decoration: none; border-radius: 5px;
                   margin: 20px 0;">
           View Leaderboard
@@ -321,7 +341,7 @@ export const sendPersonalRaceResults = async (
   totalSeasonPoints: number
 ): Promise<boolean> => {
   const isSprint = raceType === 'sprint';
-  const accentColor = isSprint ? '#F97316' : '#E10600';
+  const accentColor = isSprint ? BRAND_BLUE : BRAND_NAVY;
   const label = isSprint ? 'Sprint Race' : 'Race';
 
   const mainPointsMap: { [key: number]: number } = { 1:25, 2:18, 3:15, 4:12, 5:10, 6:8, 7:6, 8:4, 9:2, 10:1 };
@@ -366,6 +386,7 @@ export const sendPersonalRaceResults = async (
     subject: `Your ${label} Predictions — ${raceName}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        ${emailHeader}
         <h2 style="color:${accentColor};">Your ${escapeHtml(label)} Predictions</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <p>Here's how your prediction for <strong>${escapeHtml(raceName)}</strong> compared to the actual result:</p>
@@ -433,16 +454,17 @@ export const sendBroadcastEmail = async (
     subject: `F1 Prediction Poule - ${subject}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">F1 Prediction Poule 2026</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">Poule Position</h2>
         <p>Hello ${escapeHtml(nickname)}!</p>
         <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
           ${htmlMessage}
         </div>
         <a href="${process.env.FRONTEND_URL}"
-           style="display: inline-block; background-color: #E10600; color: white;
+           style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
                   padding: 12px 24px; text-decoration: none; border-radius: 5px;
                   margin: 20px 0;">
-          Visit F1 Prediction Poule
+          Visit Poule Position
         </a>
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
           This message was sent by the F1 Prediction Poule admin team.
@@ -475,7 +497,8 @@ export const sendAdminAlert = async (subject: string, message: string): Promise<
     subject: `[Poule Position Alert] ${subject}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #E10600;">Poule Position — Ops Alert</h2>
+        ${emailHeader}
+        <h2 style="color: ${BRAND_NAVY};">Ops Alert</h2>
         <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
       </div>
     `,
