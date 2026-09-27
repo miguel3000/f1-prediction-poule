@@ -1,34 +1,33 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { query } from '../config/database';
 
-export const authenticateAdmin = (req: Request, res: Response, next: NextFunction) => {
+// Admin access is now tied to a real user account's is_admin flag, checked
+// against the same session JWT used for the regular site login — no more
+// separate admin username/password prompt on top of an existing login.
+export const authenticateAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Basic ')) {
-      return res.status(401).json({ error: 'Admin authentication required' });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Decode Basic Auth credentials
-    const base64Credentials = authHeader.substring(6); // Remove 'Basic ' prefix
-    const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
-    const [username, password] = credentials.split(':');
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number; email: string };
 
-    // Check against environment variables
-    const adminUsername = process.env.ADMIN_USERNAME;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const result = await query('SELECT is_admin FROM users WHERE id = $1', [decoded.userId]);
 
-    if (!adminUsername || !adminPassword) {
-      console.error('ADMIN_USERNAME or ADMIN_PASSWORD not configured in .env');
-      return res.status(500).json({ error: 'Admin authentication not configured' });
+    if (result.rows.length === 0 || !result.rows[0].is_admin) {
+      return res.status(403).json({ error: 'Admin access required' });
     }
 
-    if (username !== adminUsername || password !== adminPassword) {
-      return res.status(401).json({ error: 'Invalid admin credentials' });
-    }
+    (req as any).userId = decoded.userId;
+    (req as any).userEmail = decoded.email;
 
     next();
   } catch (error) {
     console.error('Admin authentication error:', error);
-    return res.status(401).json({ error: 'Authentication failed' });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };

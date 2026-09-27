@@ -28,7 +28,7 @@ const cronJobStatus: {
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const result = await query(
-      `SELECT id, nickname, email, avatar_url, total_points, created_at
+      `SELECT id, nickname, email, avatar_url, total_points, is_admin, created_at
        FROM users
        ORDER BY created_at DESC`
     );
@@ -52,6 +52,10 @@ export const deleteUser = async (req: Request, res: Response) => {
     }
 
     const user = userResult.rows[0];
+
+    if (user.is_admin) {
+      return res.status(400).json({ error: 'Cannot delete an admin account' });
+    }
 
     // Delete user (cascade will handle related records)
     await query('DELETE FROM users WHERE id = $1', [id]);
@@ -748,46 +752,6 @@ export const getRacePredictionStatus = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get race prediction status error:', error);
     res.status(500).json({ error: 'Failed to get race prediction status' });
-  }
-};
-
-// Change admin password
-export const changeAdminPassword = async (req: Request, res: Response) => {
-  try {
-    const { password } = req.body;
-
-    if (!password) {
-      return res.status(400).json({ error: 'Password is required' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    // Update ADMIN_PASSWORD in environment
-    process.env.ADMIN_PASSWORD = password;
-
-    // Also update the .env file if it exists
-    const fs = require('fs');
-    const path = require('path');
-    const envPath = path.resolve(__dirname, '../../.env');
-
-    if (fs.existsSync(envPath)) {
-      let envContent = fs.readFileSync(envPath, 'utf-8');
-      if (envContent.match(/^ADMIN_PASSWORD=.*/m)) {
-        envContent = envContent.replace(/^ADMIN_PASSWORD=.*/m, `ADMIN_PASSWORD=${password}`);
-      } else {
-        envContent += `\nADMIN_PASSWORD=${password}`;
-      }
-      fs.writeFileSync(envPath, envContent);
-    }
-
-    console.log('[ADMIN] Admin password changed');
-
-    res.json({ message: 'Admin password updated successfully' });
-  } catch (error) {
-    console.error('Change admin password error:', error);
-    res.status(500).json({ error: 'Failed to change admin password' });
   }
 };
 

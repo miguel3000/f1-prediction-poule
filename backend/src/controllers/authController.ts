@@ -22,6 +22,7 @@ export const getProfile = async (req: Request, res: Response) => {
       email: user.email,
       avatar_url: user.avatar_url,
       total_points: user.total_points,
+      is_admin: user.is_admin,
       created_at: user.created_at
     });
   } catch (error) {
@@ -79,7 +80,8 @@ export const registerWithPassword = async (req: Request, res: Response) => {
         nickname: user.nickname,
         email: user.email,
         avatar_url: user.avatar_url,
-        total_points: user.total_points
+        total_points: user.total_points,
+        is_admin: user.is_admin
       }
     });
   } catch (error) {
@@ -135,7 +137,8 @@ export const loginWithPassword = async (req: Request, res: Response) => {
         nickname: user.nickname,
         email: user.email,
         avatar_url: user.avatar_url,
-        total_points: user.total_points
+        total_points: user.total_points,
+        is_admin: user.is_admin
       }
     });
   } catch (error) {

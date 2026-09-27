@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useRef, useEffect, useContext } from 'react';
+import api from '../services/api';
 import { getRaces } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 
 interface User {
   id: number;
@@ -8,6 +9,7 @@ interface User {
   email: string;
   avatar_url?: string;
   total_points: number;
+  is_admin?: boolean;
   created_at: string;
 }
 
@@ -41,13 +43,10 @@ interface DiagnosisResult {
 }
 
 const Admin = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const { user } = useContext(AuthContext);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [credentials, setCredentials] = useState<{ username: string; password: string } | null>(null);
   const [syncStatus, setSyncStatus] = useState<{ [key: string]: 'idle' | 'loading' | 'success' | 'error' }>({});
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [forceResync, setForceResync] = useState(false);
@@ -82,21 +81,19 @@ const Admin = () => {
   const [predictionStatusError, setPredictionStatusError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!user?.is_admin) return;
     getRaces(2026)
       .then(res => setPredictionRaces(res.data))
       .catch(() => { /* race list is a nice-to-have; ignore failures */ });
-  }, [isAuthenticated]);
+    fetchUsers();
+  }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
-    if (!credentials || !raceId) return;
+    if (!raceId) return;
     setPredictionStatusLoading(true);
     setPredictionStatusError(null);
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      const response = await axios.get(`/api/admin/races/${raceId}/prediction-status`, {
-        headers: { 'Authorization': `Basic ${auth}` }
-      });
+      const response = await api.get(`/api/admin/races/${raceId}/prediction-status`);
       setPredictionStatus(response.data);
     } catch (err: any) {
       setPredictionStatus(null);
@@ -108,49 +105,14 @@ const Admin = () => {
 
   // Set password state
   const [passwordModal, setPasswordModal] = useState<{ userId: number; nickname: string } | null>(null);
-  const [adminPasswordModal, setAdminPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      // Test authentication by fetching users
-      const auth = btoa(`${username}:${password}`);
-      const response = await axios.get('/api/admin/users', {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
-      });
-
-      // If successful, save credentials and mark as authenticated
-      const creds = { username, password };
-      setCredentials(creds);
-      setIsAuthenticated(true);
-      setUsers(response.data);
-
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchUsers = async () => {
-    if (!credentials) return;
-
     setLoading(true);
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      const response = await axios.get('/api/admin/users', {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
-      });
+      const response = await api.get('/api/admin/users');
       setUsers(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch users');
@@ -160,19 +122,12 @@ const Admin = () => {
   };
 
   const handleDeleteUser = async (userId: number, nickname: string) => {
-    if (!credentials) return;
-
     if (!confirm(`Are you sure you want to delete user "${nickname}"? This action cannot be undone.`)) {
       return;
     }
 
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      await axios.delete(`/api/admin/users/${userId}`, {
-        headers: {
-          'Authorization': `Basic ${auth}`
-        }
-      });
+      await api.delete(`/api/admin/users/${userId}`);
 
       // Refresh users list
       fetchUsers();
@@ -181,17 +136,9 @@ const Admin = () => {
     }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCredentials(null);
-    setUsername('');
-    setPassword('');
-    setUsers([]);
-  };
-
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!credentials || !passwordModal) return;
+    if (!passwordModal) return;
 
     if (newPassword.length < 6) {
       setPasswordMessage('Password must be at least 6 characters');
@@ -203,11 +150,8 @@ const Admin = () => {
     setPasswordMessage(null);
 
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      await axios.post(`/api/admin/users/${passwordModal.userId}/password`, {
+      await api.post(`/api/admin/users/${passwordModal.userId}/password`, {
         password: newPassword
-      }, {
-        headers: { 'Authorization': `Basic ${auth}` }
       });
 
       setPasswordStatus('success');
@@ -226,48 +170,8 @@ const Admin = () => {
     }
   };
 
-  const handleChangeAdminPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!credentials) return;
-
-    if (newPassword.length < 6) {
-      setPasswordMessage('Password must be at least 6 characters');
-      setPasswordStatus('error');
-      return;
-    }
-
-    setPasswordStatus('loading');
-    setPasswordMessage(null);
-
-    try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      await axios.post('/api/admin/admin-password', {
-        password: newPassword
-      }, {
-        headers: { 'Authorization': `Basic ${auth}` }
-      });
-
-      // Update stored credentials with new password
-      setCredentials({ ...credentials, password: newPassword });
-
-      setPasswordStatus('success');
-      setPasswordMessage('Admin password updated successfully');
-      setNewPassword('');
-
-      setTimeout(() => {
-        setAdminPasswordModal(false);
-        setPasswordStatus('idle');
-        setPasswordMessage(null);
-      }, 2000);
-    } catch (err: any) {
-      setPasswordStatus('error');
-      setPasswordMessage(err.response?.data?.error || 'Failed to change admin password');
-    }
-  };
-
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!credentials) return;
 
     if (!broadcastSubject.trim() || !broadcastMessage.trim()) {
       setBroadcastResult('Subject and message are required');
@@ -283,12 +187,9 @@ const Admin = () => {
     setBroadcastResult(null);
 
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      const response = await axios.post('/api/admin/broadcast', {
+      const response = await api.post('/api/admin/broadcast', {
         subject: broadcastSubject,
         message: broadcastMessage
-      }, {
-        headers: { 'Authorization': `Basic ${auth}` }
       });
 
       setBroadcastStatus('success');
@@ -308,8 +209,6 @@ const Admin = () => {
   };
 
   const handleSendLastRaceResults = async () => {
-    if (!credentials) return;
-
     if (!confirm(`Send personal prediction results for the last completed race to all players with a prediction?`)) {
       return;
     }
@@ -318,10 +217,7 @@ const Admin = () => {
     setRaceResultsMessage(null);
 
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      const response = await axios.post('/api/admin/send-last-race-results', {}, {
-        headers: { 'Authorization': `Basic ${auth}` }
-      });
+      const response = await api.post('/api/admin/send-last-race-results', {});
 
       setRaceResultsStatus('success');
       setRaceResultsMessage(`Sent to ${response.data.sent} player(s) for "${response.data.raceName}"${response.data.failed > 0 ? `. Failed: ${response.data.failed}` : ''}`);
@@ -337,11 +233,6 @@ const Admin = () => {
   };
 
   const handleSync = async (type: 'standings' | 'results' | 'drivers' | 'qualifying' | 'calendar') => {
-    if (!credentials) return;
-
-    const auth = btoa(`${credentials.username}:${credentials.password}`);
-    const headers = { 'Authorization': `Basic ${auth}` };
-
     const resyncRace = type === 'results' && selectedResyncRaceId !== ''
       ? predictionRaces.find(r => r.id === selectedResyncRaceId)
       : undefined;
@@ -370,7 +261,7 @@ const Admin = () => {
       : 'Driver standings sync started…');
 
     try {
-      const response = await axios.post(endpoint, {}, { headers });
+      const response = await api.post(endpoint, {});
       if (type === 'qualifying') {
         setSyncStatus(prev => ({ ...prev, qualifying: 'success' }));
         const data = response.data;
@@ -408,7 +299,7 @@ const Admin = () => {
 
     pollIntervalRef.current = setInterval(async () => {
       try {
-        const statusRes = await axios.get('/api/admin/sync-status', { headers });
+        const statusRes = await api.get('/api/admin/sync-status');
         const job: SyncJobState = statusRes.data.syncRaceResults;
 
         if (!job.isRunning) {
@@ -435,14 +326,10 @@ const Admin = () => {
   };
 
   const handleDiagnosis = async () => {
-    if (!credentials) return;
     setDiagnosisLoading(true);
     setShowDiagnosis(true);
     try {
-      const auth = btoa(`${credentials.username}:${credentials.password}`);
-      const res = await axios.get('/api/admin/sync-diagnosis', {
-        headers: { 'Authorization': `Basic ${auth}` }
-      });
+      const res = await api.get('/api/admin/sync-diagnosis');
       setDiagnosis(res.data);
     } catch (err: any) {
       setDiagnosis(null);
@@ -451,53 +338,16 @@ const Admin = () => {
     }
   };
 
-  if (!isAuthenticated) {
+  if (!user?.is_admin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="card-f1 max-w-md w-full">
-          <h1 className="text-3xl font-bold mb-6 text-center text-f1-yellow-500">
-            Admin Panel
+        <div className="card-f1 max-w-md w-full text-center">
+          <h1 className="text-3xl font-bold mb-4 text-f1-yellow-500">
+            Not authorized
           </h1>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="input-f1 w-full"
-                required
-                autoComplete="username"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-f1 w-full"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-f1-primary w-full"
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
+          <p className="text-f1-gray">
+            Your account doesn't have Pitlane access.
+          </p>
         </div>
       </div>
     );
@@ -509,13 +359,6 @@ const Admin = () => {
         <h1 className="text-4xl md:text-display-xl font-bold text-f1-yellow-500">
           Admin Panel
         </h1>
-        {/* v2 */}
-        <button
-          onClick={handleLogout}
-          className="btn-f1-secondary"
-        >
-          Logout
-        </button>
       </div>
 
       {error && (
@@ -1390,37 +1233,18 @@ const Admin = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Admin user row - cannot be deleted */}
-                <tr className="border-b border-f1-neutral-800 bg-yellow-900/10">
-                  <td className="py-3 px-4 text-yellow-500">-</td>
-                  <td className="py-3 px-4 font-medium">
-                    <span className="text-yellow-400">{credentials?.username || 'Admin'}</span>
-                    <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
-                  </td>
-                  <td className="py-3 px-4 text-f1-gray">-</td>
-                  <td className="py-3 px-4 text-f1-gray">-</td>
-                  <td className="py-3 px-4 text-f1-gray">-</td>
-                  <td className="py-3 px-4 space-x-2">
-                    <button
-                      onClick={() => {
-                        setAdminPasswordModal(true);
-                        setNewPassword('');
-                        setPasswordStatus('idle');
-                        setPasswordMessage(null);
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm transition-colors"
-                    >
-                      Change Password
-                    </button>
-                  </td>
-                </tr>
                 {users.map((user) => (
                   <tr
                     key={user.id}
                     className="border-b border-f1-neutral-800 hover:bg-f1-neutral-800/50"
                   >
                     <td className="py-3 px-4 text-f1-gray">{user.id}</td>
-                    <td className="py-3 px-4 font-medium">{user.nickname}</td>
+                    <td className="py-3 px-4 font-medium">
+                      {user.nickname}
+                      {user.is_admin && (
+                        <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-f1-gray">{user.email}</td>
                     <td className="py-3 px-4 text-f1-yellow-500 font-bold">
                       {user.total_points}
@@ -1440,12 +1264,14 @@ const Admin = () => {
                       >
                         Set Password
                       </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id, user.nickname)}
-                        className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors"
-                      >
-                        Delete
-                      </button>
+                      {!user.is_admin && (
+                        <button
+                          onClick={() => handleDeleteUser(user.id, user.nickname)}
+                          className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1461,30 +1287,16 @@ const Admin = () => {
 
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
-            {/* Admin user card - cannot be deleted */}
-            <div className="bg-yellow-900/10 border border-yellow-900/40 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-medium text-yellow-400">{credentials?.username || 'Admin'}</span>
-                <span className="text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
-              </div>
-              <button
-                onClick={() => {
-                  setAdminPasswordModal(true);
-                  setNewPassword('');
-                  setPasswordStatus('idle');
-                  setPasswordMessage(null);
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm transition-colors"
-              >
-                Change Password
-              </button>
-            </div>
-
             {users.map((user) => (
               <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{user.nickname}</p>
+                    <p className="font-medium truncate">
+                      {user.nickname}
+                      {user.is_admin && (
+                        <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
+                      )}
+                    </p>
                     <p className="text-xs text-f1-gray truncate">{user.email}</p>
                   </div>
                   <p className="text-f1-yellow-500 font-bold shrink-0 ml-2">{user.total_points}</p>
@@ -1504,12 +1316,14 @@ const Admin = () => {
                   >
                     Set Password
                   </button>
-                  <button
-                    onClick={() => handleDeleteUser(user.id, user.nickname)}
-                    className="flex-1 bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-2 text-sm transition-colors"
-                  >
-                    Delete
-                  </button>
+                  {!user.is_admin && (
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.nickname)}
+                      className="flex-1 bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-2 text-sm transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1524,67 +1338,9 @@ const Admin = () => {
         )}
 
         <div className="mt-6 text-sm text-f1-gray">
-          Total users: <span className="text-white font-bold">{users.length}</span> + <span className="text-yellow-400 font-bold">1 admin</span>
+          Total users: <span className="text-white font-bold">{users.length}</span>
         </div>
       </div>
-
-      {/* Admin Password Modal */}
-      {adminPasswordModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-f1-neutral-900 p-6 max-w-md w-full mx-4 border border-f1-neutral-700">
-            <h3 className="text-xl font-bold mb-4">Change Admin Password</h3>
-
-            {passwordMessage && (
-              <div className={`mb-4 px-4 py-3 ${
-                passwordStatus === 'success'
-                  ? 'bg-green-900/50 border border-green-500 text-green-200'
-                  : 'bg-red-900/50 border border-red-500 text-red-200'
-              }`}>
-                {passwordMessage}
-              </div>
-            )}
-
-            <form onSubmit={handleChangeAdminPassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">New Admin Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (min 6 characters)"
-                  className="input-f1 w-full"
-                  minLength={6}
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={passwordStatus === 'loading' || newPassword.length < 6}
-                  className={`flex-1 py-2 px-4 font-medium transition-colors ${
-                    passwordStatus === 'loading'
-                      ? 'bg-gray-600 cursor-not-allowed text-gray-400'
-                      : passwordStatus === 'success'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {passwordStatus === 'loading' ? 'Updating...' : passwordStatus === 'success' ? 'Done!' : 'Update Password'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAdminPasswordModal(false)}
-                  className="px-4 py-2 font-medium bg-gray-600 hover:bg-gray-700 text-white transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Set Password Modal */}
       {passwordModal && (

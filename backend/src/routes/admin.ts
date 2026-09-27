@@ -11,8 +11,7 @@ import {
   sendBroadcastToAllUsers,
   sendLastRaceResults,
   getRacePredictionStatus,
-  setUserPassword,
-  changeAdminPassword
+  setUserPassword
 } from '../controllers/adminController';
 import { syncDrivers } from '../controllers/driverController';
 import { syncRaces } from '../controllers/raceController';
@@ -24,7 +23,6 @@ const router = express.Router();
 router.get('/users', authenticateAdmin, getAllUsers);
 router.delete('/users/:id', authenticateAdmin, deleteUser);
 router.post('/users/:userId/password', authenticateAdmin, setUserPassword);
-router.post('/admin-password', authenticateAdmin, changeAdminPassword);
 
 // Cronjob management
 router.get('/cronjobs', authenticateAdmin, getCronJobs);

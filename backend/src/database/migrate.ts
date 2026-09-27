@@ -68,6 +68,12 @@ const runMigration = async () => {
     await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS provisional_alert_sent BOOLEAN DEFAULT FALSE`);
     console.log('provisional_alert_sent column ensured.');
 
+    // Add is_admin column to users table (replaces the separate Basic-Auth
+    // admin username/password — admin rights are now tied to a real account)
+    console.log('Checking for is_admin column on users...');
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE`);
+    console.log('is_admin column ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

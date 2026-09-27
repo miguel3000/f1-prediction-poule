@@ -33,8 +33,8 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
     { path: '/rules',   label: 'Rules',          icon: <ClipboardIcon /> },
     { path: '/about',   label: 'About',          icon: <InfoIcon /> },
     { path: '/privacy', label: 'Privacy Policy', icon: <ShieldIcon /> },
-    { path: '/pitlane', label: 'Pitlane',        icon: <WrenchIcon /> },
   ];
+  if (user?.is_admin) footerItems.push({ path: '/pitlane', label: 'Pitlane', icon: <WrenchIcon /> });
 
   return (
     <>
