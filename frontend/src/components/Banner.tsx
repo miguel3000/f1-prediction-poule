@@ -74,24 +74,22 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
     marginRight: '-50vw',
   };
 
-  // Label left / value right, split by a visible skewed divider (see below) —
-  // literal text shear, not font-style:italic, so the angle matches exactly.
+  // Label left / value right, split by a skewed divider (see below) — literal
+  // text shear, not font-style:italic, so the angle matches exactly.
   const rowGrid = 'relative grid grid-cols-2 items-center px-4 py-4 sm:py-6 overflow-hidden';
   const shear: React.CSSProperties = { transform: 'skewX(-13deg)', display: 'inline-block' };
   const bigType = 'font-brand tracking-wide uppercase leading-none';
-  // Shorter content (weekend/race-name, NL-time label/value) can run larger;
-  // the countdown row carries the longest string, so it stays a step smaller
-  // to avoid truncating the actual time away on narrow screens.
   const sizeWide = 'text-lg sm:text-2xl md:text-4xl lg:text-5xl';
-  const sizeCountdown = 'text-base sm:text-xl md:text-3xl lg:text-4xl';
 
-  // One angled line per row (rows now have gaps between them, so a single
-  // line spanning all three no longer makes sense) — dark like the page
-  // background, reading clearly against yellow and more subtly on blue/navy.
-  const Divider = () => (
+  // Each row's divider matches that row's own background — invisible, rather
+  // than a contrasting line — but is still offset per row (+right on top,
+  // centered on middle, -left on bottom) so the three segments read as one
+  // continuous 13° cut running through the whole stack, not three
+  // independently-centered strokes.
+  const Divider = ({ color, offset = 0 }: { color: string; offset?: number }) => (
     <div
       className="absolute top-0 bottom-0 left-1/2 w-[3px] pointer-events-none"
-      style={{ backgroundColor: '#191517', transform: 'translateX(-50%) skewX(-13deg)' }}
+      style={{ backgroundColor: color, transform: `translateX(calc(-50% + ${offset}px)) skewX(-13deg)` }}
     />
   );
 
@@ -100,8 +98,8 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
       <div style={fullBleed} className="flex flex-col gap-2">
         {/* Top row — lighter blue, weekend type + race name (logo's POULE line) */}
         <div className={rowGrid} style={{ backgroundColor: '#2596C7' }}>
-          <Divider />
-          <span className={`text-white/80 ${bigType} ${sizeWide} text-right truncate pr-3`} style={shear}>
+          <Divider color="#2596C7" offset={8} />
+          <span className={`text-white ${bigType} ${sizeWide} text-right truncate pr-3`} style={shear}>
             {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
           </span>
           <span className={`text-white ${bigType} ${sizeWide} text-left truncate pl-3`} style={shear}>
@@ -111,16 +109,16 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
 
         {/* Middle row — yellow, label/value countdown */}
         <div className={rowGrid} style={{ backgroundColor: '#FFD81A' }}>
-          <Divider />
-          <span className={`text-white ${bigType} ${sizeCountdown} text-right pr-3`} style={shear}>
+          <Divider color="#FFD81A" />
+          <span className={`text-white ${bigType} ${sizeWide} text-right pr-3`} style={shear}>
             Countdown
           </span>
           {past ? (
-            <span className={`text-white ${bigType} ${sizeCountdown} text-left truncate pl-3`} style={shear}>
+            <span className={`text-white ${bigType} ${sizeWide} text-left truncate pl-3`} style={shear}>
               {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
             </span>
           ) : (
-            <span className={`text-white ${bigType} ${sizeCountdown} tabular-nums text-left truncate pl-3`} style={shear}>
+            <span className={`text-white ${bigType} ${sizeWide} tabular-nums text-left truncate pl-3`} style={shear}>
               {targetLabel} in &middot; {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
             </span>
           )}
@@ -128,7 +126,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
 
         {/* Bottom row — darker navy, race start time in NL local time (logo's POSITION line) */}
         <div className={rowGrid} style={{ backgroundColor: '#005277' }}>
-          <Divider />
+          <Divider color="#005277" offset={-8} />
           <span className={`text-white ${bigType} ${sizeWide} text-right truncate pr-3`} style={shear}>
             Race Start NL Time
           </span>
