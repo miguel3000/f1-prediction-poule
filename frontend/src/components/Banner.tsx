@@ -27,6 +27,20 @@ const getTimeLeft = (target: Date): TimeLeft => {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+// Race's local Dutch kickoff time, independent of whatever the countdown above
+// is currently targeting (qualifying, sprint, or the race itself).
+const formatNLTime = (date: Date): string => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const hh = parts.find(p => p.type === 'hour')?.value ?? '00';
+  const mm = parts.find(p => p.type === 'minute')?.value ?? '00';
+  return `${hh}.${mm} HOURS`;
+};
+
 const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: BannerProps) => {
   const [, setTick] = useState(0);
 
@@ -58,9 +72,8 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
         <div
           style={{ backgroundColor: '#FFD81A', transform: 'skewX(-13deg)', marginLeft: '-20px', marginRight: '-20px', paddingLeft: '20px', paddingRight: '20px' }}
         >
-          {/* Top bar — lighter blue, next race info (logo's POULE line) */}
+          {/* Top bar — lighter blue, weekend type + race name (logo's POULE line) */}
           <div className="flex items-center gap-3 px-6 py-2" style={{ backgroundColor: '#2596C7' }}>
-            <div className="w-2 h-2 flex-shrink-0 bg-white" />
             <span className="text-white/80 font-brand text-sm tracking-wide uppercase">
               {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
             </span>
@@ -69,28 +82,29 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
             </span>
           </div>
 
-          {/* Middle — bare yellow, the countdown itself */}
-          <div className="px-6 py-4 flex flex-col items-center gap-1">
+          {/* Middle — bare yellow, label/value countdown */}
+          <div className="flex items-center gap-3 px-6 py-2">
+            <span className="text-white font-brand text-sm tracking-wide uppercase flex-shrink-0">
+              Countdown
+            </span>
             {past ? (
-              <span className="font-brand text-white text-lg tracking-widest uppercase">
+              <span className="text-white font-brand text-sm tracking-wide uppercase ml-auto">
                 {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
               </span>
             ) : (
-              <>
-                <span className="text-white font-brand text-base tracking-[0.25em] uppercase">
-                  {targetLabel} in
-                </span>
-                <div className="font-brand text-white text-5xl sm:text-6xl tabular-nums leading-none">
-                  {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
-                </div>
-              </>
+              <span className="text-white font-brand text-sm tracking-wide uppercase tabular-nums ml-auto truncate">
+                {targetLabel} in &middot; {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
+              </span>
             )}
           </div>
 
-          {/* Bottom bar — darker navy, subtitle (logo's POSITION line) */}
-          <div className="flex items-center justify-center px-6 py-1.5" style={{ backgroundColor: '#005277' }}>
+          {/* Bottom bar — darker navy, race start time in NL local time (logo's POSITION line) */}
+          <div className="flex items-center gap-3 px-6 py-1.5" style={{ backgroundColor: '#005277' }}>
             <span className="font-brand text-white text-xs tracking-[0.2em] uppercase">
-              Lights Out Countdown
+              Race Start NL Time
+            </span>
+            <span className="font-brand text-white text-xs tracking-[0.2em] uppercase tabular-nums ml-auto">
+              {formatNLTime(nextRaceDate)}
             </span>
           </div>
         </div>
