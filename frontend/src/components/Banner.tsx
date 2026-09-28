@@ -74,57 +74,53 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
     marginRight: '-50vw',
   };
 
-  // One angled line (matching the logo's skew) running through all three rows,
-  // splitting each into a label half and a value half instead of a plain
-  // vertical divider.
-  const Divider = () => (
-    <div
-      className="absolute top-0 bottom-0 left-1/2 w-[3px] pointer-events-none"
-      style={{ backgroundColor: '#191517', transform: 'translateX(-50%) skewX(-13deg)' }}
-    />
-  );
+  // Label-left / gutter / value-right — the gutter is an invisible spacer
+  // (no fill, no line), so label and value sit close to an unseen center seam
+  // instead of each being centered within its own half.
+  const rowGrid = 'grid items-center px-4 py-4 sm:py-6';
+  const rowGridCols = { gridTemplateColumns: '1fr 12px 1fr' };
+  const bigType = 'font-brand italic text-sm sm:text-xl md:text-3xl lg:text-4xl leading-none';
 
   return (
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
       <div style={fullBleed}>
-        <div className="relative">
-          <Divider />
+        {/* Top row — lighter blue, weekend type + race name (logo's POULE line) */}
+        <div className={rowGrid} style={{ ...rowGridCols, backgroundColor: '#2596C7' }}>
+          <span className={`text-white/80 ${bigType} tracking-wide uppercase text-right truncate`}>
+            {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
+          </span>
+          <span />
+          <span className={`text-white ${bigType} tracking-wide uppercase text-left truncate`}>
+            {nextRaceName}
+          </span>
+        </div>
 
-          {/* Top row — lighter blue, weekend type + race name (logo's POULE line) */}
-          <div className="grid grid-cols-2 items-center px-4 py-2" style={{ backgroundColor: '#2596C7' }}>
-            <span className="text-white/80 font-brand text-xs sm:text-sm tracking-wide uppercase text-center truncate">
-              {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
+        {/* Middle row — yellow, label/value countdown */}
+        <div className={rowGrid} style={{ ...rowGridCols, backgroundColor: '#FFD81A' }}>
+          <span className={`text-white ${bigType} tracking-wide uppercase text-right`}>
+            Countdown
+          </span>
+          <span />
+          {past ? (
+            <span className={`text-white ${bigType} tracking-wide uppercase text-left truncate`}>
+              {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
             </span>
-            <span className="text-white font-brand text-xs sm:text-sm tracking-wide uppercase text-center truncate">
-              {nextRaceName}
+          ) : (
+            <span className={`text-white ${bigType} tracking-wide uppercase tabular-nums text-left truncate`}>
+              {targetLabel} in &middot; {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
             </span>
-          </div>
+          )}
+        </div>
 
-          {/* Middle row — yellow, label/value countdown */}
-          <div className="grid grid-cols-2 items-center px-4 py-2" style={{ backgroundColor: '#FFD81A' }}>
-            <span className="text-white font-brand text-xs sm:text-sm tracking-wide uppercase text-center">
-              Countdown
-            </span>
-            {past ? (
-              <span className="text-white font-brand text-xs sm:text-sm tracking-wide uppercase text-center truncate">
-                {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
-              </span>
-            ) : (
-              <span className="text-white font-brand text-xs sm:text-sm tracking-wide uppercase tabular-nums text-center truncate">
-                {targetLabel} in &middot; {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
-              </span>
-            )}
-          </div>
-
-          {/* Bottom row — darker navy, race start time in NL local time (logo's POSITION line) */}
-          <div className="grid grid-cols-2 items-center px-4 py-1.5" style={{ backgroundColor: '#005277' }}>
-            <span className="font-brand text-white text-[10px] sm:text-xs tracking-[0.2em] uppercase text-center truncate">
-              Race Start NL Time
-            </span>
-            <span className="font-brand text-white text-[10px] sm:text-xs tracking-[0.2em] uppercase tabular-nums text-center">
-              {formatNLTime(nextRaceDate)}
-            </span>
-          </div>
+        {/* Bottom row — darker navy, race start time in NL local time (logo's POSITION line) */}
+        <div className={rowGrid} style={{ ...rowGridCols, backgroundColor: '#005277' }}>
+          <span className={`text-white ${bigType} tracking-wide uppercase text-right truncate`}>
+            Race Start NL Time
+          </span>
+          <span />
+          <span className={`text-white ${bigType} tracking-wide uppercase tabular-nums text-left`}>
+            {formatNLTime(nextRaceDate)}
+          </span>
         </div>
       </div>
     </div>
