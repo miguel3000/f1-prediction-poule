@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
+import ProtectedRoute from './components/ProtectedRoute';
 import BottomTabBar from './components/BottomTabBar';
 import Footer from './components/Footer';
 import Homepage from './pages/Homepage';
@@ -65,16 +66,16 @@ function App() {
           <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar md:pb-8 relative z-10 flex-grow">
             <Routes>
               <Route path="/" element={<Homepage />} />
-              <Route path="/races" element={<RaceOverview />} />
-              <Route path="/drivers" element={<DriverStandings />} />
-              <Route path="/teams" element={<Teams />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/races" element={<ProtectedRoute><RaceOverview /></ProtectedRoute>} />
+              <Route path="/drivers" element={<ProtectedRoute><DriverStandings /></ProtectedRoute>} />
+              <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+              <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
               <Route path="/rules" element={<Rules />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/pitlane" element={<Admin />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/predictions" element={<MyPredictions />} />
-              <Route path="/stats" element={<Stats />} />
+              <Route path="/pitlane" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
+              <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/about" element={<About />} />
             </Routes>

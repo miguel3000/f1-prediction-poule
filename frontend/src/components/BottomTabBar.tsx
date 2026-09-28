@@ -1,4 +1,6 @@
+import { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { RacingFlagIcon, CheckeredFlagIcon, TrophyIcon, ChartIcon } from './icons';
 import { MoreIcon } from './icons';
 
@@ -7,20 +9,23 @@ interface BottomTabBarProps {
   moreActive: boolean;
 }
 
-const tabs = [
-  { path: '/', label: 'Home', icon: RacingFlagIcon, end: true },
+const homeTab = { path: '/', label: 'Home', icon: RacingFlagIcon, end: true };
+const memberTabs = [
   { path: '/races', label: 'Races', icon: CheckeredFlagIcon, end: false },
   { path: '/leaderboard', label: 'Standings', icon: TrophyIcon, end: false },
   { path: '/stats', label: 'Stats', icon: ChartIcon, end: false },
 ];
 
 const BottomTabBar = ({ onMoreClick, moreActive }: BottomTabBarProps) => {
+  const { user } = useContext(AuthContext);
+  const tabs = user ? [homeTab, ...memberTabs] : [homeTab];
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-30 md:hidden border-t border-f1-neutral-800 backdrop-blur-xl"
       style={{ backgroundColor: 'rgba(18,16,18,0.92)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="grid grid-cols-5 h-16">
+      <ul className="grid h-16" style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}>
         {tabs.map(({ path, label, icon: Icon, end }) => (
           <li key={path} className="flex">
             <NavLink

@@ -9,8 +9,8 @@ interface HeaderProps {
   moreActive: boolean;
 }
 
-const desktopLinks = [
-  { path: '/', label: 'Home', icon: RacingFlagIcon, end: true },
+const homeLink = { path: '/', label: 'Home', icon: RacingFlagIcon, end: true };
+const memberLinks = [
   { path: '/races', label: 'Races', icon: CheckeredFlagIcon, end: false },
   { path: '/drivers', label: 'Drivers', icon: HelmetIcon, end: false },
   { path: '/teams', label: 'Teams', icon: TeamIcon, end: false },
@@ -21,6 +21,7 @@ const desktopLinks = [
 const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const desktopLinks = user ? [homeLink, ...memberLinks] : [homeLink];
 
   return (
     <header

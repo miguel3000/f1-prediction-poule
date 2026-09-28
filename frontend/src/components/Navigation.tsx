@@ -20,14 +20,18 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
   }, [isOpen]);
 
   const menuItems = [
-    { path: '/',            label: 'Homepage',      icon: <RacingFlagIcon /> },
-    { path: '/races',       label: 'Race Overview', icon: <CheckeredFlagIcon /> },
-    { path: '/drivers',     label: 'Drivers',       icon: <HelmetIcon /> },
-    { path: '/teams',       label: 'Teams',         icon: <TeamIcon /> },
-    { path: '/leaderboard', label: 'Championship',  icon: <TrophyIcon /> },
+    { path: '/', label: 'Homepage', icon: <RacingFlagIcon /> },
   ];
-  if (user) menuItems.push({ path: '/predictions', label: 'My Predictions', icon: <PredictionIcon /> });
-  menuItems.push({ path: '/stats', label: 'Statistics', icon: <ChartIcon /> });
+  if (user) {
+    menuItems.push(
+      { path: '/races',       label: 'Race Overview', icon: <CheckeredFlagIcon /> },
+      { path: '/drivers',     label: 'Drivers',       icon: <HelmetIcon /> },
+      { path: '/teams',       label: 'Teams',         icon: <TeamIcon /> },
+      { path: '/leaderboard', label: 'Championship',  icon: <TrophyIcon /> },
+      { path: '/predictions', label: 'My Predictions', icon: <PredictionIcon /> },
+      { path: '/stats',       label: 'Statistics',    icon: <ChartIcon /> },
+    );
+  }
 
   const footerItems = [
     { path: '/rules',   label: 'Rules',          icon: <ClipboardIcon /> },
