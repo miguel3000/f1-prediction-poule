@@ -9,9 +9,9 @@ import { authenticate } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', getLeaderboard);
-router.get('/top-three', getTopThree);
-router.get('/season-history', getSeasonHistory);
+router.get('/', authenticate, getLeaderboard);
+router.get('/top-three', authenticate, getTopThree);
+router.get('/season-history', authenticate, getSeasonHistory);
 router.get('/rank', authenticate, getUserRank);
 
 export default router;
