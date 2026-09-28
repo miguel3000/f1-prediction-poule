@@ -8,6 +8,7 @@ interface BannerProps {
 }
 
 interface TimeLeft {
+  days: number;
   hours: number;
   minutes: number;
   seconds: number;
@@ -16,28 +17,15 @@ interface TimeLeft {
 
 const getTimeLeft = (target: Date): TimeLeft => {
   const distance = target.getTime() - Date.now();
-  if (distance <= 0) return { hours: 0, minutes: 0, seconds: 0, past: true };
-  const hours   = Math.floor(distance / (1000 * 60 * 60));
+  if (distance <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, past: true };
+  const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+  const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-  return { hours, minutes, seconds, past: false };
+  return { days, hours, minutes, seconds, past: false };
 };
 
 const pad = (n: number) => String(n).padStart(2, '0');
-
-// Same skew as the logo's POULE/POSITION bars (skewX(-13), #2596c7 / #005277) —
-// a block widened past its container and re-centered so the shear never
-// leaves a gap at either edge, clipped by the parent's overflow-hidden.
-const SkewBar = ({ color, className = '', children }: { color: string; className?: string; children: React.ReactNode }) => (
-  <div className="overflow-hidden">
-    <div
-      className={`flex items-center px-6 ${className}`}
-      style={{ backgroundColor: color, transform: 'skewX(-13deg)', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '32px', paddingRight: '32px' }}
-    >
-      {children}
-    </div>
-  </div>
-);
 
 const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: BannerProps) => {
   const [, setTick] = useState(0);
@@ -59,48 +47,54 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   const raceLeft  = getTimeLeft(nextRaceDate);
   const showQualifying = qualiLeft && !qualiLeft.past;
   const targetLabel    = showQualifying ? 'QUALIFYING' : (isSprint ? 'SPRINT' : 'RACE');
-  const { hours, minutes, seconds, past } = showQualifying ? qualiLeft : raceLeft;
+  const { days, hours, minutes, seconds, past } = showQualifying ? qualiLeft : raceLeft;
 
   return (
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
-      {/* Top banner — same skewed bar + color as the logo's POULE line */}
-      <SkewBar color="#2596c7" className="py-2 gap-3">
-        <div className="w-2 h-2 flex-shrink-0" style={{ backgroundColor: '#ffd81a' }} />
-        <span className="text-white/80 font-brand text-sm tracking-wide uppercase">
-          {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
-        </span>
-        <span className="text-white font-brand text-sm tracking-wide uppercase ml-auto truncate">
-          {nextRaceName}
-        </span>
-      </SkewBar>
-
-      {/* Countdown — one continuous digital readout, not separate boxed units */}
-      <div className="bg-f1-neutral-950 px-4 py-5 flex flex-col items-center gap-1">
-        {past ? (
-          <div className="flex items-center gap-3 py-2">
-            <div className="w-2 h-2 bg-f1-yellow-500 animate-pulse" />
-            <span className="font-brand text-f1-yellow-500 text-lg tracking-widest uppercase">
-              {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
+      {/* Single skewed yellow backdrop (matches the logo's backing shape) — the
+          two blue bars and the timer all sit inside it, so they tilt together
+          as one piece instead of three independently-skewed strips. */}
+      <div className="overflow-hidden py-3">
+        <div
+          style={{ backgroundColor: '#FFD81A', transform: 'skewX(-13deg)', marginLeft: '-20px', marginRight: '-20px', paddingLeft: '20px', paddingRight: '20px' }}
+        >
+          {/* Top bar — lighter blue, next race info (logo's POULE line) */}
+          <div className="flex items-center gap-3 px-6 py-2" style={{ backgroundColor: '#2596C7' }}>
+            <div className="w-2 h-2 flex-shrink-0 bg-white" />
+            <span className="text-white/80 font-brand text-sm tracking-wide uppercase">
+              {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
+            </span>
+            <span className="text-white font-brand text-sm tracking-wide uppercase ml-auto truncate">
+              {nextRaceName}
             </span>
           </div>
-        ) : (
-          <>
-            <span className="text-f1-neutral-500 font-brand text-xs tracking-[0.3em] uppercase">
-              {targetLabel} in
-            </span>
-            <div className="font-brand text-f1-yellow-500 text-6xl sm:text-7xl tabular-nums leading-none">
-              {pad(hours)}<span className="text-white">:</span>{pad(minutes)}<span className="text-white">:</span>{pad(seconds)}
-            </div>
-          </>
-        )}
-      </div>
 
-      {/* Footer banner — same skewed bar + color as the logo's POSITION line */}
-      <SkewBar color="#005277" className="py-1.5 justify-center">
-        <span className="font-brand text-white text-xs tracking-[0.2em] uppercase">
-          Poule Position &middot; Official Timing
-        </span>
-      </SkewBar>
+          {/* Middle — bare yellow, the countdown itself */}
+          <div className="px-6 py-4 flex flex-col items-center gap-1">
+            {past ? (
+              <span className="font-brand text-white text-lg tracking-widest uppercase">
+                {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
+              </span>
+            ) : (
+              <>
+                <span className="text-white font-brand text-base tracking-[0.25em] uppercase">
+                  {targetLabel} in
+                </span>
+                <div className="font-brand text-white text-5xl sm:text-6xl tabular-nums leading-none">
+                  {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Bottom bar — darker navy, subtitle (logo's POSITION line) */}
+          <div className="flex items-center justify-center px-6 py-1.5" style={{ backgroundColor: '#005277' }}>
+            <span className="font-brand text-white text-xs tracking-[0.2em] uppercase">
+              Poule Position &middot; Official Timing
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

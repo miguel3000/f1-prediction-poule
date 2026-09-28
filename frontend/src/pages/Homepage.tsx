@@ -75,13 +75,13 @@ const Homepage = () => {
     return (
       <div className="text-center py-16">
         <CircuitBackground circuitName={nextRace?.circuit_name} />
+        <LogoMark className="h-16 sm:h-20 w-auto mx-auto mb-6" />
         <Banner
           nextRaceDate={mainRace ? new Date(mainRace.race_date) : (nextRace ? new Date(nextRace.race_date) : undefined)}
           nextRaceName={nextRace?.race_name}
           qualifyingDate={mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined}
         />
         <div className="mt-12 max-w-2xl mx-auto">
-          <LogoMark className="h-40 sm:h-48 w-auto mx-auto mb-10" />
           <button
             onClick={() => navigate('/auth')}
             className="btn-f1-primary"
@@ -107,6 +107,7 @@ const Homepage = () => {
   return (
     <div>
       <CircuitBackground circuitName={mainRace?.circuit_name ?? nextRace?.circuit_name} />
+      <LogoMark className="h-16 sm:h-20 w-auto mx-auto mb-6" />
       <Banner
         nextRaceDate={
           hasSprint && activeTab === 'sprint' && sprintRace
