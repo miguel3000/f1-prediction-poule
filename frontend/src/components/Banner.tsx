@@ -90,7 +90,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
           {/* Bottom bar — darker navy, subtitle (logo's POSITION line) */}
           <div className="flex items-center justify-center px-6 py-1.5" style={{ backgroundColor: '#005277' }}>
             <span className="font-brand text-white text-xs tracking-[0.2em] uppercase">
-              Poule Position &middot; Official Timing
+              Lights Out Countdown
             </span>
           </div>
         </div>
