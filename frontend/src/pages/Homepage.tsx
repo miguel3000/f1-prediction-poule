@@ -66,7 +66,7 @@ const Homepage = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" style={{ borderRadius: 0 }}></div>
-        <p className="mt-4 text-f1-gray">Loading next race...</p>
+        <p className="mt-4 text-white">Loading next race...</p>
       </div>
     );
   }
@@ -98,7 +98,7 @@ const Homepage = () => {
       <div className="text-center py-16 max-w-2xl mx-auto">
         <div className="card-f1 p-12">
           <h2 className="text-2xl font-bold mb-4">No Upcoming Races</h2>
-          <p className="text-f1-gray">The season has not started yet or has ended.</p>
+          <p className="text-white">The season has not started yet or has ended.</p>
         </div>
       </div>
     );
@@ -143,7 +143,7 @@ const Homepage = () => {
         ) : mainRace ? (
           <PredictionInterface raceId={mainRace.id} raceDate={mainRace.race_date} />
         ) : (
-          <div className="text-center py-8 text-f1-gray">No race available</div>
+          <div className="text-center py-8 text-white">No race available</div>
         )}
       </div>
     </div>

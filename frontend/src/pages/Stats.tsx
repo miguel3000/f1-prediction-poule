@@ -107,9 +107,9 @@ const DriverChip = ({ name, team, count, suffix = '' }: {
       <span className={`font-mono font-black text-xl tabular-nums ${tc.text}`}>{count}</span>
       <div className="min-w-0">
         <p className="font-bold text-white text-sm truncate">{name}</p>
-        <p className="text-xs text-f1-gray">{team}</p>
+        <p className="text-xs text-white">{team}</p>
       </div>
-      {suffix && <span className="text-xs text-f1-gray ml-auto flex-shrink-0">{suffix}</span>}
+      {suffix && <span className="text-xs text-white ml-auto flex-shrink-0">{suffix}</span>}
     </div>
   );
 };
@@ -125,7 +125,7 @@ const StatCard = ({ emoji, title, children, isEmpty }: {
     </div>
     <div className="p-4">
       {isEmpty
-        ? <p className="text-f1-gray text-sm text-center py-2">No data yet this season</p>
+        ? <p className="text-white text-sm text-center py-2">No data yet this season</p>
         : children}
     </div>
   </div>
@@ -229,7 +229,7 @@ const Stats = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" />
-        <p className="mt-4 text-f1-gray">Loading statistics...</p>
+        <p className="mt-4 text-white">Loading statistics...</p>
       </div>
     );
   }
@@ -253,19 +253,19 @@ const Stats = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-10">
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.races.completed_races}</p>
-            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Races Completed</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Races Completed</p>
           </div>
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.races.completed_sprints}</p>
-            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Sprints Completed</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Sprints Completed</p>
           </div>
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.predictions.main_predictions}</p>
-            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Race Predictions</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Race Predictions</p>
           </div>
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.predictions.sprint_predictions}</p>
-            <p className="text-xs text-blue-100/70 uppercase tracking-wider mt-1">Sprint Predictions</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Sprint Predictions</p>
           </div>
         </div>
       )}
@@ -275,16 +275,16 @@ const Stats = () => {
         <div className="w-1 h-6 bg-f1-yellow-500 flex-shrink-0" />
         <div>
           <h2 className="text-xl font-bold text-white uppercase tracking-wide">Season Highlights</h2>
-          <p className="text-f1-gray text-xs">Fun facts and stats from the 2026 season so far</p>
+          <p className="text-white text-xs">Fun facts and stats from the 2026 season so far</p>
         </div>
       </div>
       {loadingFun ? (
-        <div className="flex items-center gap-3 py-8 text-f1-gray">
+        <div className="flex items-center gap-3 py-8 text-white">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-f1-yellow-500 flex-shrink-0" />
           <span>Crunching the numbers...</span>
         </div>
       ) : !funStats ? (
-        <p className="text-f1-gray text-sm">Stats unavailable</p>
+        <p className="text-white text-sm">Stats unavailable</p>
       ) : (
         <>
           {/* Poule stats: prediction accuracy */}
@@ -296,7 +296,7 @@ const Stats = () => {
                 {funStats.crystalBall.map((u, i) => (
                   <div key={u.nickname} className="flex items-center gap-3 py-1">
                     <span className={`text-sm font-black w-6 text-center ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-f1-neutral-300' : i === 2 ? 'text-f1-yellow-400' : 'text-f1-gray'
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-f1-neutral-300' : i === 2 ? 'text-f1-yellow-400' : 'text-white'
                     }`}>{i + 1}</span>
                     <span className="font-semibold text-white flex-1">{u.nickname}</span>
                     <span className="font-mono text-f1-yellow-500 font-black">
@@ -313,11 +313,11 @@ const Stats = () => {
                 {funStats.consistency.map((u, i) => (
                   <div key={u.nickname} className="flex items-center gap-3 py-1">
                     <span className={`text-sm font-black w-6 text-center ${
-                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-f1-neutral-300' : i === 2 ? 'text-f1-yellow-400' : 'text-f1-gray'
+                      i === 0 ? 'text-yellow-400' : i === 1 ? 'text-f1-neutral-300' : i === 2 ? 'text-f1-yellow-400' : 'text-white'
                     }`}>{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white">{u.nickname}</p>
-                      <p className="text-xs text-f1-gray">{u.races} races · best: {u.best_race} pts</p>
+                      <p className="text-xs text-white">{u.races} races · best: {u.best_race} pts</p>
                     </div>
                     <span className="font-mono text-green-400 font-black">
                       {u.avg_points} avg
@@ -338,7 +338,7 @@ const Stats = () => {
                     count={d.count} suffix="picks" />
                 ))}
                 {funStats.predictedWinners.length === 0 && (
-                  <p className="text-f1-gray text-sm text-center">No predictions yet</p>
+                  <p className="text-white text-sm text-center">No predictions yet</p>
                 )}
               </div>
             </StatCard>
@@ -354,7 +354,7 @@ const Stats = () => {
                       <span className={`font-black text-lg ${tc.text}`}>{upset.winner_acronym}</span>
                       <span className="text-white text-sm">{upset.winner_name} won</span>
                     </div>
-                    <p className="text-f1-gray text-sm">
+                    <p className="text-white text-sm">
                       Only{' '}
                       <span className="text-f1-yellow-500 font-bold">{upset.correct}</span>
                       {' '}of{' '}
@@ -372,7 +372,7 @@ const Stats = () => {
 
       {/* Race Selector */}
       <div className="mb-4 mt-10">
-        <label className="block text-xs font-bold text-f1-gray uppercase tracking-wider mb-2">Select Race</label>
+        <label className="block text-xs font-bold text-white uppercase tracking-wider mb-2">Select Race</label>
         <select
           value={selectedRound || ''}
           onChange={(e) => setSelectedRound(parseInt(e.target.value))}
@@ -405,7 +405,7 @@ const Stats = () => {
       {selectedRound && (
         <div className="card-f1 p-0 overflow-hidden mb-8">
           <div className="p-4 border-b border-f1-neutral-800 flex items-center gap-2">
-            <span className={`w-1 h-5 flex-shrink-0 ${selectedSession === 'sprint' || selectedSession === 'sprint_qualifying' ? 'bg-f1-teal-400' : 'bg-f1-yellow-500'}`} />
+            <span className={`w-1 h-5 flex-shrink-0 ${selectedSession === 'sprint' || selectedSession === 'sprint_qualifying' ? 'bg-f1-blue' : 'bg-f1-yellow-500'}`} />
             <h2 className="text-lg font-bold">
               {getSelectedRace()?.race_name} — {sessionLabel[selectedSession]}
             </h2>
@@ -414,10 +414,10 @@ const Stats = () => {
           {loadingSession ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-yellow-500 mx-auto" />
-              <p className="mt-2 text-f1-gray">Loading results...</p>
+              <p className="mt-2 text-white">Loading results...</p>
             </div>
           ) : sessionResults.length === 0 ? (
-            <div className="p-8 text-center text-f1-gray">No results available for this session</div>
+            <div className="p-8 text-center text-white">No results available for this session</div>
           ) : (
             <>
               {/* Desktop/tablet: full table */}
@@ -425,23 +425,23 @@ const Stats = () => {
                 <table className="w-full">
                   <thead className="bg-f1-neutral-850">
                     <tr>
-                      <th className="px-0 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Driver</th>
+                      <th className="px-0 py-3 text-left text-xs font-semibold text-white uppercase">Driver</th>
                       {isQualiSession ? (
                         <>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ2' : 'Q2'}</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">{isSQSession ? 'SQ3' : 'Q3'}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{isSQSession ? 'SQ2' : 'Q2'}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{isSQSession ? 'SQ3' : 'Q3'}</th>
                         </>
                       ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
                         <>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Pts</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Time</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Pts</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Status</th>
                         </>
                       ) : (
                         <>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Time</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-f1-gray uppercase">Laps</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Time</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Laps</th>
                         </>
                       )}
                     </tr>
@@ -459,7 +459,7 @@ const Stats = () => {
                               <p className="font-f1 font-bold text-white text-base sm:text-lg uppercase tracking-wide leading-tight truncate">
                                 {result.driverName}
                               </p>
-                              <p className="text-[10px] text-blue-100/70 uppercase tracking-wide truncate">{result.team}</p>
+                              <p className="text-[10px] text-white/70 uppercase tracking-wide truncate">{result.team}</p>
                             </div>
                           </div>
                         </td>
@@ -506,7 +506,7 @@ const Stats = () => {
                         <p className="font-f1 font-bold text-white text-lg uppercase tracking-wide leading-tight truncate">
                           {result.driverName}
                         </p>
-                        <p className="text-[10px] text-blue-100/70 uppercase tracking-wide truncate">{result.team}</p>
+                        <p className="text-[10px] text-white/70 uppercase tracking-wide truncate">{result.team}</p>
                       </div>
                       <div className="text-right shrink-0">
                         {isQualiSession ? (
@@ -523,7 +523,7 @@ const Stats = () => {
                         ) : (
                           <>
                             <p className="font-mono text-sm text-white">{result.time || 'No time'}</p>
-                            <p className="text-[10px] text-blue-100/70">{result.laps} laps</p>
+                            <p className="text-[10px] text-white/70">{result.laps} laps</p>
                           </>
                         )}
                       </div>
@@ -567,8 +567,8 @@ const Stats = () => {
                     {funStats.bestLap.lap_time}
                   </p>
                   <p className="font-bold text-white">{funStats.bestLap.name}</p>
-                  <p className="text-xs text-f1-gray">{funStats.bestLap.team}</p>
-                  <p className="text-xs text-f1-gray mt-1">
+                  <p className="text-xs text-white">{funStats.bestLap.team}</p>
+                  <p className="text-xs text-white mt-1">
                     Round {funStats.bestLap.round} — {funStats.bestLap.race_name}
                   </p>
                 </div>

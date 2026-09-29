@@ -406,7 +406,7 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
       <div className="flex flex-col gap-3">
 
         {/* Sprint badge — teal marks it apart from main-race pink */}
-        <div className="flex items-center justify-center gap-2 bg-f1-teal-500 text-white py-1.5 px-4 text-xs font-black tracking-widest uppercase mx-auto">
+        <div className="flex items-center justify-center gap-2 bg-f1-blue text-white py-1.5 px-4 text-xs font-black tracking-widest uppercase mx-auto">
           ⚡ Sprint Race
         </div>
 

@@ -4,11 +4,11 @@ const PrivacyPolicy = () => {
       <div className="card-f1 p-8">
         <h1 className="text-4xl font-bold mb-6 text-f1-yellow-500">Privacy Policy</h1>
 
-        <p className="text-f1-gray mb-6">
+        <p className="text-white mb-6">
           <strong>Last Updated:</strong> September 29, 2026
         </p>
 
-        <div className="space-y-6 text-f1-gray">
+        <div className="space-y-6 text-white">
           <section>
             <h2 className="text-2xl font-bold text-white mb-3">1. Introduction</h2>
             <p>

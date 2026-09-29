@@ -74,7 +74,7 @@ const MyPredictions = () => {
       <div className="text-center py-16">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">My Predictions</h1>
-          <p className="text-f1-gray mb-8 text-lg">
+          <p className="text-white mb-8 text-lg">
             Please log in to view your predictions
           </p>
           <button
@@ -92,7 +92,7 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-f1-gray">Loading your predictions...</p>
+        <p className="mt-4 text-white">Loading your predictions...</p>
       </div>
     );
   }
@@ -102,7 +102,7 @@ const MyPredictions = () => {
       <div className="text-center py-16">
         <div className="card-f1 p-8 max-w-2xl mx-auto">
           <h2 className="text-2xl font-bold mb-4 text-red-500">Error</h2>
-          <p className="text-f1-gray">{error}</p>
+          <p className="text-white">{error}</p>
           <button
             onClick={() => navigate('/')}
             className="btn-f1-primary mt-6"
@@ -119,7 +119,7 @@ const MyPredictions = () => {
       <div className="text-center py-16">
         <div className="card-f1 p-12 max-w-2xl mx-auto">
           <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">My Predictions</h1>
-          <p className="text-f1-gray mb-8 text-lg">
+          <p className="text-white mb-8 text-lg">
             You haven't made any predictions yet
           </p>
           <button
@@ -179,16 +179,16 @@ const MyPredictions = () => {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-teal-400' : 'text-f1-yellow-500'}`}>
+                    <h2 className={`text-2xl font-bold ${isSprint ? 'text-f1-blue' : 'text-f1-yellow-500'}`}>
                       {prediction.race_name}
                     </h2>
                     {isSprint && (
-                      <span className="text-xs px-2 py-1 bg-f1-teal-500 text-white font-bold">
+                      <span className="text-xs px-2 py-1 bg-f1-blue text-white font-bold">
                         SPRINT
                       </span>
                     )}
                   </div>
-                  <p className="text-f1-gray">
+                  <p className="text-white">
                     {new Date(prediction.race_date).toLocaleDateString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
@@ -225,15 +225,15 @@ const MyPredictions = () => {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">{driver.name}</p>
-                          <p className="text-xs text-f1-gray truncate">{driver.team}</p>
+                          <p className="text-xs text-white truncate">{driver.team}</p>
                         </div>
                       </div>
                       {pts !== undefined && (
                         <div className="mt-1.5 flex items-center justify-between text-xs">
-                          <span className="text-f1-gray">
+                          <span className="text-white">
                             {pts.actualPosition ? `→ P${pts.actualPosition}` : '→ DNF'}
                           </span>
-                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500')) : 'text-f1-gray'}`}>
+                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500')) : 'text-white'}`}>
                             {pts.pointsEarned > 0 ? `+${pts.pointsEarned}${pts.hasBonus ? ' ★' : ''}` : '0'}
                           </span>
                         </div>
@@ -249,7 +249,7 @@ const MyPredictions = () => {
                     onClick={() => navigate('/')}
                     className={`w-full py-3 font-bold transition-all ${
                       isSprint
-                        ? 'bg-f1-teal-500 hover:brightness-110 text-white'
+                        ? 'bg-f1-blue hover:brightness-110 text-white'
                         : 'btn-f1-primary'
                     }`}
                   >

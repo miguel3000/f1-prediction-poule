@@ -102,7 +102,7 @@ const Leaderboard = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-f1-gray">Loading leaderboard...</p>
+        <p className="mt-4 text-white">Loading leaderboard...</p>
       </div>
     );
   }
@@ -120,7 +120,7 @@ const Leaderboard = () => {
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-yellow-500"></div>
           </div>
         ) : seasonRaces.length === 0 ? (
-          <div className="bg-gray-900 p-8 text-center text-f1-gray">
+          <div className="bg-gray-900 p-8 text-center text-white">
             Season data available after the first race is completed.
           </div>
         ) : (
@@ -175,7 +175,7 @@ const Leaderboard = () => {
 
         {leaderboard.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-f1-gray text-lg">No users have made predictions yet</p>
+            <p className="text-white text-lg">No users have made predictions yet</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -208,7 +208,7 @@ const Leaderboard = () => {
                       <h3 className="font-f1 font-bold text-white text-xl sm:text-2xl uppercase tracking-wide leading-tight truncate">
                         {entry.nickname}
                       </h3>
-                      <div className="flex flex-wrap items-center gap-x-3 text-xs text-blue-100/70">
+                      <div className="flex flex-wrap items-center gap-x-3 text-xs text-white/70">
                         <span>
                           Last: {entry.last_race_points}
                           {entry.last_race_rank && ` (${ordinal(entry.last_race_rank)})`}
@@ -224,7 +224,7 @@ const Leaderboard = () => {
 
                   <div className="text-right shrink-0">
                     <p className="text-2xl sm:text-3xl font-f1-badge font-bold text-f1-yellow-400">{entry.total_points}</p>
-                    <p className="text-[10px] text-blue-100/70 uppercase tracking-widest">
+                    <p className="text-[10px] text-white/70 uppercase tracking-widest">
                       {Number(entry.rank) === 1 ? 'Leader' : `-${entry.diff_to_leader}`}
                     </p>
                   </div>

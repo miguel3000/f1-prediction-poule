@@ -15,7 +15,7 @@ const Profile = () => {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
         <h1 className="text-3xl font-bold mb-4 text-f1-yellow-500">Profile</h1>
-        <p className="text-f1-gray mb-6">You need to be logged in to view your profile.</p>
+        <p className="text-white mb-6">You need to be logged in to view your profile.</p>
         <a href="/auth" className="btn-f1-primary">
           Login
         </a>
@@ -111,7 +111,7 @@ const Profile = () => {
                 className="w-32 h-32 border-4 border-f1-yellow-500 mx-auto object-cover"
               />
             ) : (
-              <div className="w-32 h-32 border-4 border-f1-neutral-700 bg-f1-neutral-800 mx-auto flex items-center justify-center text-4xl font-bold text-f1-gray">
+              <div className="w-32 h-32 border-4 border-f1-neutral-700 bg-f1-neutral-800 mx-auto flex items-center justify-center text-4xl font-bold text-white">
                 {user.nickname.charAt(0).toUpperCase()}
               </div>
             )}
@@ -144,7 +144,7 @@ const Profile = () => {
             )}
           </div>
 
-          <p className="text-xs text-f1-gray mt-2">
+          <p className="text-xs text-white mt-2">
             Max 5MB. Allowed: JPEG, PNG, GIF, WebP
           </p>
         </div>
@@ -168,23 +168,23 @@ const Profile = () => {
 
           <div className="grid gap-4">
             <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-f1-gray mb-1">Nickname</p>
+              <p className="text-sm text-white mb-1">Nickname</p>
               <p className="text-lg font-bold">{user.nickname}</p>
             </div>
 
             <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-f1-gray mb-1">Email</p>
+              <p className="text-sm text-white mb-1">Email</p>
               <p className="text-lg">{user.email}</p>
             </div>
 
             <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-f1-gray mb-1">Total Points</p>
+              <p className="text-sm text-white mb-1">Total Points</p>
               <p className="text-2xl font-bold text-f1-yellow-500">{user.total_points}</p>
             </div>
 
             {user.created_at && (
               <div className="bg-f1-neutral-800 p-4">
-                <p className="text-sm text-f1-gray mb-1">Member Since</p>
+                <p className="text-sm text-white mb-1">Member Since</p>
                 <p className="text-lg">{new Date(user.created_at).toLocaleDateString()}</p>
               </div>
             )}

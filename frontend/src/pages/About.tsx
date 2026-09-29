@@ -4,7 +4,7 @@ const About = () => {
       <div className="card-f1 p-8">
         <h1 className="text-4xl font-bold mb-6 text-f1-yellow-500">About F1 Prediction Poule</h1>
 
-        <div className="space-y-6 text-f1-gray">
+        <div className="space-y-6 text-white">
           <section>
             <h2 className="text-2xl font-bold text-white mb-3">Welcome to F1 Prediction Poule</h2>
             <p>

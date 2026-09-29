@@ -166,7 +166,7 @@ const Teams = () => {
       <h1 className="text-4xl font-bold mb-2 text-center text-f1-yellow-500">
         2026 F1 Teams
       </h1>
-      <p className="text-center text-f1-gray mb-8">
+      <p className="text-center text-white mb-8">
         11 Teams - 22 Race Drivers
       </p>
 
@@ -189,13 +189,13 @@ const Teams = () => {
             <div className="p-5">
               {/* Engine */}
               <div className="mb-4 text-sm">
-                <span className="text-f1-gray">Power Unit: </span>
+                <span className="text-white">Power Unit: </span>
                 <span className={team.textColor}>{team.engine}</span>
               </div>
 
               {/* Race Drivers */}
               <div className="mb-4">
-                <h3 className="text-sm font-semibold text-f1-gray mb-2 uppercase tracking-wide">
+                <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wide">
                   Race Drivers
                 </h3>
                 <div className="space-y-2">
@@ -209,7 +209,7 @@ const Teams = () => {
                       </span>
                       <div>
                         <p className="font-semibold text-white">{driver.name}</p>
-                        <p className="text-xs text-f1-gray">{driver.role}</p>
+                        <p className="text-xs text-white">{driver.role}</p>
                       </div>
                     </div>
                   ))}
@@ -219,7 +219,7 @@ const Teams = () => {
               {/* Reserve Drivers */}
               {team.reserves && team.reserves.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-f1-gray mb-2 uppercase tracking-wide">
+                  <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wide">
                     Reserve & Test Drivers
                   </h3>
                   <div className="space-y-2">
@@ -228,10 +228,10 @@ const Teams = () => {
                         key={index}
                         className="flex items-center gap-3 bg-f1-neutral-700/30 p-2 border border-f1-neutral-700"
                       >
-                        <span className="text-f1-gray text-sm w-12 text-center">-</span>
+                        <span className="text-white text-sm w-12 text-center">-</span>
                         <div>
-                          <p className="font-medium text-f1-gray">{driver.name}</p>
-                          <p className="text-xs text-f1-gray/70">{driver.role}</p>
+                          <p className="font-medium text-white">{driver.name}</p>
+                          <p className="text-xs text-white/70">{driver.role}</p>
                         </div>
                       </div>
                     ))}
@@ -244,7 +244,7 @@ const Teams = () => {
       </div>
 
       {/* Footer note */}
-      <div className="mt-8 text-center text-sm text-f1-gray">
+      <div className="mt-8 text-center text-sm text-white">
         <p>Driver lineup as of January 2026. Subject to change.</p>
         <p className="mt-2">
           Sources:{' '}

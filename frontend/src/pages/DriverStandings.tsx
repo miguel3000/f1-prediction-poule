@@ -121,7 +121,7 @@ const DriverStandings = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-f1-gray">Loading driver standings...</p>
+        <p className="mt-4 text-white">Loading driver standings...</p>
       </div>
     );
   }
@@ -134,7 +134,7 @@ const DriverStandings = () => {
 
       {/* Update Information - Compact */}
       <div className="max-w-4xl mx-auto mb-4">
-        <div className="text-center text-sm text-f1-gray">
+        <div className="text-center text-sm text-white">
           Updated: <span className="text-white">{formatDateTime(lastUpdated)}</span>
           <span className="mx-2">•</span>
           Next: <span className="text-white">{formatNextUpdate()}</span>
@@ -144,8 +144,8 @@ const DriverStandings = () => {
       <div className="max-w-4xl mx-auto">
         {drivers.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-f1-gray text-lg">No driver standings available yet</p>
-            <p className="text-sm text-f1-gray mt-2">
+            <p className="text-white text-lg">No driver standings available yet</p>
+            <p className="text-sm text-white mt-2">
               Standings will be updated after the first race
             </p>
           </div>
@@ -176,12 +176,12 @@ const DriverStandings = () => {
                       <h3 className="font-f1 font-bold text-white text-xl sm:text-2xl uppercase tracking-wide leading-tight truncate">
                         {driver.name}
                       </h3>
-                      <p className="text-xs text-blue-100/70 uppercase tracking-wide truncate">{driver.team}</p>
+                      <p className="text-xs text-white/70 uppercase tracking-wide truncate">{driver.team}</p>
                     </div>
 
                     <div className="text-right shrink-0">
                       <p className="text-2xl sm:text-3xl font-f1-badge font-bold text-f1-yellow-400">{driver.total_points}</p>
-                      <p className="text-[10px] text-blue-100/70 uppercase tracking-widest">Points</p>
+                      <p className="text-[10px] text-white/70 uppercase tracking-widest">Points</p>
                     </div>
                   </div>
                 </div>

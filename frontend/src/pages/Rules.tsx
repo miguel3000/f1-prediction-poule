@@ -146,7 +146,7 @@ const Rules = () => {
             <p className="mt-2 text-sm"><span className="text-gray-400">Example:</span> Predict VER P1, finishes P5 → <strong>0 pts</strong></p>
           </div>
 
-          <p className="text-f1-gray">
+          <p className="text-white">
             <strong>Note:</strong> Points are based on the position you predicted, not where the driver actually finishes.
             Predicting P1 correctly is worth more than predicting P10 correctly.
           </p>
@@ -238,7 +238,7 @@ const Rules = () => {
             </div>
           </div>
 
-          <p className="text-sm text-f1-gray">
+          <p className="text-sm text-white">
             The same scoring rules apply: <strong>exact match = full points</strong>, <strong>near miss (±1) = half points</strong>, anything else = 0.
             Sprint points count toward your overall season total.
           </p>
@@ -268,8 +268,8 @@ const Rules = () => {
             Race results are processed in two stages to account for post-race penalties and disqualifications:
           </p>
           <div className="space-y-4">
-            <div className="bg-blue-900/30 border border-blue-500/50 p-4">
-              <h3 className="text-lg font-bold text-blue-400 mb-2">Stage 1: Provisional Results (~5 min after race)</h3>
+            <div className="bg-f1-blue-dark/30 border border-f1-blue/50 p-4">
+              <h3 className="text-lg font-bold text-f1-blue mb-2">Stage 1: Provisional Results (~5 min after race)</h3>
               <p className="text-sm">
                 Shortly after the race ends, you'll receive an email with the provisional race results and
                 your initial points calculation. This gives you immediate feedback on your predictions!
@@ -284,7 +284,7 @@ const Rules = () => {
               </p>
             </div>
           </div>
-          <p className="text-f1-gray mt-4 text-sm">
+          <p className="text-white mt-4 text-sm">
             <strong>Note:</strong> Your leaderboard position may change after the 24-hour final results
             if disqualifications or penalties are applied.
           </p>
