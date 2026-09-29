@@ -33,9 +33,15 @@ const BRAND_YELLOW = '#FFD81A';
 // Logo header + thin yellow accent bar, reused at the top of every email.
 // The image is hosted on the live site rather than embedded, since most mail
 // clients strip data: URIs and inline SVG from HTML email.
+//
+// The ?v= query string is a deliberate cache-buster: Cloudflare edge-caches
+// this asset (respecting its own Cache-Control) including response headers,
+// so a bare-URL cache entry created before a header fix (e.g. the
+// Cross-Origin-Resource-Policy change) keeps serving the stale headers on
+// revalidation. Bump this whenever a header or the image itself changes.
 const emailHeader = `
   <div style="text-align: center; padding: 24px 0 16px;">
-    <img src="${process.env.FRONTEND_URL}/logo-email.png" alt="Poule Position" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
+    <img src="${process.env.FRONTEND_URL}/logo-email.png?v=2" alt="Poule Position" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
   </div>
   <div style="height: 4px; background-color: ${BRAND_YELLOW}; margin-bottom: 24px;"></div>
 `;
