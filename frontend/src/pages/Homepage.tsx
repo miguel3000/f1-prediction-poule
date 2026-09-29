@@ -117,6 +117,7 @@ const Homepage = () => {
         <RaceWeekendBanner
           raceName={mainRace?.race_name ?? nextRace.race_name}
           venue={mainRace?.circuit_name ?? nextRace.circuit_name}
+          round={mainRace?.round ?? nextRace.round}
         />
       )}
 
