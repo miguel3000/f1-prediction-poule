@@ -5,7 +5,7 @@ import CircuitBackground from '../components/CircuitBackground';
 import LogoMark from '../components/LogoMark';
 import PredictionInterface from '../components/PredictionInterface';
 import SprintPredictionInterface from '../components/SprintPredictionInterface';
-import SegmentedTabs from '../components/SegmentedTabs';
+import RaceTypeToggle from '../components/RaceTypeToggle';
 import { getUpcomingRaces } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -107,7 +107,6 @@ const Homepage = () => {
   return (
     <div>
       <CircuitBackground circuitName={mainRace?.circuit_name ?? nextRace?.circuit_name} />
-      <LogoMark className="h-16 sm:h-20 w-auto mx-auto mb-6" />
       <Banner
         nextRaceDate={
           hasSprint && activeTab === 'sprint' && sprintRace
@@ -123,19 +122,9 @@ const Homepage = () => {
         isSprint={!!(hasSprint && activeTab === 'sprint')}
       />
 
-      {/* Sprint/Main Toggle Tabs (only shown for sprint weekends) */}
-      {hasSprint && (
-        <div className="mt-4 mb-2">
-          <SegmentedTabs
-            options={[
-              { value: 'sprint', label: 'Sprint' },
-              { value: 'main', label: 'Main Race' },
-            ]}
-            value={activeTab}
-            onChange={setActiveTab}
-          />
-        </div>
-      )}
+      {/* Sprint/Main Toggle (only shown for sprint weekends) — same signage
+          look as Banner above it, rather than a generic pill control. */}
+      {hasSprint && <RaceTypeToggle value={activeTab} onChange={setActiveTab} />}
 
       <div className="mt-4">
         {hasSprint && activeTab === 'sprint' && sprintRace ? (
