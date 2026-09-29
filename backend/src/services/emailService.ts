@@ -30,17 +30,21 @@ const BRAND_NAVY = '#005277';
 const BRAND_BLUE = '#2596C7';
 const BRAND_YELLOW = '#FFD81A';
 
-// Gmail's own automatic dark-mode recoloring (especially the Android app)
-// darkens bright inline background colors it judges "too light" even when
-// meta color-scheme says light — it doesn't reliably honor that meta tag.
-// When it recolors an element it tags it with data-ogsc/data-ogsb, which a
-// <style> block CAN target to force the real color back. Verified live:
-// our blue (#2596C7, medium luminance) survived untouched; our yellow
-// (#FFD81A, very high luminance) got muddied to olive without this.
+// Gmail's own automatic dark-mode recoloring (especially the Android app,
+// via Android WebView's system-level "force dark") darkens bright inline
+// background colors it judges "too light" — it does this by algorithmically
+// adjusting computed CSS colors post-render, which meta color-scheme and
+// data-ogsc/data-ogsb style overrides both failed to stop in a live test:
+// our blue (#2596C7, medium luminance) survived, our yellow (#FFD81A, very
+// high luminance) got muddied to olive regardless. Force-dark does NOT
+// touch raster images though, so the fix for a high-luminance color like
+// our brand yellow is a background IMAGE (emailYellowBg below) instead of a
+// CSS color — bgcolor/background-color stay too, as the fallback for
+// clients that block images.
+const EMAIL_YELLOW_BG_URL = `${process.env.FRONTEND_URL}/email-yellow-bg.png`;
+
 const emailDarkModeOverrides = `
   <style>
-    .op-yellow-bg { background-color: ${BRAND_YELLOW} !important; }
-    [data-ogsc] .op-yellow-bg, [data-ogsb] .op-yellow-bg { background-color: ${BRAND_YELLOW} !important; }
     .op-blue-bg { background-color: ${BRAND_BLUE} !important; }
     [data-ogsc] .op-blue-bg, [data-ogsb] .op-blue-bg { background-color: ${BRAND_BLUE} !important; }
     .op-black-text { color: #000000 !important; }
@@ -59,15 +63,14 @@ const emailDarkModeOverrides = `
 // so a bare-URL cache entry created before a header fix (e.g. the
 // Cross-Origin-Resource-Policy change) keeps serving the stale headers on
 // revalidation. Bump this whenever a header or the image itself changes.
-//
-// The accent line uses a bulletproof table + bgcolor attribute, plus the
-// op-yellow-bg class (see emailDarkModeOverrides above).
 const emailHeader = `
   <div style="text-align: center; padding: 24px 0 16px;">
     <img src="${process.env.FRONTEND_URL}/logo-email.png?v=2" alt="Poule Position" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
   </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
-    <tr><td height="4" bgcolor="${BRAND_YELLOW}" class="op-yellow-bg" style="background-color: ${BRAND_YELLOW}; line-height: 4px; font-size: 4px;">&nbsp;</td></tr>
+    <tr>
+      <td height="4" bgcolor="${BRAND_YELLOW}" background="${EMAIL_YELLOW_BG_URL}" style="background-color: ${BRAND_YELLOW}; background-image: url('${EMAIL_YELLOW_BG_URL}'); line-height: 4px; font-size: 4px;">&nbsp;</td>
+    </tr>
   </table>
 `;
 
@@ -78,12 +81,17 @@ const emailHeader = `
 // elements). Yellow/black by default, matching the site's own primary CTA
 // color (.btn-f1-primary); pass a url to make the whole bar a clickable link.
 //
-// Built as a table with a bgcolor attribute plus an op-*-bg class (see
-// emailDarkModeOverrides above) for the same reason as the header line.
+// Yellow bars use the background-image trick (see EMAIL_YELLOW_BG_URL
+// above) since force-dark otherwise darkens them; blue bars use the
+// data-ogsc/data-ogsb class override, which was enough for blue alone.
 const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: string }) => {
   const bg = opts?.bg ?? BRAND_YELLOW;
   const color = opts?.color ?? '#000000';
-  const bgClass = bg === BRAND_YELLOW ? 'op-yellow-bg' : bg === BRAND_BLUE ? 'op-blue-bg' : '';
+  const isYellow = bg === BRAND_YELLOW;
+  const bgClass = isYellow ? '' : bg === BRAND_BLUE ? 'op-blue-bg' : '';
+  const bgImageAttrs = isYellow
+    ? `background="${EMAIL_YELLOW_BG_URL}" style="background-color: ${bg}; background-image: url('${EMAIL_YELLOW_BG_URL}'); padding: 14px 24px;"`
+    : `style="background-color: ${bg} !important; padding: 14px 24px;"`;
   const textClass = color === '#000000' ? 'op-black-text' : color === '#ffffff' ? 'op-white-text' : '';
   const text = `
     <p class="${textClass}" style="margin: 0; color: ${color} !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 18px;">
@@ -97,7 +105,7 @@ const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: 
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
       <tr>
-        <td bgcolor="${bg}" class="${bgClass}" style="background-color: ${bg} !important; padding: 14px 24px;">
+        <td bgcolor="${bg}" class="${bgClass}" ${bgImageAttrs}>
           ${content}
         </td>
       </tr>
