@@ -52,7 +52,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   if (!nextRaceDate || !nextRaceName) {
     return (
       <div className="w-full py-5 px-4 border-b border-f1-neutral-800 text-center" style={{ backgroundColor: '#191517' }}>
-        <p className="text-f1-neutral-500 font-brand text-sm tracking-widest uppercase">Fetching race data...</p>
+        <p className="text-white font-brand text-sm tracking-widest uppercase">Fetching race data...</p>
       </div>
     );
   }
