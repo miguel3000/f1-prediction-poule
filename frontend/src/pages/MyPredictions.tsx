@@ -210,35 +210,30 @@ const MyPredictions = () => {
                 </div>
               </div>
 
-              <div className={`grid gap-3 ${isSprint ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-5'}`}>
+              <div className="border border-f1-neutral-700">
                 {prediction.positions.map((driver, index) => {
                   const pts = prediction.positionPoints?.[index];
+                  const isEven = index % 2 === 0;
                   return (
                     <div
                       key={index}
-                      className={`p-3 border ${
-                        isSprint
-                          ? 'bg-f1-yellow-900/20 border-f1-yellow-500/30'
-                          : 'bg-f1-neutral-800 border-f1-neutral-700'
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-2.5 ${isEven ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className={`font-bold text-sm ${isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500'}`}>
-                          P{index + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{driver.name}</p>
-                          <p className="text-xs text-white truncate">{driver.team}</p>
-                        </div>
+                      <span className="font-f1-badge font-bold text-white/80 text-sm w-7 flex-shrink-0">
+                        P{index + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-white truncate">{driver.name}</p>
+                        <p className="text-xs text-white/70 truncate">{driver.team}</p>
                       </div>
                       {pts !== undefined && (
-                        <div className="mt-1.5 flex items-center justify-between text-xs">
-                          <span className="text-white">
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs text-white/80">
                             {pts.actualPosition ? `→ P${pts.actualPosition}` : '→ DNF'}
-                          </span>
-                          <span className={`font-bold ${pts.pointsEarned > 0 ? (pts.hasBonus ? 'text-yellow-400' : (isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500')) : 'text-white'}`}>
+                          </p>
+                          <p className={`font-bold text-sm ${pts.pointsEarned > 0 ? 'text-f1-yellow-400' : 'text-white/60'}`}>
                             {pts.pointsEarned > 0 ? `+${pts.pointsEarned}${pts.hasBonus ? ' ★' : ''}` : '0'}
-                          </span>
+                          </p>
                         </div>
                       )}
                     </div>

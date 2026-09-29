@@ -27,10 +27,10 @@ const raceResults: RaceResultForEmail[] = [
 ];
 
 const userPrediction: UserPredictionResult[] = [
-  { predictedPosition: 1, driverName: 'Russell', actualPosition: 1, pointsEarned: 25, hasBonus: false },
-  { predictedPosition: 2, driverName: 'Leclerc', actualPosition: 3, pointsEarned: 9, hasBonus: true },
-  { predictedPosition: 3, driverName: 'Verstappen', actualPosition: 2, pointsEarned: 7, hasBonus: true },
-  { predictedPosition: 4, driverName: 'Norris', actualPosition: null, pointsEarned: 0, hasBonus: false },
+  { predictedPosition: 1, driverName: 'Russell', team: 'Mercedes', actualPosition: 1, pointsEarned: 25, hasBonus: false },
+  { predictedPosition: 2, driverName: 'Leclerc', team: 'Ferrari', actualPosition: 3, pointsEarned: 9, hasBonus: true },
+  { predictedPosition: 3, driverName: 'Verstappen', team: 'Red Bull Racing', actualPosition: 2, pointsEarned: 7, hasBonus: true },
+  { predictedPosition: 4, driverName: 'Norris', team: 'McLaren', actualPosition: null, pointsEarned: 0, hasBonus: false },
 ];
 
 const personalPredictions: PersonalPredictionPosition[] = [
@@ -54,7 +54,13 @@ const run = async () => {
 
   console.log('Sending test emails to', to);
 
-  await sendPredictionConfirmation(to, 'Gaston', 'Azerbaijan Grand Prix', ['Russell', 'Verstappen', 'Leclerc', 'Piastri', 'Norris']);
+  await sendPredictionConfirmation(to, 'Gaston', 'Azerbaijan Grand Prix', [
+    { driverName: 'Russell', team: 'Mercedes' },
+    { driverName: 'Verstappen', team: 'Red Bull Racing' },
+    { driverName: 'Leclerc', team: 'Ferrari' },
+    { driverName: 'Piastri', team: 'McLaren' },
+    { driverName: 'Norris', team: 'McLaren' },
+  ]);
   console.log('1/8 sent: prediction confirmation');
 
   await sendProvisionalResults(to, 'Gaston', 'Azerbaijan Grand Prix', raceResults, userPrediction, 41);

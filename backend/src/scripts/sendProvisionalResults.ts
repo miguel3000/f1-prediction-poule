@@ -132,9 +132,10 @@ async function processProvisionalResults() {
               const predictedDriverId = prediction[`position_${predictedPos}`];
               if (!predictedDriverId) continue;
 
-              // Get driver name
-              const driverResult = await query('SELECT name FROM drivers WHERE id = $1', [predictedDriverId]);
+              // Get driver name/team
+              const driverResult = await query('SELECT name, team FROM drivers WHERE id = $1', [predictedDriverId]);
               const driverName = driverResult.rows[0]?.name || 'Unknown';
+              const driverTeam = driverResult.rows[0]?.team;
 
               // Find actual position
               const actualResult = await query(
@@ -163,6 +164,7 @@ async function processProvisionalResults() {
               userPredictionResults.push({
                 predictedPosition: predictedPos,
                 driverName,
+                team: driverTeam,
                 actualPosition,
                 pointsEarned,
                 hasBonus

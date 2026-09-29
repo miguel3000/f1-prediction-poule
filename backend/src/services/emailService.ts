@@ -148,35 +148,45 @@ const emailDocument = (bodyHtml: string) => `
   </html>
 `;
 
+export interface PredictionPickForEmail {
+  driverName: string;
+  team?: string;
+}
+
 export const sendPredictionConfirmation = async (
   email: string,
   nickname: string,
   raceName: string,
-  predictions: string[],
+  predictions: PredictionPickForEmail[],
   dnfPickName?: string | null
 ) => {
+  const rows: UserPredictionResult[] = predictions.map((p, i) => ({
+    predictedPosition: i + 1,
+    driverName: p.driverName,
+    team: p.team,
+    actualPosition: undefined,
+    pointsEarned: 0,
+    hasBonus: false,
+  }));
+
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
     subject: `Prediction Confirmed - ${raceName}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        ${emailHeader}
-        <h2 style="color: ${BRAND_NAVY};">Prediction Confirmed!</h2>
-        <p>Hello ${escapeHtml(nickname)}!</p>
-        <p>Your prediction for <strong>${escapeHtml(raceName)}</strong> has been saved:</p>
-        <ol style="line-height: 2;">
-          ${predictions.map((driver) => `<li>${escapeHtml(driver)}</li>`).join('')}
-        </ol>
-        ${dnfPickName ? `<p>First retirement pick: <strong>${escapeHtml(dnfPickName)}</strong> (+25 pts if correct)</p>` : ''}
-        <p style="margin-top: 20px;">
-          You can update your prediction until 1 minute before the race starts.
-        </p>
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Good luck! 🏎️
-        </p>
-      </div>
-    `,
+    html: emailDocument(`
+      ${emailHeader}
+      <h2 style="color: ${BRAND_NAVY};">Prediction Confirmed!</h2>
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>Your prediction for <strong>${escapeHtml(raceName)}</strong> has been saved:</p>
+      ${emailPredictionRows(rows)}
+      ${dnfPickName ? `<p>First retirement pick: <strong>${escapeHtml(dnfPickName)}</strong> (+25 pts if correct)</p>` : ''}
+      <p style="margin-top: 20px;">
+        You can update your prediction until 1 minute before the race starts.
+      </p>
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        Good luck! 🏎️
+      </p>
+    `),
   };
 
   try {
@@ -196,10 +206,52 @@ export interface RaceResultForEmail {
 export interface UserPredictionResult {
   predictedPosition: number;
   driverName: string;
-  actualPosition: number | null;
+  team?: string;
+  // undefined (not just null) means "not scored yet" — the confirmation
+  // email lists picks before the race, with no actual/points column at all.
+  actualPosition?: number | null;
   pointsEarned: number;
   hasBonus: boolean;
 }
+
+// The MyPredictions page's alternating blue/navy row list, ported to email —
+// bulletproof table markup (bgcolor + style, same reasoning as the broadcast
+// banners) since this is a stack of colored rows, not one bar. Blue/navy are
+// both medium-to-low luminance, so unlike the broadcast yellow they don't
+// need the background-image workaround — confirmed live during that fix.
+const emailPredictionRows = (rows: UserPredictionResult[]) => {
+  const hasResults = rows.some((r) => r.actualPosition !== undefined);
+
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0;">
+      ${rows
+        .map((r, i) => {
+          const bg = i % 2 === 0 ? BRAND_BLUE : BRAND_NAVY;
+          const resultCell = hasResults
+            ? `
+              <td bgcolor="${bg}" align="right" style="background-color: ${bg}; padding: 10px 14px 10px 8px; white-space: nowrap; vertical-align: top;">
+                <div style="color: rgba(255,255,255,0.8); font-size: 12px;">${r.actualPosition ? `&rarr; P${r.actualPosition}` : '&rarr; DNF'}</div>
+                <div style="font-weight: 800; font-size: 14px; color: ${r.pointsEarned > 0 ? BRAND_YELLOW : 'rgba(255,255,255,0.6)'};">
+                  ${r.pointsEarned > 0 ? `+${r.pointsEarned}${r.hasBonus ? ' &#9733;' : ''}` : '0'}
+                </div>
+              </td>
+            `
+            : '';
+          return `
+            <tr>
+              <td bgcolor="${bg}" width="32" style="background-color: ${bg}; padding: 10px 0 10px 14px; color: rgba(255,255,255,0.8); font-weight: 800; font-size: 14px; vertical-align: top;">P${r.predictedPosition}</td>
+              <td bgcolor="${bg}" style="background-color: ${bg}; padding: 10px 8px;">
+                <div style="color: #ffffff; font-weight: 700; font-size: 14px;">${escapeHtml(r.driverName)}</div>
+                ${r.team ? `<div style="color: rgba(255,255,255,0.7); font-size: 11px;">${escapeHtml(r.team)}</div>` : ''}
+              </td>
+              ${resultCell}
+            </tr>
+          `;
+        })
+        .join('')}
+    </table>
+  `;
+};
 
 export const sendProvisionalResults = async (
   email: string,
@@ -215,57 +267,40 @@ export const sendProvisionalResults = async (
     from: process.env.EMAIL_FROM,
     to: email,
     subject: `Race Results - ${raceName} (Provisional)`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        ${emailHeader}
-        <h2 style="color: ${BRAND_NAVY};">Provisional Race Results</h2>
-        <p>Hello ${escapeHtml(nickname)}!</p>
-        <p>The <strong>${escapeHtml(raceName)}</strong> has finished! Here are the provisional results:</p>
+    html: emailDocument(`
+      ${emailHeader}
+      <h2 style="color: ${BRAND_NAVY};">Provisional Race Results</h2>
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>The <strong>${escapeHtml(raceName)}</strong> has finished! Here are the provisional results:</p>
 
-        <h3 style="color: #333; margin-top: 20px;">Race Results (Top 10)</h3>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <tr style="background-color: ${BRAND_NAVY}; color: white;">
-            <th style="padding: 8px; text-align: left;">Pos</th>
-            <th style="padding: 8px; text-align: left;">Driver</th>
-            <th style="padding: 8px; text-align: right;">Points</th>
+      <h3 style="color: #333; margin-top: 20px;">Race Results (Top 10)</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="background-color: ${BRAND_NAVY}; color: white;">
+          <th style="padding: 8px; text-align: left;">Pos</th>
+          <th style="padding: 8px; text-align: left;">Driver</th>
+          <th style="padding: 8px; text-align: right;">Points</th>
+        </tr>
+        ${top10Results.map((r, i) => `
+          <tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">
+            <td style="padding: 8px;">${r.position}</td>
+            <td style="padding: 8px;">${escapeHtml(r.driverName)}</td>
+            <td style="padding: 8px; text-align: right;">${r.points}</td>
           </tr>
-          ${top10Results.map((r, i) => `
-            <tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">
-              <td style="padding: 8px;">${r.position}</td>
-              <td style="padding: 8px;">${escapeHtml(r.driverName)}</td>
-              <td style="padding: 8px; text-align: right;">${r.points}</td>
-            </tr>
-          `).join('')}
-        </table>
+        `).join('')}
+      </table>
 
-        <h3 style="color: #333;">Your Prediction Results</h3>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <tr style="background-color: #333; color: white;">
-            <th style="padding: 8px; text-align: left;">Predicted</th>
-            <th style="padding: 8px; text-align: left;">Driver</th>
-            <th style="padding: 8px; text-align: center;">Actual</th>
-            <th style="padding: 8px; text-align: right;">Points</th>
-          </tr>
-          ${userPrediction.map((p, i) => `
-            <tr style="background-color: ${p.hasBonus ? '#d4edda' : (i % 2 === 0 ? '#f9f9f9' : '#fff')};">
-              <td style="padding: 8px;">P${p.predictedPosition}</td>
-              <td style="padding: 8px;">${escapeHtml(p.driverName)}</td>
-              <td style="padding: 8px; text-align: center;">${p.actualPosition ? `P${p.actualPosition}` : 'DNF/DNS'}</td>
-              <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (½ pts)' : ''}</td>
-            </tr>
-          `).join('')}
-        </table>
+      <h3 style="color: #333;">Your Prediction Results</h3>
+      ${emailPredictionRows(userPrediction)}
 
-        <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; border-radius: 5px; text-align: center;">
-          <strong>Your Total Points: ${totalPoints}</strong>
-        </div>
-
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Note: These are provisional results. Final points will be calculated 24 hours after the race
-          to account for any disqualifications or penalties.
-        </p>
+      <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; text-align: center;">
+        <strong>Your Total Points: ${totalPoints}</strong>
       </div>
-    `,
+
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        Note: These are provisional results. Final points will be calculated 24 hours after the race
+        to account for any disqualifications or penalties.
+      </p>
+    `),
   };
 
   try {
@@ -298,22 +333,7 @@ export const sendFinalResults = async (
   const predictionTable = userPrediction && userPrediction.length > 0
     ? `
       <h3 style="color: #333;">Your Prediction Results</h3>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        <tr style="background-color: #333; color: white;">
-          <th style="padding: 8px; text-align: left;">Predicted</th>
-          <th style="padding: 8px; text-align: left;">Driver</th>
-          <th style="padding: 8px; text-align: center;">Actual</th>
-          <th style="padding: 8px; text-align: right;">Points</th>
-        </tr>
-        ${userPrediction.map((p, i) => `
-          <tr style="background-color: ${p.hasBonus ? '#d4edda' : (i % 2 === 0 ? '#f9f9f9' : '#fff')};">
-            <td style="padding: 8px;">P${p.predictedPosition}</td>
-            <td style="padding: 8px;">${escapeHtml(p.driverName)}</td>
-            <td style="padding: 8px; text-align: center;">${p.actualPosition ? `P${p.actualPosition}` : 'DNF/DNS'}</td>
-            <td style="padding: 8px; text-align: right;">${p.pointsEarned}${p.hasBonus ? ' (½ pts)' : ''}</td>
-          </tr>
-        `).join('')}
-      </table>
+      ${emailPredictionRows(userPrediction)}
     `
     : '';
 
@@ -321,34 +341,26 @@ export const sendFinalResults = async (
     from: process.env.EMAIL_FROM,
     to: email,
     subject: `Final Results - ${raceName}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        ${emailHeader}
-        <h2 style="color: ${BRAND_NAVY};">Final Race Results Confirmed</h2>
-        <p>Hello ${escapeHtml(nickname)}!</p>
-        <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been confirmed.</p>
+    html: emailDocument(`
+      ${emailHeader}
+      <h2 style="color: ${BRAND_NAVY};">Final Race Results Confirmed</h2>
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been confirmed.</p>
 
-        ${changesSection}
+      ${changesSection}
 
-        ${predictionTable}
+      ${predictionTable}
 
-        <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; border-radius: 5px; text-align: center;">
-          <strong>Your Final Points: ${totalPoints}</strong>
-        </div>
-
-        <p style="margin-top: 20px;">
-          <a href="${process.env.FRONTEND_URL}/leaderboard"
-             style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
-                    padding: 12px 24px; text-decoration: none; border-radius: 5px;">
-            View Leaderboard
-          </a>
-        </p>
-
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          See you at the next race! 🏎️
-        </p>
+      <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; text-align: center;">
+        <strong>Your Final Points: ${totalPoints}</strong>
       </div>
-    `,
+
+      ${emailBanner('View Leaderboard', { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
+
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        See you at the next race! 🏎️
+      </p>
+    `),
   };
 
   try {

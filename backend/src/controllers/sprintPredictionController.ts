@@ -59,20 +59,23 @@ export const submitSprintPrediction = async (req: Request, res: Response) => {
       );
     }
 
-    // Get driver names for confirmation email
+    // Get driver names/teams for confirmation email
     const driverResult = await query(
-      'SELECT id, name FROM drivers WHERE id = ANY($1)',
+      'SELECT id, name, team FROM drivers WHERE id = ANY($1)',
       [positions]
     );
-    const driverMap = new Map(driverResult.rows.map((d: any) => [d.id, d.name]));
-    const driverNames = positions.map((id: number) => driverMap.get(id)).filter(Boolean) as string[];
+    const driverMap = new Map(driverResult.rows.map((d: any) => [d.id, d]));
+    const driverPicks = positions
+      .map((id: number) => driverMap.get(id))
+      .filter(Boolean)
+      .map((d: any) => ({ driverName: d.name, team: d.team }));
 
     // Get user info
     const userResult = await query('SELECT nickname, email FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
     // Send confirmation email
-    await sendPredictionConfirmation(user.email, user.nickname, `${race.race_name} (Sprint)`, driverNames);
+    await sendPredictionConfirmation(user.email, user.nickname, `${race.race_name} (Sprint)`, driverPicks);
 
     res.json({ message: 'Sprint prediction submitted successfully', raceId, positions });
   } catch (error) {

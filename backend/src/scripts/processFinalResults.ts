@@ -126,10 +126,10 @@ async function processFinalResults() {
         );
         const uniqueDriverIds = [...new Set(allDriverIds)];
         const driverNamesResult = await query(
-          'SELECT id, name FROM drivers WHERE id = ANY($1)',
+          'SELECT id, name, team FROM drivers WHERE id = ANY($1)',
           [uniqueDriverIds]
         );
-        const driverNameMap = new Map(driverNamesResult.rows.map((d: any) => [d.id, d.name]));
+        const driverNameMap = new Map(driverNamesResult.rows.map((d: any) => [d.id, d]));
 
         console.log(`[CRON] Sending final results to ${newPredictions.rows.length} users...`);
 
@@ -144,7 +144,8 @@ async function processFinalResults() {
             for (let pos = 1; pos <= maxPositions; pos++) {
               const driverId = pred[`position_${pos}`];
               if (!driverId) continue;
-              const driverName = driverNameMap.get(driverId) || 'Unknown';
+              const driverInfo = driverNameMap.get(driverId);
+              const driverName = driverInfo?.name || 'Unknown';
               const actualPos: number | null = finalResultsMap.get(driverId) ?? null;
               let pointsEarned = 0;
               let hasBonus = false;
@@ -158,7 +159,7 @@ async function processFinalResults() {
                   hasBonus = true;
                 }
               }
-              userPredictionResults.push({ predictedPosition: pos, driverName, actualPosition: actualPos, pointsEarned, hasBonus });
+              userPredictionResults.push({ predictedPosition: pos, driverName, team: driverInfo?.team, actualPosition: actualPos, pointsEarned, hasBonus });
             }
 
             await sendFinalResults(

@@ -62,22 +62,25 @@ export const submitPrediction = async (req: Request, res: Response) => {
       );
     }
 
-    // Get driver names for confirmation email (single query instead of N queries)
+    // Get driver names/teams for confirmation email (single query instead of N queries)
     const allDriverIds = dnfPickId != null ? [...positions, dnfPickId] : positions;
     const driverResult = await query(
-      'SELECT id, name FROM drivers WHERE id = ANY($1)',
+      'SELECT id, name, team FROM drivers WHERE id = ANY($1)',
       [allDriverIds]
     );
-    const driverMap = new Map(driverResult.rows.map((d: any) => [d.id, d.name]));
-    const driverNames = positions.map((id: number) => driverMap.get(id)).filter(Boolean) as string[];
-    const dnfPickName = dnfPickId != null ? driverMap.get(dnfPickId) ?? null : null;
+    const driverMap = new Map(driverResult.rows.map((d: any) => [d.id, d]));
+    const driverPicks = positions
+      .map((id: number) => driverMap.get(id))
+      .filter(Boolean)
+      .map((d: any) => ({ driverName: d.name, team: d.team }));
+    const dnfPickName = dnfPickId != null ? driverMap.get(dnfPickId)?.name ?? null : null;
 
     // Get user info
     const userResult = await query('SELECT nickname, email FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
     // Send confirmation email
-    await sendPredictionConfirmation(user.email, user.nickname, race.race_name, driverNames, dnfPickName);
+    await sendPredictionConfirmation(user.email, user.nickname, race.race_name, driverPicks, dnfPickName);
 
     res.json({ message: 'Prediction submitted successfully', raceId, positions });
   } catch (error) {
