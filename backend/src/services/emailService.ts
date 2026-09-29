@@ -30,6 +30,26 @@ const BRAND_NAVY = '#005277';
 const BRAND_BLUE = '#2596C7';
 const BRAND_YELLOW = '#FFD81A';
 
+// Gmail's own automatic dark-mode recoloring (especially the Android app)
+// darkens bright inline background colors it judges "too light" even when
+// meta color-scheme says light — it doesn't reliably honor that meta tag.
+// When it recolors an element it tags it with data-ogsc/data-ogsb, which a
+// <style> block CAN target to force the real color back. Verified live:
+// our blue (#2596C7, medium luminance) survived untouched; our yellow
+// (#FFD81A, very high luminance) got muddied to olive without this.
+const emailDarkModeOverrides = `
+  <style>
+    .op-yellow-bg { background-color: ${BRAND_YELLOW} !important; }
+    [data-ogsc] .op-yellow-bg, [data-ogsb] .op-yellow-bg { background-color: ${BRAND_YELLOW} !important; }
+    .op-blue-bg { background-color: ${BRAND_BLUE} !important; }
+    [data-ogsc] .op-blue-bg, [data-ogsb] .op-blue-bg { background-color: ${BRAND_BLUE} !important; }
+    .op-black-text { color: #000000 !important; }
+    [data-ogsc] .op-black-text, [data-ogsb] .op-black-text { color: #000000 !important; }
+    .op-white-text { color: #ffffff !important; }
+    [data-ogsc] .op-white-text, [data-ogsb] .op-white-text { color: #ffffff !important; }
+  </style>
+`;
+
 // Logo header + thin yellow accent bar, reused at the top of every email.
 // The image is hosted on the live site rather than embedded, since most mail
 // clients strip data: URIs and inline SVG from HTML email.
@@ -40,16 +60,14 @@ const BRAND_YELLOW = '#FFD81A';
 // Cross-Origin-Resource-Policy change) keeps serving the stale headers on
 // revalidation. Bump this whenever a header or the image itself changes.
 //
-// The accent line uses a bulletproof table + bgcolor attribute rather than a
-// plain styled div — Gmail's automatic dark-mode recoloring is far more
-// likely to leave a legacy bgcolor attribute alone than a CSS background
-// declared only via inline style.
+// The accent line uses a bulletproof table + bgcolor attribute, plus the
+// op-yellow-bg class (see emailDarkModeOverrides above).
 const emailHeader = `
   <div style="text-align: center; padding: 24px 0 16px;">
     <img src="${process.env.FRONTEND_URL}/logo-email.png?v=2" alt="Poule Position" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
   </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
-    <tr><td height="4" bgcolor="${BRAND_YELLOW}" style="background-color: ${BRAND_YELLOW}; line-height: 4px; font-size: 4px;">&nbsp;</td></tr>
+    <tr><td height="4" bgcolor="${BRAND_YELLOW}" class="op-yellow-bg" style="background-color: ${BRAND_YELLOW}; line-height: 4px; font-size: 4px;">&nbsp;</td></tr>
   </table>
 `;
 
@@ -60,13 +78,15 @@ const emailHeader = `
 // elements). Yellow/black by default, matching the site's own primary CTA
 // color (.btn-f1-primary); pass a url to make the whole bar a clickable link.
 //
-// Built as a table with a bgcolor attribute (not just a styled div) for the
-// same dark-mode-recoloring reason as the header line above.
+// Built as a table with a bgcolor attribute plus an op-*-bg class (see
+// emailDarkModeOverrides above) for the same reason as the header line.
 const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: string }) => {
   const bg = opts?.bg ?? BRAND_YELLOW;
   const color = opts?.color ?? '#000000';
+  const bgClass = bg === BRAND_YELLOW ? 'op-yellow-bg' : bg === BRAND_BLUE ? 'op-blue-bg' : '';
+  const textClass = color === '#000000' ? 'op-black-text' : color === '#ffffff' ? 'op-white-text' : '';
   const text = `
-    <p style="margin: 0; color: ${color} !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 18px;">
+    <p class="${textClass}" style="margin: 0; color: ${color} !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 18px;">
       ${escapeHtml(label)}
     </p>
   `;
@@ -77,7 +97,7 @@ const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: 
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
       <tr>
-        <td bgcolor="${bg}" style="background-color: ${bg} !important; padding: 14px 24px;">
+        <td bgcolor="${bg}" class="${bgClass}" style="background-color: ${bg} !important; padding: 14px 24px;">
           ${content}
         </td>
       </tr>
@@ -110,6 +130,7 @@ const emailDocument = (bodyHtml: string) => `
       <meta name="color-scheme" content="light" />
       <meta name="supported-color-schemes" content="light" />
       <title>Poule Position</title>
+      ${emailDarkModeOverrides}
     </head>
     <body style="margin: 0; padding: 0; background-color: #ffffff;">
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
