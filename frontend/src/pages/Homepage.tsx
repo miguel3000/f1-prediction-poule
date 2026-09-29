@@ -107,23 +107,10 @@ const Homepage = () => {
   return (
     <div>
       <CircuitBackground circuitName={mainRace?.circuit_name ?? nextRace?.circuit_name} />
-      <Banner
-        nextRaceDate={
-          hasSprint && activeTab === 'sprint' && sprintRace
-            ? new Date(sprintRace.race_date)
-            : new Date(mainRace?.race_date ?? nextRace.race_date)
-        }
-        nextRaceName={mainRace?.race_name ?? nextRace.race_name}
-        qualifyingDate={
-          hasSprint && activeTab === 'sprint'
-            ? undefined
-            : mainRace?.qualifying_date ? new Date(mainRace.qualifying_date) : undefined
-        }
-        isSprint={!!(hasSprint && activeTab === 'sprint')}
-      />
 
-      {/* Sprint/Main Toggle (only shown for sprint weekends) — same signage
-          look as Banner above it, rather than a generic pill control. */}
+      {/* Sprint/Main Toggle (only shown for sprint weekends) — the countdown
+          banner isn't needed here once logged in, the prediction interface
+          below already carries the race context. */}
       {hasSprint && <RaceTypeToggle value={activeTab} onChange={setActiveTab} />}
 
       <div className="mt-4">
