@@ -182,6 +182,146 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
   }
 };
 
+// Deeper per-player breakdown than the standings table shows: prediction
+// accuracy, exact-pick count, and a current scoring streak — computed from
+// the same position-by-position comparison calculateRacePoints uses, since
+// points_earned is only the summed total per prediction, not a breakdown.
+export const getPlayerStats = async (req: Request, res: Response) => {
+  try {
+    const racesResult = await query(
+      `SELECT id, race_name, race_type, race_date
+       FROM races
+       WHERE season = EXTRACT(YEAR FROM CURRENT_DATE)::int
+         AND status IN ('completed', 'provisional')
+       ORDER BY race_date ASC`
+    );
+    const races = racesResult.rows;
+
+    if (races.length === 0) {
+      return res.json([]);
+    }
+
+    const raceIds = races.map((r) => r.id);
+    const raceById = new Map(races.map((r) => [r.id, r]));
+
+    const [resultsResult, predictionsResult, sprintPredictionsResult, usersResult] = await Promise.all([
+      query(
+        `SELECT race_id, driver_id, position, 'main' as kind FROM race_results WHERE race_id = ANY($1)
+         UNION ALL
+         SELECT race_id, driver_id, position, 'sprint' as kind FROM sprint_results WHERE race_id = ANY($1)`,
+        [raceIds]
+      ),
+      query(`SELECT * FROM predictions WHERE race_id = ANY($1)`, [raceIds]),
+      query(`SELECT * FROM sprint_predictions WHERE race_id = ANY($1)`, [raceIds]),
+      query(`SELECT id, nickname, total_points FROM users`),
+    ]);
+
+    // resultsByRace[kind][raceId] -> [{ driver_id, position }]
+    const resultsByRace: Record<'main' | 'sprint', Map<number, { driver_id: number; position: number }[]>> = {
+      main: new Map(),
+      sprint: new Map(),
+    };
+    for (const row of resultsResult.rows) {
+      const kind = row.kind as 'main' | 'sprint';
+      const list = resultsByRace[kind].get(row.race_id) ?? [];
+      list.push({ driver_id: row.driver_id, position: row.position });
+      resultsByRace[kind].set(row.race_id, list);
+    }
+
+    interface UserAgg {
+      predictionsMade: number;
+      positionsGuessed: number;
+      exactPicks: number;
+      bestRace: { name: string; points: number } | null;
+      raceLog: { date: string; points: number }[];
+    }
+    const aggByUser = new Map<number, UserAgg>();
+    const getAgg = (userId: number): UserAgg => {
+      let agg = aggByUser.get(userId);
+      if (!agg) {
+        agg = { predictionsMade: 0, positionsGuessed: 0, exactPicks: 0, bestRace: null, raceLog: [] };
+        aggByUser.set(userId, agg);
+      }
+      return agg;
+    };
+
+    const tally = (rows: any[], kind: 'main' | 'sprint', maxPositions: number, scoringPositions: number) => {
+      for (const row of rows) {
+        const race = raceById.get(row.race_id);
+        if (!race) continue;
+
+        const agg = getAgg(row.user_id);
+        const results = resultsByRace[kind].get(row.race_id) ?? [];
+        const pointsEarned = Number(row.points_earned) || 0;
+
+        agg.predictionsMade += 1;
+        agg.raceLog.push({ date: race.race_date, points: pointsEarned });
+        if (!agg.bestRace || pointsEarned > agg.bestRace.points) {
+          agg.bestRace = { name: race.race_name, points: pointsEarned };
+        }
+
+        for (let pos = 1; pos <= maxPositions; pos++) {
+          const driverId = row[`position_${pos}`];
+          if (driverId == null) continue;
+          agg.positionsGuessed += 1;
+          const actual = results.find((r) => r.driver_id === driverId);
+          if (actual && actual.position <= scoringPositions && actual.position === pos) {
+            agg.exactPicks += 1;
+          }
+        }
+      }
+    };
+
+    tally(predictionsResult.rows, 'main', 10, 10);
+    tally(sprintPredictionsResult.rows, 'sprint', 8, 8);
+
+    const stats = usersResult.rows.map((user) => {
+      const agg = aggByUser.get(user.id);
+      if (!agg || agg.predictionsMade === 0) {
+        return {
+          id: user.id,
+          nickname: user.nickname,
+          total_points: user.total_points,
+          predictions_made: 0,
+          avg_points_per_race: 0,
+          accuracy_pct: 0,
+          exact_picks: 0,
+          current_streak: 0,
+          best_race: null as { name: string; points: number } | null,
+        };
+      }
+
+      const sortedLog = [...agg.raceLog].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      let currentStreak = 0;
+      for (const entry of sortedLog) {
+        if (entry.points > 0) currentStreak += 1;
+        else break;
+      }
+
+      return {
+        id: user.id,
+        nickname: user.nickname,
+        total_points: user.total_points,
+        predictions_made: agg.predictionsMade,
+        avg_points_per_race: Math.round((user.total_points / agg.predictionsMade) * 10) / 10,
+        accuracy_pct: agg.positionsGuessed > 0 ? Math.round((agg.exactPicks / agg.positionsGuessed) * 1000) / 10 : 0,
+        exact_picks: agg.exactPicks,
+        current_streak: currentStreak,
+        best_race: agg.bestRace,
+      };
+    });
+
+    stats.sort((a, b) => b.total_points - a.total_points);
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get player stats error:', error);
+    res.status(500).json({ error: 'Failed to get player stats' });
+  }
+};
+
 // F1 points systems
 const mainPointsMap: { [key: number]: number } = {
   1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1

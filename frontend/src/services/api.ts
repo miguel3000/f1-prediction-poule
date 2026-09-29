@@ -104,6 +104,9 @@ export const getUserRank = () =>
 export const getSeasonHistory = () =>
   api.get('/api/leaderboard/season-history');
 
+export const getPlayerStats = () =>
+  api.get('/api/leaderboard/player-stats');
+
 // Upload
 export const uploadAvatar = (file: File) => {
   const formData = new FormData();

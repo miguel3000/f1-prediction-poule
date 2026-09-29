@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getLeaderboard, getSeasonHistory } from '../services/api';
+import { getLeaderboard, getSeasonHistory, getPlayerStats } from '../services/api';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -32,6 +32,18 @@ interface SeasonUser {
   points_per_race: number[];
 }
 
+interface PlayerStat {
+  id: number;
+  nickname: string;
+  total_points: number;
+  predictions_made: number;
+  avg_points_per_race: number;
+  accuracy_pct: number;
+  exact_picks: number;
+  current_streak: number;
+  best_race: { name: string; points: number } | null;
+}
+
 const CHART_COLORS = [
   '#E10600', '#3B82F6', '#22C55E', '#F59E0B', '#A855F7',
   '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#6366F1'
@@ -54,13 +66,27 @@ const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [seasonRaces, setSeasonRaces] = useState<SeasonRace[]>([]);
   const [seasonUsers, setSeasonUsers] = useState<SeasonUser[]>([]);
+  const [playerStats, setPlayerStats] = useState<PlayerStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     fetchLeaderboard();
     fetchSeasonHistory();
+    fetchPlayerStats();
   }, []);
+
+  const fetchPlayerStats = async () => {
+    try {
+      const response = await getPlayerStats();
+      setPlayerStats(response.data);
+    } catch (error) {
+      console.error('Failed to fetch player stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchLeaderboard = async () => {
     try {
@@ -229,6 +255,61 @@ const Leaderboard = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Player Stats — deeper per-player breakdown beyond the totals column above */}
+      <div className="max-w-5xl mx-auto mt-10">
+        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">Player Stats</h2>
+
+        {statsLoading ? (
+          <div className="bg-gray-900 p-8 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-yellow-500"></div>
+          </div>
+        ) : playerStats.length === 0 ? (
+          <div className="card-f1 p-8 text-center text-white">
+            Stats available after the first race is completed.
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {playerStats.map((stat) => (
+              <div key={stat.id} className="card-f1">
+                <h3 className="font-f1 font-bold text-white text-lg uppercase tracking-wide truncate mb-3">
+                  {stat.nickname}
+                </h3>
+
+                {stat.predictions_made === 0 ? (
+                  <p className="text-white text-sm">No predictions yet this season.</p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-4 gap-2 text-center mb-3">
+                      <div className="bg-f1-neutral-800 p-2">
+                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.avg_points_per_race}</p>
+                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Avg/Race</p>
+                      </div>
+                      <div className="bg-f1-neutral-800 p-2">
+                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.accuracy_pct}%</p>
+                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Accuracy</p>
+                      </div>
+                      <div className="bg-f1-neutral-800 p-2">
+                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.exact_picks}</p>
+                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Exact Picks</p>
+                      </div>
+                      <div className="bg-f1-neutral-800 p-2">
+                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.current_streak}</p>
+                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Streak</p>
+                      </div>
+                    </div>
+                    {stat.best_race && (
+                      <p className="text-xs text-white">
+                        Best race: <span className="text-f1-yellow-500 font-bold">{stat.best_race.points} pts</span> ({stat.best_race.name})
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             ))}
           </div>
