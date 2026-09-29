@@ -24,7 +24,11 @@ const FEEDS: { url: string; source: string }[] = [
 const CACHE_KEY = 'f1_news';
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const MAX_ITEMS = 30;
-const SUMMARY_MAX_CHARS = 220;
+// Generous cap — most feeds' own descriptions run shorter than this anyway
+// (some, like Motorsport.com/Autosport, already end in their own "Keep
+// reading" cutoff), so this mostly avoids re-truncating an already-short
+// summary rather than actually kicking in.
+const SUMMARY_MAX_CHARS = 500;
 
 // Some feeds (Motorsport.com, Autosport) wrap their description in CDATA
 // containing raw HTML — a trailing "Keep reading" link, <br> tags — which
