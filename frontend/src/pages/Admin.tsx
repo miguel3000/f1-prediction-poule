@@ -878,7 +878,7 @@ const Admin = () => {
               required
             />
             <p className="text-xs text-white mt-1">
-              Will be prefixed with "F1 Prediction Poule - "
+              Will be prefixed with "Poule Position - "
             </p>
           </div>
 

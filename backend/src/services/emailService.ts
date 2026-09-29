@@ -455,7 +455,7 @@ export const sendBroadcastEmail = async (
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `F1 Prediction Poule - ${subject}`,
+    subject: `Poule Position - ${subject}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${emailHeader}
@@ -471,7 +471,7 @@ export const sendBroadcastEmail = async (
           Visit Poule Position
         </a>
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          This message was sent by the F1 Prediction Poule admin team.
+          This message was sent by the Poule Position admin team.
         </p>
       </div>
     `,
