@@ -118,6 +118,10 @@ export const uploadAvatar = (file: File) => {
 export const deleteAvatar = () =>
   api.delete('/api/upload/avatar');
 
+// News
+export const getNews = () =>
+  api.get('/api/news');
+
 // Stats
 export const getCompletedRaces = (season?: number) =>
   api.get('/api/stats/races', { params: { season } });

@@ -15,6 +15,7 @@ import leaderboardRoutes from './routes/leaderboard';
 import uploadRoutes from './routes/upload';
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
+import newsRoutes from './routes/news';
 
 dotenv.config();
 
@@ -61,6 +62,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/news', newsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

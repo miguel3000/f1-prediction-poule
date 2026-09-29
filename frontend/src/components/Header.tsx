@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import LogoMark from './LogoMark';
-import { RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon, PredictionIcon, ChartIcon, MoreIcon } from './icons';
+import { RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon, PredictionIcon, ChartIcon, NewsIcon, MoreIcon } from './icons';
 
 interface HeaderProps {
   onMoreToggle: () => void;
@@ -16,6 +16,7 @@ const memberLinks = [
   { path: '/teams', label: 'Teams', icon: TeamIcon, end: false },
   { path: '/leaderboard', label: 'Standings', icon: TrophyIcon, end: false },
   { path: '/stats', label: 'Stats', icon: ChartIcon, end: false },
+  { path: '/news', label: 'News', icon: NewsIcon, end: false },
 ];
 
 const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
