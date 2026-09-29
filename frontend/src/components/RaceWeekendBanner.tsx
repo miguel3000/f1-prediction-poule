@@ -26,8 +26,14 @@ const RaceWeekendBanner = ({ raceName, venue, round }: RaceWeekendBannerProps) =
   const bigType = 'font-brand tracking-wide uppercase leading-none';
   const sizeWide = 'text-lg sm:text-2xl md:text-4xl lg:text-5xl';
 
+  // Try race name + venue first, drop down to just the race name if that's
+  // too long, and only fall back to a bare round number if even the name
+  // alone won't fit.
   const combined = venue ? `${raceName} · ${venue}` : raceName;
-  const display = combined.length > MAX_COMBINED_LENGTH ? `Round ${round}` : combined;
+  const display =
+    combined.length <= MAX_COMBINED_LENGTH ? combined :
+    raceName.length <= MAX_COMBINED_LENGTH ? raceName :
+    `Round ${round}`;
 
   return (
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
