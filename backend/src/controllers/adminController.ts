@@ -676,10 +676,12 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
     }
 
     const driversResult = await query(
-      `SELECT id, name FROM drivers WHERE id = ANY($1)`,
+      `SELECT id, name, team FROM drivers WHERE id = ANY($1)`,
       [Array.from(allDriverIds)]
     );
-    const driverNameMap = new Map<number, string>(driversResult.rows.map((d: any) => [d.id, d.name]));
+    const driverInfoMap = new Map<number, { name: string; team: string }>(
+      driversResult.rows.map((d: any) => [d.id, { name: d.name, team: d.team }])
+    );
 
     // Send email to each user
     let successCount = 0;
@@ -689,9 +691,11 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
       const predictions = [];
       for (let i = 1; i <= maxPositions; i++) {
         const driverId = pred[`position_${i}`];
+        const driverInfo = driverId ? driverInfoMap.get(driverId) : undefined;
         predictions.push({
           position: i,
-          driverName: driverId ? (driverNameMap.get(driverId) || 'Unknown') : 'Not set'
+          driverName: driverInfo?.name || 'Unknown',
+          team: driverInfo?.team
         });
       }
 
