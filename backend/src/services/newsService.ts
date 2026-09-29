@@ -41,6 +41,14 @@ function stripHtml(raw: string): string {
     .trim();
 }
 
+// rss-parser generates contentSnippet by stripping tags itself before we
+// ever see it, which removes the <a class="more"> markup above but leaves
+// its "Keep reading" link text behind as plain trailing text — strip that
+// separately since it's no longer inside a tag by the time it reaches us.
+function stripTrailingCta(text: string): string {
+  return text.replace(/\s*\.{0,3}\s*(keep reading|read more|continue reading)\.?\s*$/i, '').trim();
+}
+
 function truncate(text: string, max = SUMMARY_MAX_CHARS): string {
   if (text.length <= max) return text;
   return text.slice(0, max).replace(/\s+\S*$/, '') + '…';
@@ -58,7 +66,7 @@ export async function getLatestNews(): Promise<NewsItem[]> {
         return {
           title: stripHtml(item.title || 'Untitled'),
           link: item.link || '',
-          summary: truncate(stripHtml(rawSummary)),
+          summary: truncate(stripTrailingCta(stripHtml(rawSummary))),
           source,
           publishedAt: item.isoDate || item.pubDate || null,
         };
