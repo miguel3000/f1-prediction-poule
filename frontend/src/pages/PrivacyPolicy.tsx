@@ -64,8 +64,8 @@ const PrivacyPolicy = () => {
 
             <h3 className="text-xl font-semibold text-f1-yellow-500 mb-2">4.2 Email Delivery</h3>
             <p>
-              Emails are sent through our mailbox on Antagonist's mail servers. The content is the
-              transactional messages described above — we don't use any marketing or mailing-list tooling.
+              Emails are sent through our own mail servers. The content is the transactional messages
+              described above — we don't use any marketing or mailing-list tooling.
             </p>
           </section>
 
