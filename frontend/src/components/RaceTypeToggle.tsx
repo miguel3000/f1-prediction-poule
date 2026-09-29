@@ -18,10 +18,12 @@ const RaceTypeToggle = ({ value, onChange }: RaceTypeToggleProps) => {
   };
   const shear: React.CSSProperties = { transform: 'skewX(-13deg)', display: 'inline-block' };
   const bigType = 'font-brand tracking-wide uppercase leading-none';
-  const sizeWide = 'text-base sm:text-xl md:text-2xl';
+  // Matches Banner's own row sizing exactly, so this bar reads as the same
+  // height as the banner rows above it, not a shorter afterthought.
+  const sizeWide = 'text-lg sm:text-2xl md:text-4xl lg:text-5xl';
 
   const optionClass = (active: boolean) =>
-    `bg-transparent border-0 p-0 cursor-pointer transition-opacity ${bigType} ${sizeWide} text-white ${
+    `bg-transparent border-0 p-0 cursor-pointer transition-opacity truncate ${bigType} ${sizeWide} text-white ${
       active ? 'opacity-100' : 'opacity-50 hover:opacity-75'
     }`;
 
@@ -29,7 +31,7 @@ const RaceTypeToggle = ({ value, onChange }: RaceTypeToggleProps) => {
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>
       <div
         style={{ ...fullBleed, backgroundColor: '#2596C7', gridTemplateColumns: '50% 50%' }}
-        className="relative grid items-center px-4 py-4 sm:py-5 overflow-hidden"
+        className="relative grid items-center px-4 py-4 sm:py-6 overflow-hidden"
       >
         <div
           className="absolute top-0 bottom-0 left-1/2 w-2 pointer-events-none"
