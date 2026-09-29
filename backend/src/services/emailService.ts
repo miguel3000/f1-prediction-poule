@@ -501,7 +501,7 @@ export const sendBroadcastEmail = async (
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${emailHeader}
-        ${emailBanner(subject)}
+        ${emailBanner(subject, { bg: BRAND_BLUE, color: '#ffffff' })}
         <p>Hello ${escapeHtml(nickname)}!</p>
         <div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0;">
           ${htmlMessage}
