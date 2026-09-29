@@ -277,9 +277,11 @@ const Leaderboard = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             {playerStats.map((stat) => (
               <div key={stat.id} className="card-f1">
-                <h3 className="font-f1 font-bold text-white text-lg uppercase tracking-wide truncate mb-3">
-                  {stat.nickname}
-                </h3>
+                <div className="-mx-6 -mt-6 mb-4 bg-f1-blue px-4 py-3">
+                  <h3 className="font-f1 font-bold text-white text-lg uppercase tracking-wide truncate">
+                    {stat.nickname}
+                  </h3>
+                </div>
 
                 {stat.predictions_made === 0 ? (
                   <p className="text-white text-sm">No predictions yet this season.</p>
@@ -291,7 +293,7 @@ const Leaderboard = () => {
                         <p className="text-[9px] text-white uppercase tracking-wider mt-1">Avg/Race</p>
                       </div>
                       <div className="bg-f1-neutral-800 p-2">
-                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.accuracy_pct}%</p>
+                        <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.accuracy_pct}%</p>
                         <p className="text-[9px] text-white uppercase tracking-wider mt-1">Accuracy</p>
                       </div>
                       <div className="bg-f1-neutral-800 p-2">
@@ -299,7 +301,7 @@ const Leaderboard = () => {
                         <p className="text-[9px] text-white uppercase tracking-wider mt-1">Exact Picks</p>
                       </div>
                       <div className="bg-f1-neutral-800 p-2">
-                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.current_streak}</p>
+                        <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.current_streak}</p>
                         <p className="text-[9px] text-white uppercase tracking-wider mt-1">Streak</p>
                       </div>
                     </div>
