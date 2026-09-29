@@ -30,6 +30,12 @@ export const loginWithPassword = (email: string, password: string) =>
 export const getProfile = () =>
   api.get('/api/auth/profile');
 
+export const changeEmail = (newEmail: string, password: string) =>
+  api.put('/api/auth/email', { newEmail, password });
+
+export const deleteAccount = (password: string) =>
+  api.delete('/api/auth/account', { data: { password } });
+
 // Races
 export const getRaces = (season?: number) =>
   api.get('/api/races', { params: { season } });

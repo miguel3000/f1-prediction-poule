@@ -90,6 +90,92 @@ export const registerWithPassword = async (req: Request, res: Response) => {
   }
 };
 
+// Self-service email change — requires the current password since email
+// doubles as the login identifier.
+export const changeEmail = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const { newEmail, password } = req.body;
+
+    if (!newEmail || !password) {
+      return res.status(400).json({ error: 'New email and current password are required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address' });
+    }
+
+    const userResult = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const user = userResult.rows[0];
+
+    if (!user.password_hash) {
+      return res.status(400).json({ error: 'No password set for this account. Please contact an admin.' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
+
+    const existing = await query('SELECT id FROM users WHERE email = $1 AND id != $2', [newEmail, userId]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'That email is already in use' });
+    }
+
+    await query('UPDATE users SET email = $1 WHERE id = $2', [newEmail, userId]);
+
+    res.json({ message: 'Email updated successfully', email: newEmail });
+  } catch (error) {
+    console.error('Change email error:', error);
+    res.status(500).json({ error: 'Failed to change email' });
+  }
+};
+
+// Self-service account deletion — requires the current password, and
+// mirrors the admin panel's rule that an admin account can't be deleted
+// this way (an admin removes it from the Pitlane instead).
+export const deleteAccount = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to delete your account' });
+    }
+
+    const userResult = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const user = userResult.rows[0];
+
+    if (user.is_admin) {
+      return res.status(400).json({ error: "Admin accounts can't be self-deleted. Ask another admin to remove it." });
+    }
+
+    if (!user.password_hash) {
+      return res.status(400).json({ error: 'No password set for this account. Please contact an admin.' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
+
+    // Cascade deletes the user's predictions and sprint_predictions too.
+    await query('DELETE FROM users WHERE id = $1', [userId]);
+
+    res.json({ message: 'Account deleted' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+};
+
 // Password-based login
 export const loginWithPassword = async (req: Request, res: Response) => {
   try {
