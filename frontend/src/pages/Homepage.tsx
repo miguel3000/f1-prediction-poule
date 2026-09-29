@@ -6,6 +6,7 @@ import LogoMark from '../components/LogoMark';
 import PredictionInterface from '../components/PredictionInterface';
 import SprintPredictionInterface from '../components/SprintPredictionInterface';
 import RaceTypeToggle from '../components/RaceTypeToggle';
+import RaceWeekendBanner from '../components/RaceWeekendBanner';
 import { getUpcomingRaces } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 
@@ -108,10 +109,16 @@ const Homepage = () => {
     <div>
       <CircuitBackground circuitName={mainRace?.circuit_name ?? nextRace?.circuit_name} />
 
-      {/* Sprint/Main Toggle (only shown for sprint weekends) — the countdown
-          banner isn't needed here once logged in, the prediction interface
-          below already carries the race context. */}
-      {hasSprint && <RaceTypeToggle value={activeTab} onChange={setActiveTab} />}
+      {/* Sprint weekends get the sprint/main toggle; regular weekends get a
+          plain venue/race-name banner instead, so this slot is never empty. */}
+      {hasSprint ? (
+        <RaceTypeToggle value={activeTab} onChange={setActiveTab} />
+      ) : (
+        <RaceWeekendBanner
+          raceName={mainRace?.race_name ?? nextRace.race_name}
+          venue={mainRace?.circuit_name ?? nextRace.circuit_name}
+        />
+      )}
 
       <div className="mt-4">
         {hasSprint && activeTab === 'sprint' && sprintRace ? (
