@@ -74,6 +74,13 @@ const runMigration = async () => {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE`);
     console.log('is_admin column ensured.');
 
+    // Add email_opt_out column to users (lets a player opt out of the admin
+    // broadcast/announcement emails via the unsubscribe link, without
+    // affecting transactional emails like prediction confirmations)
+    console.log('Checking for email_opt_out column...');
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_opt_out BOOLEAN NOT NULL DEFAULT FALSE`);
+    console.log('email_opt_out column ensured.');
+
     // Add dnf_pick / dnf_bonus_points columns to predictions (main race only —
     // the +25pt bonus for correctly calling the first retirement of the race)
     console.log('Checking for dnf_pick/dnf_bonus_points columns...');

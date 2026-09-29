@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
@@ -577,12 +578,12 @@ export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Message must be 5000 characters or less' });
     }
 
-    // Get all users
-    const usersResult = await query('SELECT id, email, nickname FROM users ORDER BY nickname');
+    // Get all users who haven't opted out of announcement emails
+    const usersResult = await query('SELECT id, email, nickname FROM users WHERE email_opt_out = FALSE ORDER BY nickname');
     const users = usersResult.rows;
 
     if (users.length === 0) {
-      return res.status(400).json({ error: 'No users found' });
+      return res.status(400).json({ error: 'No subscribed users found' });
     }
 
     // Send emails to all users
@@ -591,7 +592,9 @@ export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
     const failures: string[] = [];
 
     for (const user of users) {
-      const success = await sendBroadcastEmail(user.email, user.nickname, subject, message);
+      const unsubscribeToken = jwt.sign({ userId: user.id, purpose: 'unsubscribe' }, process.env.JWT_SECRET!);
+      const unsubscribeUrl = `${process.env.FRONTEND_URL}/api/auth/unsubscribe?token=${unsubscribeToken}`;
+      const success = await sendBroadcastEmail(user.email, user.nickname, subject, message, unsubscribeUrl);
       if (success) {
         successCount++;
       } else {

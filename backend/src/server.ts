@@ -35,9 +35,14 @@ const limiter = rateLimit({
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Disable CSP for React app
+  // Static assets (the email logo, uploaded avatars) are meant to be embedded
+  // cross-origin — an email client renders our <img> from its own origin —
+  // so the default same-origin CORP would silently block them from loading.
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 app.use(cors({
   origin: [
+    'https://pouleposition.nl',
     'https://f1.miguelm.nl',
     'http://localhost:5000',
     'http://localhost:3000',

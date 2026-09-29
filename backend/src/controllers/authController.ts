@@ -232,3 +232,46 @@ export const loginWithPassword = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to login' });
   }
 };
+
+// Simple standalone confirmation page — this is opened directly from an
+// email link, not the app, so it can't rely on the React frontend.
+const unsubscribePage = (message: string, ok: boolean) => `
+  <!DOCTYPE html>
+  <html>
+    <head><meta charset="utf-8" /><title>Poule Position</title></head>
+    <body style="font-family: Arial, sans-serif; background: #121012; color: #fff; margin: 0; padding: 60px 20px; text-align: center;">
+      <h1 style="color: #FFD81A; margin-bottom: 16px;">Poule Position</h1>
+      <p style="font-size: 16px; max-width: 420px; margin: 0 auto;">${message}</p>
+      ${ok ? `<p style="margin-top: 24px;"><a href="${process.env.FRONTEND_URL}" style="color: #2596C7;">Back to Poule Position</a></p>` : ''}
+    </body>
+  </html>
+`;
+
+// One-click unsubscribe from admin broadcast/announcement emails — reached
+// directly from a mail client, so it's a public GET with no auth header,
+// gated only by the signed token embedded in the link.
+export const unsubscribe = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).send(unsubscribePage('This unsubscribe link is invalid.', false));
+    }
+
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return res.status(400).send(unsubscribePage('This unsubscribe link is invalid or has expired.', false));
+    }
+
+    if (payload.purpose !== 'unsubscribe' || !payload.userId) {
+      return res.status(400).send(unsubscribePage('This unsubscribe link is invalid.', false));
+    }
+
+    await query('UPDATE users SET email_opt_out = TRUE WHERE id = $1', [payload.userId]);
+    res.send(unsubscribePage("You've been unsubscribed from Poule Position announcement emails. You'll still get emails about your own predictions and results.", true));
+  } catch (error) {
+    console.error('Unsubscribe error:', error);
+    res.status(500).send(unsubscribePage('Something went wrong. Please try again later.', false));
+  }
+};

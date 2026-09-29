@@ -40,6 +40,40 @@ const emailHeader = `
   <div style="height: 4px; background-color: ${BRAND_YELLOW}; margin-bottom: 24px;"></div>
 `;
 
+// Flat full-width color bar with bold uppercase white text — the same
+// blocky "signage" language as the site's homepage banners, adapted to
+// what HTML email actually renders reliably (no CSS transforms/skew,
+// most clients — Outlook included — only trust solid background colors
+// on plain block elements).
+const emailBanner = (label: string, bg: string = BRAND_BLUE) => `
+  <div style="background-color: ${bg}; padding: 14px 24px; margin-bottom: 24px;">
+    <p style="margin: 0; color: #ffffff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 18px;">
+      ${escapeHtml(label)}
+    </p>
+  </div>
+`;
+
+// Flat yellow CTA button — matches the site's own .btn-f1-primary (solid
+// fill, black bold uppercase text, no border-radius).
+const emailButton = (label: string, url: string) => `
+  <a href="${url}"
+     style="display: inline-block; background-color: ${BRAND_YELLOW}; color: #000000;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+            padding: 14px 28px; text-decoration: none; margin: 20px 0;">
+    ${escapeHtml(label)}
+  </a>
+`;
+
+// Shared footer, with an optional one-click unsubscribe link for non-essential
+// (announcement/broadcast) mail — transactional emails like prediction
+// confirmations don't get this, since opting out of those would break the game.
+const emailFooter = (unsubscribeUrl?: string) => `
+  <p style="color: #666; font-size: 12px; margin-top: 30px;">
+    Poule Position &middot; pouleposition.nl
+    ${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe from announcement emails</a>` : ''}
+  </p>
+`;
+
 export const sendPredictionConfirmation = async (
   email: string,
   nickname: string,
@@ -447,7 +481,8 @@ export const sendBroadcastEmail = async (
   email: string,
   nickname: string,
   subject: string,
-  message: string
+  message: string,
+  unsubscribeUrl?: string
 ) => {
   // Convert newlines to <br> for HTML
   const htmlMessage = escapeHtml(message).replace(/\n/g, '<br>');
@@ -459,20 +494,13 @@ export const sendBroadcastEmail = async (
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${emailHeader}
-        <h2 style="color: ${BRAND_NAVY};">Poule Position</h2>
+        ${emailBanner(subject)}
         <p>Hello ${escapeHtml(nickname)}!</p>
-        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+        <div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0;">
           ${htmlMessage}
         </div>
-        <a href="${process.env.FRONTEND_URL}"
-           style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
-                  padding: 12px 24px; text-decoration: none; border-radius: 5px;
-                  margin: 20px 0;">
-          Visit Poule Position
-        </a>
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          This message was sent by the Poule Position admin team.
-        </p>
+        ${emailButton('Visit Poule Position', process.env.FRONTEND_URL!)}
+        ${emailFooter(unsubscribeUrl)}
       </div>
     `,
   };

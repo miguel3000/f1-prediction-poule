@@ -5,6 +5,7 @@ import {
   loginWithPassword,
   changeEmail,
   deleteAccount,
+  unsubscribe,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 
@@ -18,5 +19,8 @@ router.post('/login-password', loginWithPassword);
 router.get('/profile', authenticate, getProfile);
 router.put('/email', authenticate, changeEmail);
 router.delete('/account', authenticate, deleteAccount);
+
+// Public — reached directly from an email link, not the app
+router.get('/unsubscribe', unsubscribe);
 
 export default router;
