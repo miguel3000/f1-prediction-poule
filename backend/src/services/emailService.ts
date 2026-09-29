@@ -39,11 +39,18 @@ const BRAND_YELLOW = '#FFD81A';
 // so a bare-URL cache entry created before a header fix (e.g. the
 // Cross-Origin-Resource-Policy change) keeps serving the stale headers on
 // revalidation. Bump this whenever a header or the image itself changes.
+//
+// The accent line uses a bulletproof table + bgcolor attribute rather than a
+// plain styled div — Gmail's automatic dark-mode recoloring is far more
+// likely to leave a legacy bgcolor attribute alone than a CSS background
+// declared only via inline style.
 const emailHeader = `
   <div style="text-align: center; padding: 24px 0 16px;">
     <img src="${process.env.FRONTEND_URL}/logo-email.png?v=2" alt="Poule Position" width="180" style="display: block; margin: 0 auto; max-width: 180px; height: auto;" />
   </div>
-  <div style="height: 4px; background-color: ${BRAND_YELLOW}; margin-bottom: 24px;"></div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+    <tr><td height="4" bgcolor="${BRAND_YELLOW}" style="background-color: ${BRAND_YELLOW}; line-height: 4px; font-size: 4px;">&nbsp;</td></tr>
+  </table>
 `;
 
 // Flat full-width color bar with bold uppercase text — the same blocky
@@ -52,11 +59,14 @@ const emailHeader = `
 // Outlook included — only trust solid background colors on plain block
 // elements). Yellow/black by default, matching the site's own primary CTA
 // color (.btn-f1-primary); pass a url to make the whole bar a clickable link.
+//
+// Built as a table with a bgcolor attribute (not just a styled div) for the
+// same dark-mode-recoloring reason as the header line above.
 const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: string }) => {
   const bg = opts?.bg ?? BRAND_YELLOW;
   const color = opts?.color ?? '#000000';
   const text = `
-    <p style="margin: 0; color: ${color}; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 18px;">
+    <p style="margin: 0; color: ${color} !important; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 18px;">
       ${escapeHtml(label)}
     </p>
   `;
@@ -65,9 +75,13 @@ const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: 
     : text;
 
   return `
-    <div style="background-color: ${bg}; padding: 14px 24px; margin-bottom: 24px;">
-      ${content}
-    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+      <tr>
+        <td bgcolor="${bg}" style="background-color: ${bg} !important; padding: 14px 24px;">
+          ${content}
+        </td>
+      </tr>
+    </table>
   `;
 };
 
@@ -79,6 +93,30 @@ const emailFooter = (unsubscribeUrl?: string) => `
     Poule Position &middot; pouleposition.nl
     ${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe from announcement emails</a>` : ''}
   </p>
+`;
+
+// Full HTML document wrapper — the templates previously shipped as a bare
+// <div>, with no <head> at all, so there was nowhere to declare color-scheme.
+// Gmail (particularly the Android app) will auto-recolor an email it decides
+// needs dark-mode treatment when the email doesn't say otherwise; declaring
+// "light" here tells it this email is already themed and shouldn't be
+// reinterpreted.
+const emailDocument = (bodyHtml: string) => `
+  <!DOCTYPE html>
+  <html lang="en" style="margin: 0; padding: 0;">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="color-scheme" content="light" />
+      <meta name="supported-color-schemes" content="light" />
+      <title>Poule Position</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #ffffff;">
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        ${bodyHtml}
+      </div>
+    </body>
+  </html>
 `;
 
 export const sendPredictionConfirmation = async (
@@ -498,18 +536,16 @@ export const sendBroadcastEmail = async (
     from: process.env.EMAIL_FROM,
     to: email,
     subject: `Poule Position - ${subject}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        ${emailHeader}
-        ${emailBanner(subject, { bg: BRAND_BLUE, color: '#ffffff' })}
-        <p>Hello ${escapeHtml(nickname)}!</p>
-        <div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0;">
-          ${htmlMessage}
-        </div>
-        ${emailBanner('Visit Poule Position', { url: process.env.FRONTEND_URL! })}
-        ${emailFooter(unsubscribeUrl)}
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner(subject, { bg: BRAND_BLUE, color: '#ffffff' })}
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0;">
+        ${htmlMessage}
       </div>
-    `,
+      ${emailBanner('Visit Poule Position', { url: process.env.FRONTEND_URL! })}
+      ${emailFooter(unsubscribeUrl)}
+    `),
   };
 
   try {
