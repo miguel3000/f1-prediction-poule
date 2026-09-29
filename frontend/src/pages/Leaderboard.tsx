@@ -281,36 +281,34 @@ const Leaderboard = () => {
                   <h3 className="font-f1 font-bold text-white text-lg uppercase tracking-wide truncate">
                     {stat.nickname}
                   </h3>
+                  {stat.best_race && (
+                    <p className="text-xs text-white/70 truncate">
+                      Best race: <span className="font-bold text-white">{stat.best_race.points} pts</span> ({stat.best_race.name})
+                    </p>
+                  )}
                 </div>
 
                 {stat.predictions_made === 0 ? (
                   <p className="text-white text-sm">No predictions yet this season.</p>
                 ) : (
-                  <>
-                    <div className="grid grid-cols-4 gap-2 text-center mb-3">
-                      <div className="bg-f1-neutral-800 p-2">
-                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.avg_points_per_race}</p>
-                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Avg/Race</p>
-                      </div>
-                      <div className="bg-f1-neutral-800 p-2">
-                        <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.accuracy_pct}%</p>
-                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Accuracy</p>
-                      </div>
-                      <div className="bg-f1-neutral-800 p-2">
-                        <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.exact_picks}</p>
-                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Exact Picks</p>
-                      </div>
-                      <div className="bg-f1-neutral-800 p-2">
-                        <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.current_streak}</p>
-                        <p className="text-[9px] text-white uppercase tracking-wider mt-1">Streak</p>
-                      </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="bg-f1-neutral-800 p-2">
+                      <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.avg_points_per_race}</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">Avg/Race</p>
                     </div>
-                    {stat.best_race && (
-                      <p className="text-xs text-white">
-                        Best race: <span className="text-f1-yellow-500 font-bold">{stat.best_race.points} pts</span> ({stat.best_race.name})
-                      </p>
-                    )}
-                  </>
+                    <div className="bg-f1-neutral-800 p-2">
+                      <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.accuracy_pct}</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">% Accuracy</p>
+                    </div>
+                    <div className="bg-f1-neutral-800 p-2">
+                      <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.exact_picks}</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">Exact Picks</p>
+                    </div>
+                    <div className="bg-f1-neutral-800 p-2">
+                      <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.current_streak}</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">Streak</p>
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
