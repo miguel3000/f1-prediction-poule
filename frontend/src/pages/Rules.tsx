@@ -150,6 +150,15 @@ const Rules = () => {
             <strong>Note:</strong> Points are based on the position you predicted, not where the driver actually finishes.
             Predicting P1 correctly is worth more than predicting P10 correctly.
           </p>
+
+          <div className="bg-f1-blue-dark/30 border border-f1-blue/50 p-4 mt-4">
+            <h3 className="text-lg font-bold text-f1-blue mb-2">⚠ Bonus: First Retirement (+25 pts)</h3>
+            <p className="text-sm">
+              On the prediction screen you can also pick which driver you think will be the <strong>first
+              to retire</strong> from the race. Get it right and you earn a flat <strong>25 bonus points</strong>,
+              on top of your position score. This pick is optional and main-race only — sprints don't count.
+            </p>
+          </div>
         </section>
 
         <section className="bg-gray-800 p-6">

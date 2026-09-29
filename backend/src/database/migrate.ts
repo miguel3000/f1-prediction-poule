@@ -74,6 +74,13 @@ const runMigration = async () => {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE`);
     console.log('is_admin column ensured.');
 
+    // Add dnf_pick / dnf_bonus_points columns to predictions (main race only —
+    // the +25pt bonus for correctly calling the first retirement of the race)
+    console.log('Checking for dnf_pick/dnf_bonus_points columns...');
+    await query(`ALTER TABLE predictions ADD COLUMN IF NOT EXISTS dnf_pick INTEGER REFERENCES drivers(id)`);
+    await query(`ALTER TABLE predictions ADD COLUMN IF NOT EXISTS dnf_bonus_points INTEGER DEFAULT 0`);
+    console.log('dnf_pick/dnf_bonus_points columns ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

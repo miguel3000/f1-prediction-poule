@@ -371,8 +371,20 @@ export const calculateRacePoints = async (raceId: number) => {
     const maxPositions = isSprint ? 8 : 10;
     const scoringPositions = isSprint ? 8 : 10;
 
+    // First-retirement bonus (main race only): among drivers who DNF'd, the one
+    // classified last completed the fewest laps — i.e. retired earliest. There's
+    // no lap-of-retirement column to go on, so this is the best signal available.
+    let firstOutDriverId: number | null = null;
+    if (!isSprint) {
+      const dnfResults = results.filter((r: any) => r.status === 'dnf');
+      if (dnfResults.length > 0) {
+        firstOutDriverId = dnfResults.reduce((worst: any, r: any) =>
+          r.position > worst.position ? r : worst, dnfResults[0]).driver_id;
+      }
+    }
+
     // Calculate points for all predictions
-    const predictionUpdates: { id: number; points: number; userId: number }[] = [];
+    const predictionUpdates: { id: number; points: number; dnfBonus: number; userId: number }[] = [];
 
     for (const prediction of predictions) {
       let pointsEarned = 0;
@@ -396,18 +408,26 @@ export const calculateRacePoints = async (raceId: number) => {
         }
       }
 
-      predictionUpdates.push({ id: prediction.id, points: pointsEarned, userId: prediction.user_id });
+      const dnfBonus = firstOutDriverId != null && prediction.dnf_pick === firstOutDriverId ? 25 : 0;
+      pointsEarned += dnfBonus;
+
+      predictionUpdates.push({ id: prediction.id, points: pointsEarned, dnfBonus, userId: prediction.user_id });
     }
 
     // Batch update predictions (single query instead of N queries)
     if (predictionUpdates.length > 0) {
       const predictionIds = predictionUpdates.map(p => p.id);
       const pointsCases = predictionUpdates.map(p => `WHEN ${p.id} THEN ${p.points}`).join(' ');
+      // sprint_predictions has no dnf_pick/dnf_bonus_points columns — the bonus is main-race only
+      const dnfSetClause = !isSprint
+        ? `, dnf_bonus_points = CASE id ${predictionUpdates.map(p => `WHEN ${p.id} THEN ${p.dnfBonus}`).join(' ')} END`
+        : '';
 
       await query(
         `UPDATE ${predictionTable}
          SET points_earned = CASE id ${pointsCases} END,
              is_locked = TRUE
+             ${dnfSetClause}
          WHERE id = ANY($1)`,
         [predictionIds]
       );

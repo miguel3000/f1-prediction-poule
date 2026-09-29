@@ -222,6 +222,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
   const [isLocked, setIsLocked] = useState(false);
   const [lockNoticeDismissed, setLockNoticeDismissed] = useState(false);
   const [heldIndex, setHeldIndex] = useState<number | null>(null);
+  const [dnfPick, setDnfPick] = useState<number | ''>('');
 
   const checkLockState = useCallback(() => {
     if (!raceDate) return;
@@ -254,6 +255,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
           loaded.push(driverId ? drivers.find((d: Driver) => d.id === driverId) || null : null);
         }
         setPredictions(loaded);
+        setDnfPick(existing.dnf_pick ?? '');
       } catch { /* no existing prediction */ }
 
       setLoading(false);
@@ -333,7 +335,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
     setSubmitting(true);
     setMessage('');
     try {
-      await submitPrediction(raceId, predictions.map(d => d!.id));
+      await submitPrediction(raceId, predictions.map(d => d!.id), dnfPick === '' ? null : dnfPick);
       setShowConfirmModal(true);
     } catch (error: any) {
       setMessage(error.response?.data?.error || 'Failed to submit prediction');
@@ -514,6 +516,25 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
             className="h-full bg-f1-yellow-500 transition-all duration-300"
             style={{ width: `${(filledCount / 10) * 100}%` }}
           />
+        </div>
+
+        {/* First retirement bonus pick */}
+        <div className="bg-f1-neutral-900 border border-f1-neutral-800 px-3 py-2.5">
+          <label htmlFor="dnf-pick" className="flex items-center justify-between text-[10px] font-bold text-f1-yellow-500 uppercase tracking-widest mb-1.5">
+            <span>First Retirement</span>
+            <span className="text-white normal-case font-normal tracking-normal">Bonus +25 pts</span>
+          </label>
+          <select
+            id="dnf-pick"
+            value={dnfPick}
+            onChange={(e) => setDnfPick(e.target.value === '' ? '' : Number(e.target.value))}
+            className="w-full bg-f1-neutral-950 border border-f1-neutral-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-f1-yellow-500"
+          >
+            <option value="">No pick</option>
+            {qualifyingDrivers.map((driver) => (
+              <option key={driver.id} value={driver.id}>{driver.name}</option>
+            ))}
+          </select>
         </div>
 
         {/* Submit */}

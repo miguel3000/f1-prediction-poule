@@ -72,8 +72,8 @@ export const syncDrivers = () =>
   api.post('/api/drivers/sync');
 
 // Predictions
-export const submitPrediction = (raceId: number, positions: number[]) =>
-  api.post('/api/predictions', { raceId, positions });
+export const submitPrediction = (raceId: number, positions: number[], dnfPick?: number | null) =>
+  api.post('/api/predictions', { raceId, positions, dnfPick });
 
 export const getPrediction = (raceId: number) =>
   api.get(`/api/predictions/${raceId}`);

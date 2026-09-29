@@ -26,6 +26,9 @@ interface Prediction {
   points?: number;
   positionPoints?: PositionPoint[];
   race_type?: 'sprint' | 'main';
+  dnfPick?: { name: string } | null;
+  dnfBonusPoints?: number;
+  firstOutDriverName?: string | null;
 }
 
 const MyPredictions = () => {
@@ -242,6 +245,22 @@ const MyPredictions = () => {
                   );
                 })}
               </div>
+
+              {!isSprint && prediction.dnfPick && (
+                <div className="mt-4 pt-4 border-t border-f1-neutral-700 flex items-center justify-between text-sm">
+                  <span className="text-white">
+                    First retirement pick: <span className="font-semibold">{prediction.dnfPick.name}</span>
+                    {prediction.status === 'completed' && prediction.firstOutDriverName && (
+                      <span className="text-white"> (actual: {prediction.firstOutDriverName})</span>
+                    )}
+                  </span>
+                  {prediction.status === 'completed' && (
+                    <span className={`font-bold ${prediction.dnfBonusPoints ? 'text-yellow-400' : 'text-white'}`}>
+                      {prediction.dnfBonusPoints ? `+${prediction.dnfBonusPoints} ★` : '0'}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {prediction.status === 'upcoming' && (
                 <div className="mt-4 pt-4 border-t border-f1-neutral-700">

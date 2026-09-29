@@ -5,10 +5,16 @@ import { sendPredictionConfirmation } from '../services/emailService';
 export const submitPrediction = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
-    const { raceId, positions } = req.body;
+    const { raceId, positions, dnfPick } = req.body;
 
     if (!raceId || !positions || positions.length !== 10) {
       return res.status(400).json({ error: 'Race ID and 10 positions are required' });
+    }
+
+    // Optional bonus pick — any driver in the field, not just the predicted top 10
+    const dnfPickId: number | null = dnfPick == null ? null : Number(dnfPick);
+    if (dnfPickId != null && Number.isNaN(dnfPickId)) {
+      return res.status(400).json({ error: 'Invalid DNF pick' });
     }
 
     // Check if race exists and is not completed
@@ -40,35 +46,38 @@ export const submitPrediction = async (req: Request, res: Response) => {
         `UPDATE predictions SET
           position_1 = $1, position_2 = $2, position_3 = $3, position_4 = $4, position_5 = $5,
           position_6 = $6, position_7 = $7, position_8 = $8, position_9 = $9, position_10 = $10,
+          dnf_pick = $11,
           submitted_at = CURRENT_TIMESTAMP
-         WHERE user_id = $11 AND race_id = $12`,
-        [...positions, userId, raceId]
+         WHERE user_id = $12 AND race_id = $13`,
+        [...positions, dnfPickId, userId, raceId]
       );
     } else {
       // Create new prediction
       await query(
         `INSERT INTO predictions
           (user_id, race_id, position_1, position_2, position_3, position_4, position_5,
-           position_6, position_7, position_8, position_9, position_10)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [userId, raceId, ...positions]
+           position_6, position_7, position_8, position_9, position_10, dnf_pick)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [userId, raceId, ...positions, dnfPickId]
       );
     }
 
     // Get driver names for confirmation email (single query instead of N queries)
+    const allDriverIds = dnfPickId != null ? [...positions, dnfPickId] : positions;
     const driverResult = await query(
       'SELECT id, name FROM drivers WHERE id = ANY($1)',
-      [positions]
+      [allDriverIds]
     );
     const driverMap = new Map(driverResult.rows.map((d: any) => [d.id, d.name]));
     const driverNames = positions.map((id: number) => driverMap.get(id)).filter(Boolean) as string[];
+    const dnfPickName = dnfPickId != null ? driverMap.get(dnfPickId) ?? null : null;
 
     // Get user info
     const userResult = await query('SELECT nickname, email FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
     // Send confirmation email
-    await sendPredictionConfirmation(user.email, user.nickname, race.race_name, driverNames);
+    await sendPredictionConfirmation(user.email, user.nickname, race.race_name, driverNames, dnfPickName);
 
     res.json({ message: 'Prediction submitted successfully', raceId, positions });
   } catch (error) {
@@ -120,6 +129,7 @@ export const getUserPredictions = async (req: Request, res: Response) => {
           driverIds.push(prediction[`position_${i}`]);
         }
       }
+      if (prediction.dnf_pick) driverIds.push(prediction.dnf_pick);
 
       // Fetch driver details
       const driversResult = await query(
@@ -141,9 +151,11 @@ export const getUserPredictions = async (req: Request, res: Response) => {
       const mainPointsMap: Record<number, number> = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
       let positionPoints: Array<{ pointsEarned: number; hasBonus: boolean; actualPosition: number | null }> | undefined;
 
+      let firstOutDriverName: string | null = null;
+
       if (prediction.status === 'completed' || prediction.status === 'provisional') {
         const resultsResult = await query(
-          'SELECT driver_id, position FROM race_results WHERE race_id = $1',
+          'SELECT driver_id, position, status FROM race_results WHERE race_id = $1',
           [prediction.race_id]
         );
         const resultsMap = new Map(resultsResult.rows.map((r: any) => [r.driver_id, r.position]));
@@ -162,7 +174,17 @@ export const getUserPredictions = async (req: Request, res: Response) => {
             positionPoints.push({ pointsEarned: 0, hasBonus: false, actualPosition: actualPos });
           }
         }
+
+        // Same "worst-classified DNF = retired earliest" heuristic used to award the bonus
+        const dnfResults = resultsResult.rows.filter((r: any) => r.status === 'dnf');
+        if (dnfResults.length > 0) {
+          const firstOut = dnfResults.reduce((worst: any, r: any) => (r.position > worst.position ? r : worst), dnfResults[0]);
+          const firstOutDriver = await query('SELECT name FROM drivers WHERE id = $1', [firstOut.driver_id]);
+          firstOutDriverName = firstOutDriver.rows[0]?.name ?? null;
+        }
       }
+
+      const dnfPickDriver = prediction.dnf_pick ? driverMap.get(prediction.dnf_pick) : null;
 
       return {
         id: prediction.id,
@@ -172,7 +194,10 @@ export const getUserPredictions = async (req: Request, res: Response) => {
         status: prediction.status,
         positions: positions,
         points: prediction.points_earned,
-        positionPoints
+        positionPoints,
+        dnfPick: dnfPickDriver ? { name: dnfPickDriver.name } : null,
+        dnfBonusPoints: prediction.dnf_bonus_points || 0,
+        firstOutDriverName
       };
     }));
 

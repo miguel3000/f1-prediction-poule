@@ -44,7 +44,8 @@ export const sendPredictionConfirmation = async (
   email: string,
   nickname: string,
   raceName: string,
-  predictions: string[]
+  predictions: string[],
+  dnfPickName?: string | null
 ) => {
   const mailOptions = {
     from: process.env.EMAIL_FROM,
@@ -59,6 +60,7 @@ export const sendPredictionConfirmation = async (
         <ol style="line-height: 2;">
           ${predictions.map((driver) => `<li>${escapeHtml(driver)}</li>`).join('')}
         </ol>
+        ${dnfPickName ? `<p>First retirement pick: <strong>${escapeHtml(dnfPickName)}</strong> (+25 pts if correct)</p>` : ''}
         <p style="margin-top: 20px;">
           You can update your prediction until 1 minute before the race starts.
         </p>

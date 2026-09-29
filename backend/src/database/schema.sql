@@ -78,6 +78,8 @@ CREATE TABLE IF NOT EXISTS predictions (
   position_8 INTEGER REFERENCES drivers(id),
   position_9 INTEGER REFERENCES drivers(id),
   position_10 INTEGER REFERENCES drivers(id),
+  dnf_pick INTEGER REFERENCES drivers(id),
+  dnf_bonus_points INTEGER DEFAULT 0,
   points_earned INTEGER DEFAULT 0,
   submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   is_locked BOOLEAN DEFAULT FALSE,
