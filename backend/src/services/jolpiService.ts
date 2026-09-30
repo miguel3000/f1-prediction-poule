@@ -1,6 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { f1Cache, CACHE_TTL } from '../utils/cache';
+import { f1Cache, CACHE_TTL, getTTLForSession } from '../utils/cache';
 
 dotenv.config();
 
@@ -245,8 +245,18 @@ export interface JolpiPracticeResult {
   laps: string;
 }
 
-// Get practice session results (FP1, FP2, FP3)
-export const getPracticeResults = async (season: number, round: number, session: 1 | 2 | 3): Promise<JolpiPracticeResult[]> => {
+// Get practice session results (FP1, FP2, FP3). raceDate (the weekend's main
+// race date) picks the cache TTL: a session fetched before/during the race
+// weekend is cached briefly so live/partial laps keep refreshing instead of
+// getting stuck at whatever was first fetched, same as any other in-progress
+// session — it was previously always cached for 24h flat, which is what made
+// "live" FP results actually just freeze on the first partial snapshot.
+export const getPracticeResults = async (
+  season: number,
+  round: number,
+  session: 1 | 2 | 3,
+  raceDate?: Date | string
+): Promise<JolpiPracticeResult[]> => {
   const key = cacheKey.practice(season, round, session);
   const cached = f1Cache.get<JolpiPracticeResult[]>(key);
   if (cached) return cached;
@@ -259,7 +269,8 @@ export const getPracticeResults = async (season: number, round: number, session:
 
     const sessionKey = session === 1 ? 'FirstPractice' : session === 2 ? 'SecondPractice' : 'ThirdPractice';
     const results = races[0][sessionKey + 'Results'] || races[0].PracticeResults || [];
-    f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
+    const ttl = raceDate ? getTTLForSession(raceDate) : CACHE_TTL.RECENT_SESSION;
+    f1Cache.set(key, results, ttl);
     return results;
   } catch (error) {
     console.error(`Error fetching FP${session} results from Jolpi:`, error);

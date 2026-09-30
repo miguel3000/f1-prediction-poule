@@ -158,7 +158,12 @@ const Stats = () => {
 
       const mainRaces = racesRes.data.filter((r: Race) => r.race_type === 'main');
       if (mainRaces.length > 0) {
-        setSelectedRound(mainRaces[mainRaces.length - 1].round);
+        const latest = mainRaces[mainRaces.length - 1];
+        setSelectedRound(latest.round);
+        // Weekend still in progress — land on FP1 instead of the (empty) Race tab
+        if (latest.status === 'upcoming') {
+          setSelectedSession('fp1');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);

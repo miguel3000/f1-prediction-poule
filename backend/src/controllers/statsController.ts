@@ -15,7 +15,16 @@ export const getPracticeResults = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Session must be 1, 2, or 3' });
     }
 
-    const results = await jolpiService.getPracticeResults(season, parseInt(round), sessionNum);
+    // Weekend's race_date decides how long the practice results get cached —
+    // see getPracticeResults in jolpiService for why this matters for live data.
+    const raceRow = await query(
+      `SELECT race_date FROM races WHERE season = $1 AND round = $2
+       ORDER BY (race_type = 'main') DESC LIMIT 1`,
+      [season, parseInt(round)]
+    );
+    const raceDate = raceRow.rows[0]?.race_date;
+
+    const results = await jolpiService.getPracticeResults(season, parseInt(round), sessionNum, raceDate);
 
     const formattedResults = results.map((r: any, index: number) => ({
       position: parseInt(r.position) || index + 1,
@@ -114,7 +123,10 @@ export const getSprintResultsFromApi = async (req: Request, res: Response) => {
   }
 };
 
-// Get all completed races with basic info
+// Get completed races, plus the current race weekend while it's still in
+// progress (status='upcoming' but within a few days of race_date) — so FP1/2/3
+// and qualifying results show up on the Stats page as they're driven instead
+// of only appearing once the whole weekend is marked completed.
 export const getCompletedRaces = async (req: Request, res: Response) => {
   try {
     const season = parseInt(req.query.season as string) || 2026;
@@ -122,7 +134,11 @@ export const getCompletedRaces = async (req: Request, res: Response) => {
     const result = await query(
       `SELECT id, round, race_name, circuit_name, country, race_date, race_type, status
        FROM races
-       WHERE season = $1 AND status IN ('completed', 'provisional')
+       WHERE season = $1
+         AND (
+           status IN ('completed', 'provisional')
+           OR (status = 'upcoming' AND race_date <= NOW() + INTERVAL '4 days')
+         )
        ORDER BY round ASC, race_type DESC`,
       [season]
     );
