@@ -450,6 +450,57 @@ export const sendMissedPredictionReminder = async (
   }
 };
 
+// Sent right after copyMissingPredictions.ts auto-fills a no-show's prediction
+// with their last race's picks, so they know it happened and what got entered
+// on their behalf (rather than finding out silently from the results email).
+export const sendAutoFillNotice = async (
+  email: string,
+  nickname: string,
+  raceName: string,
+  predictions: PredictionPickForEmail[]
+) => {
+  const rows: UserPredictionResult[] = predictions.map((p, i) => ({
+    predictedPosition: i + 1,
+    driverName: p.driverName,
+    team: p.team,
+    actualPosition: undefined,
+    pointsEarned: 0,
+    hasBonus: false,
+  }));
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `We Filled In Your Prediction - ${raceName}`,
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('Prediction Auto-Filled', { bg: BRAND_YELLOW })}
+      <h2 style="color: ${BRAND_NAVY};">You Didn't Predict In Time</h2>
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>
+        <strong>${escapeHtml(raceName)}</strong> locked before you submitted a
+        prediction, so we copied in your picks from your last race to keep you
+        in the game:
+      </p>
+      ${emailPredictionRows(rows)}
+      <p style="margin-top: 20px;">
+        Nothing to do now — this prediction is locked in for this race. Don't
+        forget to submit your own next time!
+      </p>
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        Good luck! 🏎️
+      </p>
+    `),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Auto-fill notice email sent to:', email);
+  } catch (error) {
+    console.error('Error sending auto-fill notice:', error);
+  }
+};
+
 // Send "The results are in!" email after final results are processed
 export const sendResultsAreInEmail = async (
   email: string,

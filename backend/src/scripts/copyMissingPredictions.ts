@@ -1,4 +1,5 @@
 import { query } from '../config/database';
+import { sendAutoFillNotice, PredictionPickForEmail } from '../services/emailService';
 
 /**
  * For users who haven't submitted a prediction for an upcoming race,
@@ -126,6 +127,23 @@ async function copyMissingPredictions() {
 
         copiedCount++;
         console.log(`[CRON]   Copied ${isSprint ? 'sprint ' : ''}prediction for ${user.nickname}`);
+
+        // Look up driver names/teams for the copied positions and let the
+        // user know their pick was filled in automatically
+        const driverIds = Array.from({ length: positionColumns }, (_, i) => pred[`position_${i + 1}`]).filter(Boolean);
+        const driversResult = await query('SELECT id, name, team FROM drivers WHERE id = ANY($1)', [driverIds]);
+        const driverMap = new Map(driversResult.rows.map((d: any) => [d.id, d]));
+
+        const copiedPicks: PredictionPickForEmail[] = driverIds.map((id: number) => ({
+          driverName: driverMap.get(id)?.name || 'Unknown',
+          team: driverMap.get(id)?.team,
+        }));
+
+        try {
+          await sendAutoFillNotice(user.email, user.nickname, race.race_name, copiedPicks);
+        } catch (emailError) {
+          console.error(`[CRON] Error sending auto-fill notice to ${user.email}:`, emailError);
+        }
       }
 
       console.log(`[CRON] ✓ Copied ${copiedCount} predictions for ${race.race_name}`);

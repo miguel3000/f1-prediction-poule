@@ -10,6 +10,7 @@ import {
   sendFinalResults,
   sendRaceReminder,
   sendMissedPredictionReminder,
+  sendAutoFillNotice,
   sendResultsAreInEmail,
   sendPersonalRaceResults,
   sendBroadcastEmail,
@@ -62,34 +63,43 @@ const run = async () => {
     { driverName: 'Piastri', team: 'McLaren' },
     { driverName: 'Norris', team: 'McLaren' },
   ]);
-  console.log('1/8 sent: prediction confirmation');
+  console.log('1/11 sent: prediction confirmation');
 
   await sendProvisionalResults(to, 'Gaston', 'Azerbaijan Grand Prix', raceResults, userPrediction, 41);
-  console.log('2/8 sent: provisional results');
+  console.log('2/11 sent: provisional results');
 
   await sendFinalResults(to, 'Gaston', 'Azerbaijan Grand Prix', 41, true, 34, userPrediction);
-  console.log('3/8 sent: final results');
+  console.log('3/11 sent: final results');
 
   await sendRaceReminder(to, 'Gaston', 'Singapore Grand Prix', new Date(Date.now() + 3 * 24 * 60 * 60 * 1000));
-  console.log('4/9 sent: race reminder');
+  console.log('4/11 sent: race reminder');
 
   await sendMissedPredictionReminder(to, 'Gaston', 'Singapore Grand Prix', false);
-  console.log('5/9 sent: missed-prediction reminder');
+  console.log('5/11 sent: missed-prediction reminder');
+
+  await sendAutoFillNotice(to, 'Gaston', 'Singapore Grand Prix', [
+    { driverName: 'Russell', team: 'Mercedes' },
+    { driverName: 'Verstappen', team: 'Red Bull Racing' },
+    { driverName: 'Leclerc', team: 'Ferrari' },
+    { driverName: 'Piastri', team: 'McLaren' },
+    { driverName: 'Norris', team: 'McLaren' },
+  ]);
+  console.log('6/11 sent: auto-fill notice');
 
   await sendResultsAreInEmail(to, 'Gaston', 'Azerbaijan Grand Prix');
-  console.log('6/9 sent: results are in');
+  console.log('7/11 sent: results are in');
 
   await sendPersonalRaceResults(to, 'Gaston', 'Azerbaijan Grand Prix', 'main', personalPredictions, personalActuals, 41, 187);
-  console.log('7/9 sent: personal race results (main)');
+  console.log('8/11 sent: personal race results (main)');
 
   await sendPersonalRaceResults(to, 'Gaston', 'Azerbaijan Sprint', 'sprint', personalPredictions, personalActuals, 19, 187);
-  console.log('8/9 sent: personal race results (sprint)');
+  console.log('9/11 sent: personal race results (sprint)');
 
   await sendBroadcastEmail(to, 'Gaston', 'Test Broadcast', 'This is a test of the broadcast email template.\nSecond line to check line breaks.');
-  console.log('9/9 sent: broadcast');
+  console.log('10/11 sent: broadcast');
 
   await sendAdminAlert('Test admin alert', 'This is a test of the admin ops-alert template.');
-  console.log('10/10 sent: admin alert (goes to ADMIN_EMAIL, not the address above)');
+  console.log('11/11 sent: admin alert (goes to ADMIN_EMAIL, not the address above)');
 
   console.log('Done.');
   process.exit(0);
