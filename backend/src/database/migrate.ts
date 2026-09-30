@@ -88,6 +88,12 @@ const runMigration = async () => {
     await query(`ALTER TABLE predictions ADD COLUMN IF NOT EXISTS dnf_bonus_points INTEGER DEFAULT 0`);
     console.log('dnf_pick/dnf_bonus_points columns ensured.');
 
+    // Add reminder_sent column to races (tracks whether the 1-hour-before-lights-out
+    // missed-prediction reminder has already gone out, so the cron job stays idempotent)
+    console.log('Checking for reminder_sent column...');
+    await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT FALSE`);
+    console.log('reminder_sent column ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

@@ -409,6 +409,47 @@ export const sendRaceReminder = async (
   }
 };
 
+// Sent 1 hour before lights out to anyone who hasn't submitted a prediction
+// yet for the upcoming race/sprint — last chance before it auto-locks and
+// their previous prediction gets copied in instead.
+export const sendMissedPredictionReminder = async (
+  email: string,
+  nickname: string,
+  raceName: string,
+  isSprint: boolean
+) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `1 Hour Left — Submit Your Prediction for ${raceName}!`,
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('1 Hour To Lights Out', { bg: BRAND_YELLOW })}
+      <h2 style="color: ${BRAND_NAVY};">Don't Miss Out!</h2>
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>
+        You haven't submitted a ${isSprint ? 'sprint' : ''} prediction yet for
+        <strong>${escapeHtml(raceName)}</strong>, and it locks in about 1 hour.
+      </p>
+      <p>
+        If you don't submit in time, your last prediction will be copied in
+        automatically — so get your own picks in while you still can!
+      </p>
+      ${emailBanner('Submit Prediction', { url: process.env.FRONTEND_URL!, bg: BRAND_NAVY, color: '#ffffff' })}
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        Good luck! 🏎️
+      </p>
+    `),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Missed-prediction reminder email sent to:', email);
+  } catch (error) {
+    console.error('Error sending missed-prediction reminder:', error);
+  }
+};
+
 // Send "The results are in!" email after final results are processed
 export const sendResultsAreInEmail = async (
   email: string,

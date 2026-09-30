@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS races (
   provisional_results_sent BOOLEAN DEFAULT FALSE,
   provisional_alert_sent BOOLEAN DEFAULT FALSE,
   final_results_processed BOOLEAN DEFAULT FALSE,
+  reminder_sent BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(season, round, race_type)

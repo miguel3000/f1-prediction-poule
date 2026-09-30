@@ -9,6 +9,7 @@ import {
   sendProvisionalResults,
   sendFinalResults,
   sendRaceReminder,
+  sendMissedPredictionReminder,
   sendResultsAreInEmail,
   sendPersonalRaceResults,
   sendBroadcastEmail,
@@ -70,22 +71,25 @@ const run = async () => {
   console.log('3/8 sent: final results');
 
   await sendRaceReminder(to, 'Gaston', 'Singapore Grand Prix', new Date(Date.now() + 3 * 24 * 60 * 60 * 1000));
-  console.log('4/8 sent: race reminder');
+  console.log('4/9 sent: race reminder');
+
+  await sendMissedPredictionReminder(to, 'Gaston', 'Singapore Grand Prix', false);
+  console.log('5/9 sent: missed-prediction reminder');
 
   await sendResultsAreInEmail(to, 'Gaston', 'Azerbaijan Grand Prix');
-  console.log('5/8 sent: results are in');
+  console.log('6/9 sent: results are in');
 
   await sendPersonalRaceResults(to, 'Gaston', 'Azerbaijan Grand Prix', 'main', personalPredictions, personalActuals, 41, 187);
-  console.log('6/8 sent: personal race results (main)');
+  console.log('7/9 sent: personal race results (main)');
 
   await sendPersonalRaceResults(to, 'Gaston', 'Azerbaijan Sprint', 'sprint', personalPredictions, personalActuals, 19, 187);
-  console.log('7/8 sent: personal race results (sprint)');
+  console.log('8/9 sent: personal race results (sprint)');
 
   await sendBroadcastEmail(to, 'Gaston', 'Test Broadcast', 'This is a test of the broadcast email template.\nSecond line to check line breaks.');
-  console.log('8/8 sent: broadcast');
+  console.log('9/9 sent: broadcast');
 
   await sendAdminAlert('Test admin alert', 'This is a test of the admin ops-alert template.');
-  console.log('9/9 sent: admin alert (goes to ADMIN_EMAIL, not the address above)');
+  console.log('10/10 sent: admin alert (goes to ADMIN_EMAIL, not the address above)');
 
   console.log('Done.');
   process.exit(0);

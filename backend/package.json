@@ -13,6 +13,7 @@
     "results:provisional": "npx ts-node src/scripts/sendProvisionalResults.ts",
     "results:final": "npx ts-node src/scripts/processFinalResults.ts",
     "predictions:copy-missing": "npx ts-node src/scripts/copyMissingPredictions.ts",
+    "predictions:remind-missed": "npx ts-node src/scripts/sendMissedPredictionReminders.ts",
     "points:repair-totals": "npx ts-node src/scripts/repairTotalPoints.ts"
   },
   "keywords": [

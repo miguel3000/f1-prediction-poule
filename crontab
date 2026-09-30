@@ -12,6 +12,11 @@
 # Picks up qualifying data ~2 hours after session ends
 0 * * * 5,6 /app/sync-qualifying-results.sh
 
+# MISSED-PREDICTION REMINDER: Check every 5 minutes on race days (Sat sprint + Sun main, 01:00-20:00 UTC)
+# Fires ~1 hour before lights out for anyone who still hasn't predicted.
+# Window starts an hour earlier than the other race-day jobs to catch early sprints (e.g. China ~03:00 UTC).
+*/5 1-20 * * 0,6 /app/send-missed-prediction-reminders.sh
+
 # COPY MISSING PREDICTIONS: Check every 2 minutes on race days (Sat sprint + Sun main, 02:00-20:00 UTC)
 # Wide window covers early sprints (e.g. China ~03:00 UTC) through late-timezone races.
 # Copies last prediction for users who forgot to submit

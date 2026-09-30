@@ -56,6 +56,7 @@ npm run sync:results              # Sync race results from F1 API
 npm run results:provisional       # Send provisional results emails
 npm run results:final             # Process final results (24h after race)
 npm run predictions:copy-missing  # Copy predictions for users who forgot
+npm run predictions:remind-missed # Email users who haven't predicted, 1h before lights out
 ```
 
 ## Project Structure
@@ -190,6 +191,7 @@ FRONTEND_URL=https://yoursite.com
 
 Automated via crontab in Docker:
 - **Driver standings sync**: Mon/Thu 9:00 UTC
+- **Missed-prediction reminder**: Every 5 min on race days, ~1h before lights out
 - **Copy missing predictions**: Every 2 min on Sundays 12:00-18:00 UTC
 - **Provisional results**: Every 5 min on Sundays 12:00-20:00 UTC
 - **Final results**: Mon 12:00-20:00 UTC
