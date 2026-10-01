@@ -22,7 +22,7 @@ const BottomTabBar = ({ onMoreClick, moreActive }: BottomTabBarProps) => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 md:hidden border-t border-f1-neutral-800 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-30 lg:hidden border-t border-f1-neutral-800 backdrop-blur-xl"
       style={{ backgroundColor: 'rgba(18,16,18,0.92)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="grid h-16" style={{ gridTemplateColumns: `repeat(${tabs.length + 1}, minmax(0, 1fr))` }}>

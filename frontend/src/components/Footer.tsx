@@ -4,8 +4,10 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    // Mobile: these links already live in the "More" drawer, so skip the footer here.
-    <footer className="footer-solid mt-12 hidden md:block">
+    // Mobile/tablet (incl. landscape, up to lg): these links already live in
+    // the "More" drawer, so skip the footer here — kept in sync with Header's
+    // and BottomTabBar's own lg breakpoint.
+    <footer className="footer-solid mt-12 hidden lg:block">
       <div className="container mx-auto px-4 py-5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-f1-neutral-500">
           <div className="flex items-center gap-4 flex-wrap justify-center">

@@ -37,10 +37,13 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
             <LogoMark className="h-10 w-auto" />
           </button>
 
-          <div className="w-px h-6 bg-f1-neutral-800 hidden md:block" />
+          <div className="w-px h-6 bg-f1-neutral-800 hidden lg:block" />
 
-          {/* Desktop persistent nav — no drawer, always visible */}
-          <nav className="hidden md:flex items-center gap-1 flex-1">
+          {/* Desktop persistent nav — no drawer, always visible. Breakpoint is lg
+              (not md) so phone/tablet landscape widths, which commonly land in
+              the 768-1023px md range, keep the compact portrait-style header
+              instead of switching to this busy multi-item nav too early. */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1">
             {desktopLinks.map(({ path, label, icon: Icon, end }) => (
               <NavLink
                 key={path}
@@ -81,14 +84,14 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
             )}
           </nav>
 
-          <div className="flex-1 md:hidden" />
+          <div className="flex-1 lg:hidden" />
 
           {/* User + More */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {user ? (
               <>
                 <div
-                  className="hidden md:block text-right cursor-pointer"
+                  className="hidden lg:block text-right cursor-pointer"
                   onClick={() => navigate('/profile')}
                 >
                   <p className="text-sm font-bold text-white hover:text-f1-yellow-400 transition-colors leading-tight">{user.nickname}</p>
@@ -112,7 +115,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 )}
                 <button
                   onClick={logout}
-                  className="hidden md:block text-xs text-f1-neutral-500 hover:text-f1-yellow-400 transition-colors font-bold uppercase tracking-wider"
+                  className="hidden lg:block text-xs text-f1-neutral-500 hover:text-f1-yellow-400 transition-colors font-bold uppercase tracking-wider"
                 >
                   Out
                 </button>
