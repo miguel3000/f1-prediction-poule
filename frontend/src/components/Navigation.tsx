@@ -3,7 +3,7 @@ import { useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import {
   RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon,
-  PredictionIcon, ChartIcon, NewsIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon,
+  PredictionIcon, ChartIcon, NewsIcon, LiveIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon,
 } from './icons';
 
 interface NavigationProps {
@@ -31,6 +31,7 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
       { path: '/predictions', label: 'My Predictions', icon: <PredictionIcon /> },
       { path: '/stats',       label: 'Statistics',    icon: <ChartIcon /> },
       { path: '/news',        label: 'News',          icon: <NewsIcon /> },
+      { path: '/live',        label: 'Live Timing',   icon: <LiveIcon /> },
     );
   }
 

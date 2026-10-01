@@ -125,6 +125,10 @@ export const deleteAvatar = () =>
 export const getNews = () =>
   api.get('/api/news');
 
+// Live Timing
+export const getLiveTiming = () =>
+  api.get('/api/live-timing');
+
 // Stats
 export const getCompletedRaces = (season?: number) =>
   api.get('/api/stats/races', { params: { season } });

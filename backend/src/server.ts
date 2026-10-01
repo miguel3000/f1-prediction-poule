@@ -16,6 +16,8 @@ import uploadRoutes from './routes/upload';
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
 import newsRoutes from './routes/news';
+import liveTimingRoutes from './routes/liveTiming';
+import { startLiveTimingIngest } from './services/liveTimingService';
 
 dotenv.config();
 
@@ -68,6 +70,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/live-timing', liveTimingRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -95,6 +98,7 @@ app.listen(PORT, () => {
   console.log(`🏎️  Poule Position API running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL}`);
+  startLiveTimingIngest();
 });
 
 export default app;

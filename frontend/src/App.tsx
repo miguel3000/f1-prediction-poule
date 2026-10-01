@@ -19,6 +19,7 @@ import MyPredictions from './pages/MyPredictions';
 import Stats from './pages/Stats';
 import Teams from './pages/Teams';
 import News from './pages/News';
+import LiveTiming from './pages/LiveTiming';
 import { AuthContext } from './context/AuthContext';
 import { getProfile } from './services/api';
 
@@ -78,6 +79,7 @@ function App() {
               <Route path="/predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
               <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
               <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+              <Route path="/live" element={<ProtectedRoute><LiveTiming /></ProtectedRoute>} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/about" element={<About />} />
             </Routes>
