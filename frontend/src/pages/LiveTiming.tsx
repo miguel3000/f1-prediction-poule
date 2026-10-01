@@ -226,18 +226,18 @@ const LiveTiming = () => {
           <div className="p-8 text-center text-white">No timing data available right now</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-base">
               <thead className="bg-f1-yellow-500">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Pos</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Driver</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Tyre</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Gap</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Last Lap</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Best Lap</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">S1</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">S2</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">S3</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">Pos</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">Driver</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">Tyre</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">Gap</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">Last Lap</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">Best Lap</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">S1</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">S2</th>
+                  <th className="px-3 py-3 text-left text-sm font-bold text-black uppercase tracking-wider">S3</th>
                 </tr>
               </thead>
               <tbody>
@@ -250,38 +250,38 @@ const LiveTiming = () => {
 
                   return (
                     <tr key={line.RacingNumber} className={rowBg}>
-                      <td className="px-3 py-2 font-f1-badge font-bold text-lg text-white/80">{line.Position}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-3 font-f1-badge font-bold text-2xl text-white/80">{line.Position}</td>
+                      <td className="px-3 py-3">
                         <div
                           className="flex items-center gap-2 border-l-4 pl-2"
                           style={{ borderColor: driver ? `#${driver.TeamColour}` : '#666' }}
                         >
                           <div className="min-w-0">
-                            <p className="font-bold text-white truncate">{driver?.Tla || line.RacingNumber}</p>
-                            <p className="text-[10px] text-white/70 truncate">{driver?.TeamName}</p>
+                            <p className="font-bold text-white text-lg truncate">{driver?.Tla || line.RacingNumber}</p>
+                            <p className="text-xs text-white/70 truncate">{driver?.TeamName}</p>
                           </div>
-                          {line.Retired && <span className="text-[10px] px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">OUT</span>}
-                          {line.InPit && <span className="text-[10px] px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold flex-shrink-0">PIT</span>}
-                          {line.Stopped && !line.Retired && <span className="text-[10px] px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">STOP</span>}
+                          {line.Retired && <span className="text-xs px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">OUT</span>}
+                          {line.InPit && <span className="text-xs px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold flex-shrink-0">PIT</span>}
+                          {line.Stopped && !line.Retired && <span className="text-xs px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">STOP</span>}
                         </div>
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-3">
                         {compound ? (
-                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ${compound.className}`}>
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black ${compound.className}`}>
                             {compound.label}
                           </span>
                         ) : (
                           <span className="text-white/40">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 font-mono text-xs text-white/90">{line.GapToLeader || '—'}</td>
-                      <td className={`px-3 py-2 font-mono text-xs ${line.LastLapTime?.OverallFastest ? 'text-purple-400 font-bold' : line.LastLapTime?.PersonalFastest ? 'text-green-400 font-bold' : 'text-white/90'}`}>
+                      <td className="px-3 py-3 font-mono font-bold text-white/90">{line.GapToLeader || '—'}</td>
+                      <td className={`px-3 py-3 font-mono font-bold ${line.LastLapTime?.OverallFastest ? 'text-purple-400' : line.LastLapTime?.PersonalFastest ? 'text-green-400' : 'text-white/90'}`}>
                         {line.LastLapTime?.Value || '—'}
                       </td>
-                      <td className="px-3 py-2 font-mono text-xs text-white/90">{line.BestLapTime?.Value || '—'}</td>
-                      <td className={`px-3 py-2 font-mono text-xs ${sectorClass(line.Sectors?.[0])}`}>{line.Sectors?.[0]?.Value || '—'}</td>
-                      <td className={`px-3 py-2 font-mono text-xs ${sectorClass(line.Sectors?.[1])}`}>{line.Sectors?.[1]?.Value || '—'}</td>
-                      <td className={`px-3 py-2 font-mono text-xs ${sectorClass(line.Sectors?.[2])}`}>{line.Sectors?.[2]?.Value || '—'}</td>
+                      <td className="px-3 py-3 font-mono font-bold text-white/90">{line.BestLapTime?.Value || '—'}</td>
+                      <td className={`px-3 py-3 font-mono font-bold ${sectorClass(line.Sectors?.[0])}`}>{line.Sectors?.[0]?.Value || '—'}</td>
+                      <td className={`px-3 py-3 font-mono font-bold ${sectorClass(line.Sectors?.[1])}`}>{line.Sectors?.[1]?.Value || '—'}</td>
+                      <td className={`px-3 py-3 font-mono font-bold ${sectorClass(line.Sectors?.[2])}`}>{line.Sectors?.[2]?.Value || '—'}</td>
                     </tr>
                   );
                 })}
