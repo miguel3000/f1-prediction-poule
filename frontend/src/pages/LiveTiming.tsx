@@ -202,8 +202,11 @@ const LiveTiming = () => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
 
+    let first = true;
     const loop = async () => {
-      if (!document.hidden) await fetchSnapshot();
+      // Always load once so the page has data; after that, skip while hidden.
+      if (first || !document.hidden) await fetchSnapshot();
+      first = false;
       if (cancelled) return;
       const base = isLiveRef.current ? 3000 : 15000;
       timer = setTimeout(loop, base * 2 ** backoffRef.current);
