@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import { sendAutoFillNotice, PredictionPickForEmail } from '../services/emailService';
+import { findSourcePrediction } from '../services/autoFillService';
 
 /**
  * For users who haven't submitted a prediction for an upcoming race,
@@ -37,12 +38,15 @@ async function copyMissingPredictions() {
       const positionColumns = isSprint ? 8 : 10;
       console.log(`[CRON] Processing missing ${isSprint ? 'sprint ' : ''}predictions for ${race.race_name} (Round ${race.round})...`);
 
-      // Find users who have made predictions before but not for this race
+      // Find users who have made predictions before but not for this race. For a
+      // sprint, an earlier main-race prediction counts too (its top 8 is used),
+      // so a player who has never predicted a sprint still gets covered.
       const usersWithoutPrediction = await query(
         `SELECT DISTINCT u.id, u.nickname, u.email
          FROM users u
-         WHERE EXISTS (
-           SELECT 1 FROM ${predictionTable} p2 WHERE p2.user_id = u.id
+         WHERE (
+           EXISTS (SELECT 1 FROM ${predictionTable} p2 WHERE p2.user_id = u.id)
+           ${isSprint ? 'OR EXISTS (SELECT 1 FROM predictions p4 WHERE p4.user_id = u.id)' : ''}
          )
          AND NOT EXISTS (
            SELECT 1 FROM ${predictionTable} p WHERE p.user_id = u.id AND p.race_id = $1
@@ -60,22 +64,11 @@ async function copyMissingPredictions() {
       let copiedCount = 0;
 
       for (const user of usersWithoutPrediction.rows) {
-        // Get user's most recent prediction from the appropriate table
-        const lastPrediction = await query(
-          `SELECT p.*
-           FROM ${predictionTable} p
-           JOIN races r ON p.race_id = r.id
-           WHERE p.user_id = $1
-           ORDER BY r.race_date DESC
-           LIMIT 1`,
-          [user.id]
-        );
+        const pred = await findSourcePrediction(user.id, isSprint, race.race_date);
 
-        if (lastPrediction.rows.length === 0) {
+        if (!pred) {
           continue;
         }
-
-        const pred = lastPrediction.rows[0];
 
         // Copy the prediction to the new race (different columns for sprint vs main)
         // Use ON CONFLICT DO NOTHING to make this idempotent (safe to run multiple times)
