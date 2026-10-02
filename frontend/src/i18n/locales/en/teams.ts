@@ -12,4 +12,5 @@ export const teams = {
   'teams.sources': 'Sources:',
   'teams.pts': 'pts',
   'teams.wins': 'wins',
+  'teams.win': 'win',
 };

@@ -3,7 +3,7 @@ import { useLang } from '../i18n/LanguageContext';
 import { getDriverStandings, getTeamStandings } from '../services/api';
 import { teamKey, driverKey } from '../utils/teamKey';
 
-interface DriverStat { points: number; wins: number }
+interface DriverStat { points: number; wins: number; number: number }
 interface TeamStat { points: number; position: number }
 
 const Teams = () => {
@@ -18,7 +18,7 @@ const Teams = () => {
       .then((res) => {
         const drivers: any[] = res.data.drivers || res.data;
         setDriverStats(
-          new Map(drivers.map((d) => [driverKey(d.name), { points: d.total_points, wins: d.wins ?? 0 }]))
+          new Map(drivers.map((d) => [driverKey(d.name), { points: d.total_points, wins: d.wins ?? 0, number: d.driver_number }]))
         );
       })
       .catch(() => undefined);
@@ -254,7 +254,7 @@ const Teams = () => {
                       className="flex items-center gap-3 bg-f1-neutral-700/50 p-3"
                     >
                       <span className={`text-2xl font-bold ${team.textColor} w-12 text-center`}>
-                        #{driver.number}
+                        #{driverStats.get(driverKey(driver.name))?.number ?? driver.number}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white">{driver.name}</p>
@@ -267,7 +267,7 @@ const Teams = () => {
                           </p>
                           {driverStats.get(driverKey(driver.name))!.wins > 0 && (
                             <p className="text-xs text-white/70">
-                              {driverStats.get(driverKey(driver.name))!.wins} {t('teams.wins')}
+                              {driverStats.get(driverKey(driver.name))!.wins} {driverStats.get(driverKey(driver.name))!.wins === 1 ? t('teams.win') : t('teams.wins')}
                             </p>
                           )}
                         </div>

@@ -14,4 +14,5 @@ export const teams: Record<keyof typeof en_teams, string> = {
   'teams.sources': 'Bronnen:',
   'teams.pts': 'ptn',
   'teams.wins': 'zeges',
+  'teams.win': 'zege',
 };
