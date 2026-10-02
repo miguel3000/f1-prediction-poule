@@ -14,7 +14,14 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       userId: number;
       email: string;
+      purpose?: string;
     };
+
+    // Purpose-bound tokens (unsubscribe links, password resets) are signed
+    // with the same secret but must never work as a login session.
+    if (decoded.purpose) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
 
     // Add userId to request object
     (req as any).userId = decoded.userId;

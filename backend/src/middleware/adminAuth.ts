@@ -14,7 +14,12 @@ export const authenticateAdmin = async (req: Request, res: Response, next: NextF
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number; email: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number; email: string; purpose?: string };
+
+    // Purpose-bound tokens (unsubscribe links, password resets) are not sessions.
+    if (decoded.purpose) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
 
     const result = await query('SELECT is_admin FROM users WHERE id = $1', [decoded.userId]);
 
