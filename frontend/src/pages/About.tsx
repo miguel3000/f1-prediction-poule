@@ -98,7 +98,6 @@ const About = () => {
             <p className="mb-3">{t('about.contact.intro')}</p>
             <ul className="list-none ml-4 space-y-1">
               <li><strong>{t('about.contact.email')}</strong> <a href="mailto:kimi@pouleposition.nl" className="text-f1-yellow-500 hover:underline">kimi@pouleposition.nl</a></li>
-              <li><strong>{t('about.contact.website')}</strong> http://localhost:5000</li>
             </ul>
             <p className="mt-3">
               {t('about.contact.privacy')} <a href="/privacy" className="text-f1-yellow-500 hover:underline">{t('about.contact.privacyLink')}</a>.

@@ -58,7 +58,6 @@ export const about: Record<keyof typeof en_about, string> = {
   'about.contact.title': 'Contact',
   'about.contact.intro': 'We horen graag van je! Of je nu vragen of feedback hebt, of hulp nodig hebt:',
   'about.contact.email': 'E-mail:',
-  'about.contact.website': 'Website:',
   'about.contact.privacy': 'Voor vragen over privacy verwijzen we naar ons',
   'about.contact.privacyLink': 'Privacybeleid',
   'about.version.title': 'Versie & updates',

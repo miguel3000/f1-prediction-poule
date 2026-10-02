@@ -56,7 +56,6 @@ export const about = {
   'about.contact.title': 'Contact Us',
   'about.contact.intro': 'We\'d love to hear from you! Whether you have questions, feedback, or need support:',
   'about.contact.email': 'Email:',
-  'about.contact.website': 'Website:',
   'about.contact.privacy': 'For privacy-related inquiries, please see our',
   'about.contact.privacyLink': 'Privacy Policy',
   'about.version.title': 'Version & Updates',
