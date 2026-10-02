@@ -1,8 +1,8 @@
-# F1 Prediction Poule - Claude Code Guide
+# Poule Position - Claude Code Guide
 
 ## Project Overview
 
-F1 Prediction Poule is a web application where users can predict Formula 1 race results and compete on a leaderboard. It supports both main races (top 10 predictions) and sprint races (top 8 predictions).
+Poule Position is a web application where users can predict Formula 1 race results and compete on a leaderboard. It supports both main races (top 10 predictions) and sprint races (top 8 predictions).
 
 ## Tech Stack
 

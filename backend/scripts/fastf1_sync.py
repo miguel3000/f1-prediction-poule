@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FastF1 data sync utility for F1 Prediction Poule.
+FastF1 data sync utility for Poule Position.
 
 Fetches session results via the FastF1 library, which connects to F1's own
 timing system and is faster than Ergast/Jolpi for freshly completed sessions.

@@ -1,4 +1,4 @@
-# F1 Prediction Poule - Setup Guide
+# Poule Position - Setup Guide
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ Edit `backend/.env` and update the following:
 # Gmail Configuration
 EMAIL_USER=your-gmail@gmail.com
 EMAIL_PASSWORD=your-app-specific-password
-EMAIL_FROM=F1 Prediction Poule <your-gmail@gmail.com>
+EMAIL_FROM=Poule Position <your-gmail@gmail.com>
 
 # JWT Secret (change this!)
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production

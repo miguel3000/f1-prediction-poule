@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for F1 Prediction Poule
+# Multi-stage Dockerfile for Poule Position
 # Combines frontend and backend into single image on port 5000
 
 # Stage 1: Build Frontend

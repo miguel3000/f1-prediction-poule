@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Starting F1 Prediction Poule application..."
+echo "Starting Poule Position application..."
 
 # Run database migrations before starting (idempotent — safe to run on every boot)
 echo "Running database migrations..."
