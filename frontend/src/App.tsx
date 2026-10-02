@@ -20,6 +20,7 @@ import Stats from './pages/Stats';
 import Teams from './pages/Teams';
 import News from './pages/News';
 import LiveTiming from './pages/LiveTiming';
+import ResetPassword from './pages/ResetPassword';
 import { AuthContext } from './context/AuthContext';
 import { getProfile } from './services/api';
 
@@ -81,6 +82,7 @@ function App() {
               <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
               <Route path="/rules" element={<Rules />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/pitlane" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />

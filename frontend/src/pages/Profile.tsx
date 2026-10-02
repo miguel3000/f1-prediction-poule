@@ -2,7 +2,7 @@ import { useState, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { changeEmail as changeEmailRequest, deleteAccount as deleteAccountRequest } from '../services/api';
+import { changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, deleteAccount as deleteAccountRequest } from '../services/api';
 
 const Profile = () => {
   const { user, token, logout } = useContext(AuthContext);
@@ -11,6 +11,10 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const [showNicknameForm, setShowNicknameForm] = useState(false);
+  const [newNickname, setNewNickname] = useState('');
+  const [nicknameSaving, setNicknameSaving] = useState(false);
 
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -101,6 +105,24 @@ const Profile = () => {
       }, 1000);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to remove avatar');
+    }
+  };
+
+  const handleChangeNickname = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setNicknameSaving(true);
+
+    try {
+      await changeNicknameRequest(newNickname);
+      setSuccess('Username updated successfully! Refreshing...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to change username');
+      setNicknameSaving(false);
     }
   };
 
@@ -212,8 +234,50 @@ const Profile = () => {
 
           <div className="grid gap-4">
             <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-white mb-1">Nickname</p>
-              <p className="text-lg font-bold">{user.nickname}</p>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm text-white mb-1">Username</p>
+                  <p className="text-lg font-bold">{user.nickname}</p>
+                </div>
+                {!showNicknameForm && (
+                  <button
+                    onClick={() => { setShowNicknameForm(true); setNewNickname(user.nickname); setError(''); setSuccess(''); }}
+                    className="text-sm text-f1-yellow-500 hover:underline flex-shrink-0"
+                  >
+                    Change
+                  </button>
+                )}
+              </div>
+
+              {showNicknameForm && (
+                <form onSubmit={handleChangeNickname} className="mt-4 space-y-3 pt-4 border-t border-f1-neutral-700">
+                  <div>
+                    <label className="block text-sm text-white mb-1">New username</label>
+                    <input
+                      type="text"
+                      required
+                      minLength={2}
+                      maxLength={30}
+                      value={newNickname}
+                      onChange={(e) => setNewNickname(e.target.value)}
+                      className="w-full bg-f1-neutral-900 border border-f1-neutral-700 px-3 py-2 text-white focus:outline-none focus:border-f1-yellow-500"
+                    />
+                    <p className="text-xs text-white/60 mt-1">2-30 characters: letters, numbers, spaces and . _ ' -</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button type="submit" disabled={nicknameSaving} className="btn-f1-primary text-sm px-4 py-2">
+                      {nicknameSaving ? 'Saving...' : 'Save Username'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNicknameForm(false); setError(''); }}
+                      className="text-sm text-white hover:underline px-2"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
 
             <div className="bg-f1-neutral-800 p-4">

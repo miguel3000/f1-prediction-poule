@@ -33,6 +33,15 @@ export const getProfile = () =>
 export const changeEmail = (newEmail: string, password: string) =>
   api.put('/api/auth/email', { newEmail, password });
 
+export const changeNickname = (newNickname: string) =>
+  api.put('/api/auth/nickname', { newNickname });
+
+export const forgotPassword = (email: string) =>
+  api.post('/api/auth/forgot-password', { email });
+
+export const resetPassword = (token: string, newPassword: string) =>
+  api.post('/api/auth/reset-password', { token, newPassword });
+
 export const deleteAccount = (password: string) =>
   api.delete('/api/auth/account', { data: { password } });
 

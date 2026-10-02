@@ -1,9 +1,21 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { query } from '../config/database';
+import { sendPasswordReset } from '../services/emailService';
 
 const SALT_ROUNDS = 10;
+
+// Ties a reset token to the password it was issued for: an HMAC of the stored
+// hash, so the token stops working the moment the password changes (single
+// use) without storing anything, and without exposing any of the hash itself.
+const passwordFingerprint = (passwordHash: string | null): string =>
+  crypto.createHmac('sha256', process.env.JWT_SECRET!).update(passwordHash || '').digest('hex').slice(0, 32);
+
+// userId -> last reset mail time, so one account can't be mail-bombed.
+const resetMailCooldown = new Map<number, number>();
+const RESET_MAIL_COOLDOWN_MS = 60 * 1000;
 
 export const getProfile = async (req: Request, res: Response) => {
   try {
@@ -132,6 +144,129 @@ export const changeEmail = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Change email error:', error);
     res.status(500).json({ error: 'Failed to change email' });
+  }
+};
+
+// Self-service nickname change. Nickname is read live from users everywhere
+// (leaderboard, predictions, emails), so there is nothing else to update.
+export const changeNickname = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const newNickname = typeof req.body?.newNickname === 'string' ? req.body.newNickname.trim() : '';
+
+    if (newNickname.length < 2 || newNickname.length > 30) {
+      return res.status(400).json({ error: 'Username must be between 2 and 30 characters' });
+    }
+    if (!/^[\p{L}\p{N} ._'-]+$/u.test(newNickname)) {
+      return res.status(400).json({ error: "Username can only contain letters, numbers, spaces and . _ ' -" });
+    }
+
+    const taken = await query(
+      'SELECT id FROM users WHERE LOWER(nickname) = LOWER($1) AND id != $2',
+      [newNickname, userId]
+    );
+    if (taken.rows.length > 0) {
+      return res.status(400).json({ error: 'That username is already taken' });
+    }
+
+    const updated = await query('UPDATE users SET nickname = $1 WHERE id = $2', [newNickname, userId]);
+    if (updated.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Username updated successfully', nickname: newNickname });
+  } catch (error: any) {
+    if (error?.code === '23505') {
+      return res.status(400).json({ error: 'That username is already taken' });
+    }
+    console.error('Change nickname error:', error);
+    res.status(500).json({ error: 'Failed to change username' });
+  }
+};
+
+// Step 1 of a password reset. Always answers the same way, and answers before
+// doing any lookup, so neither the response nor its timing reveals whether an
+// email has an account.
+export const forgotPassword = async (req: Request, res: Response) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  res.json({ message: 'If that email belongs to an account, a reset link is on its way.' });
+
+  try {
+    const result = await query(
+      'SELECT id, nickname, email, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
+    if (result.rows.length === 0) return;
+    const user = result.rows[0];
+
+    const last = resetMailCooldown.get(user.id) || 0;
+    if (Date.now() - last < RESET_MAIL_COOLDOWN_MS) return;
+    resetMailCooldown.set(user.id, Date.now());
+
+    const token = jwt.sign(
+      { userId: user.id, purpose: 'reset', fp: passwordFingerprint(user.password_hash) },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1h' }
+    );
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
+    await sendPasswordReset(user.email, user.nickname, resetUrl);
+  } catch (error: any) {
+    // Never log the token or the link.
+    console.error('Forgot password error:', error?.message || error);
+  }
+};
+
+// Step 2: the emailed link brings the player to /reset-password, which posts
+// the token here with the new password.
+export const resetPassword = async (req: Request, res: Response) => {
+  const invalid = { error: 'This reset link is invalid or has expired. Please request a new one.' };
+
+  try {
+    const { token, newPassword } = req.body || {};
+    if (typeof token !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    let payload: any;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return res.status(400).json(invalid);
+    }
+    if (payload?.purpose !== 'reset' || !payload.userId || typeof payload.fp !== 'string') {
+      return res.status(400).json(invalid);
+    }
+
+    const result = await query('SELECT id, password_hash FROM users WHERE id = $1', [payload.userId]);
+    if (result.rows.length === 0) return res.status(400).json(invalid);
+    const user = result.rows[0];
+
+    const expected = Buffer.from(passwordFingerprint(user.password_hash));
+    const given = Buffer.from(payload.fp);
+    if (expected.length !== given.length || !crypto.timingSafeEqual(expected, given)) {
+      return res.status(400).json(invalid);
+    }
+
+    const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    // Compare-and-set on the old hash so two simultaneous uses of one link
+    // can't both succeed.
+    const updated = await query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2 AND password_hash IS NOT DISTINCT FROM $3',
+      [newHash, user.id, user.password_hash]
+    );
+    if (updated.rowCount === 0) return res.status(400).json(invalid);
+
+    res.json({ message: 'Password updated. You can log in with it now.' });
+  } catch (error: any) {
+    console.error('Reset password error:', error?.message || error);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 };
 

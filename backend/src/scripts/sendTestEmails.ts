@@ -11,6 +11,7 @@ import {
   sendRaceReminder,
   sendMissedPredictionReminder,
   sendAutoFillNotice,
+  sendPasswordReset,
   sendResultsAreInEmail,
   sendPersonalRaceResults,
   sendBroadcastEmail,
@@ -99,7 +100,10 @@ const run = async () => {
   console.log('10/11 sent: broadcast');
 
   await sendAdminAlert('Test admin alert', 'This is a test of the admin ops-alert template.');
-  console.log('11/11 sent: admin alert (goes to ADMIN_EMAIL, not the address above)');
+  console.log('11/12 sent: admin alert (goes to ADMIN_EMAIL, not the address above)');
+
+  await sendPasswordReset(to, 'Gaston', `${process.env.FRONTEND_URL}/reset-password?token=EXAMPLE-NOT-A-REAL-TOKEN`);
+  console.log('12/12 sent: password reset (sample link, not a real token)');
 
   console.log('Done.');
   process.exit(0);

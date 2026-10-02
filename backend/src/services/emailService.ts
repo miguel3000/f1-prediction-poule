@@ -450,6 +450,39 @@ export const sendMissedPredictionReminder = async (
   }
 };
 
+// Password reset link. Transactional, so no unsubscribe link. Deliberately
+// never logs the URL — it contains the reset token.
+export const sendPasswordReset = async (email: string, nickname: string, resetUrl: string) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Reset your Poule Position password',
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('Reset Your Password', { url: resetUrl, bg: BRAND_NAVY, color: '#ffffff' })}
+      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>
+        Someone asked to reset the password for your Poule Position account.
+        Use the button above to choose a new one. The link works for 1 hour and
+        only once.
+      </p>
+      <p style="color: #666; font-size: 12px; word-break: break-all;">
+        Button not working? Paste this link into your browser:<br />
+        <a href="${escapeHtml(resetUrl)}" style="color: #666;">${escapeHtml(resetUrl)}</a>
+      </p>
+      <p>If you didn't ask for this, you can ignore this email. Your password stays the same.</p>
+      ${emailFooter()}
+    `),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent to:', email);
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+  }
+};
+
 // Sent right after copyMissingPredictions.ts auto-fills a no-show's prediction
 // with their last race's picks, so they know it happened and what got entered
 // on their behalf (rather than finding out silently from the results email).
