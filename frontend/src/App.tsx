@@ -74,7 +74,7 @@ function App() {
           <Header onMoreToggle={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
           <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />
 
-          <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar lg:pb-8 relative z-10 flex-grow">
+          <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar xl:pb-8 relative z-10 flex-grow">
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/races" element={<ProtectedRoute><RaceOverview /></ProtectedRoute>} />

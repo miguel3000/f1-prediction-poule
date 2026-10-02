@@ -40,26 +40,26 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
             <LogoMark className="h-10 w-auto" />
           </button>
 
-          <div className="w-px h-6 bg-f1-neutral-800 hidden lg:block" />
+          <div className="w-px h-6 bg-f1-neutral-800 hidden xl:block" />
 
-          {/* Desktop persistent nav — no drawer, always visible. Breakpoint is lg
-              (not md) so phone/tablet landscape widths, which commonly land in
-              the 768-1023px md range, keep the compact portrait-style header
+          {/* Desktop persistent nav — no drawer, always visible. Breakpoint is xl
+              (not md/lg) so phone/tablet landscape widths, which commonly land in
+              the 768-1279px range, keep the compact portrait-style header
               instead of switching to this busy multi-item nav too early. */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1">
+          <nav className="hidden xl:flex items-center gap-1 flex-1">
             {desktopLinks.map(({ path, label, icon: Icon, end }) => (
               <NavLink
                 key={path}
                 to={path}
                 end={end}
-                className="relative px-3 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
+                className="relative px-2 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
               >
                 {({ isActive }) => (
                   <>
                     <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
                     <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t(label)}</span>
                     <span
-                      className={`absolute left-3 right-3 -bottom-[1px] h-0.5 transition-all duration-200 ${
+                      className={`absolute left-2 right-2 -bottom-[1px] h-0.5 transition-all duration-200 ${
                         isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
                       }`}
                     />
@@ -70,14 +70,14 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
             {user && (
               <NavLink
                 to="/predictions"
-                className="relative px-3 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
+                className="relative px-2 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
               >
                 {({ isActive }) => (
                   <>
                     <PredictionIcon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
                     <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t('nav.predictions')}</span>
                     <span
-                      className={`absolute left-3 right-3 -bottom-[1px] h-0.5 transition-all duration-200 ${
+                      className={`absolute left-2 right-2 -bottom-[1px] h-0.5 transition-all duration-200 ${
                         isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
                       }`}
                     />
@@ -87,7 +87,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
             )}
           </nav>
 
-          <div className="flex-1 lg:hidden" />
+          <div className="flex-1 xl:hidden" />
 
           {/* User + More */}
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -95,7 +95,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
             {user ? (
               <>
                 <div
-                  className="hidden lg:block text-right cursor-pointer"
+                  className="hidden xl:block text-right cursor-pointer"
                   onClick={() => navigate('/profile')}
                 >
                   <p className="text-sm font-bold text-white hover:text-f1-yellow-400 transition-colors leading-tight">{user.nickname}</p>
@@ -119,7 +119,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 )}
                 <button
                   onClick={logout}
-                  className="hidden lg:block text-xs text-f1-neutral-500 hover:text-f1-yellow-400 transition-colors font-bold uppercase tracking-wider"
+                  className="hidden xl:block text-xs text-f1-neutral-500 hover:text-f1-yellow-400 transition-colors font-bold uppercase tracking-wider"
                 >
                   {t('nav.out')}
                 </button>
