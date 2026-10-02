@@ -31,6 +31,16 @@ app.set('trust proxy', 1);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  // The live timing page polls every few seconds, which would exhaust this
+  // shared budget in minutes and make every other call (including the
+  // profile fetch on page load) fail — it gets its own limiter instead.
+  skip: (req) => req.path.startsWith('/live-timing'),
+});
+
+const liveTimingLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 90,
   message: 'Too many requests from this IP, please try again later.'
 });
 
@@ -70,7 +80,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/news', newsRoutes);
-app.use('/api/live-timing', liveTimingRoutes);
+app.use('/api/live-timing', liveTimingLimiter, liveTimingRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

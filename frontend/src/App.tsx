@@ -35,15 +35,22 @@ function App() {
     }
   }, [token]);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (attempt = 0) => {
     try {
       const response = await getProfile();
       setUser(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch user profile:', error);
-      // Token is invalid, clear it
-      localStorage.removeItem('token');
-      setToken(null);
+      const status = error?.response?.status;
+      // Only a rejected token (401) or a deleted account (404) should end the
+      // session — a rate limit (429), server hiccup or dropped connection must
+      // not log the player out, just retry shortly.
+      if (status === 401 || status === 404) {
+        localStorage.removeItem('token');
+        setToken(null);
+      } else if (attempt < 3) {
+        setTimeout(() => fetchUserProfile(attempt + 1), 3000 * (attempt + 1));
+      }
     }
   };
 
