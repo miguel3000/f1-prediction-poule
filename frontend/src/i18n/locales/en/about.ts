@@ -48,7 +48,7 @@ export const about = {
   'about.community.title': 'Community',
   'about.community.text': 'Poule Position is designed for Formula 1 fans by Formula 1 fans. Whether you\'re a casual viewer or a die-hard supporter, our platform welcomes all levels of F1 knowledge. Join our growing community and prove you have what it takes to be the ultimate F1 predictor!',
   'about.free.title': 'Free to Play',
-  'about.free.text': 'Poule Position is completely free to use. We support the platform through non-intrusive advertisements to keep the service free for all users. Your support by using our platform helps us continue providing this service to the F1 community.',
+  'about.free.text': 'Poule Position is completely free to use. There are no ads and no paid features.',
   'about.disclaimer.title': 'Disclaimer',
   'about.disclaimer.intro': 'Poule Position is an independent fan-created prediction game and is not affiliated with, endorsed by, or connected to:',
   'about.disclaimer.4': 'Any Formula 1 teams or drivers',
@@ -65,6 +65,6 @@ export const about = {
   'about.version.updatedValue': 'January 30, 2026',
   'about.version.text': 'We continuously improve Poule Position based on user feedback and the latest Formula 1 developments. Check back regularly for new features and enhancements!',
   'about.cta.title': 'Ready to Start Predicting?',
-  'about.cta.text': 'Join thousands of F1 fans competing for leaderboard glory!',
+  'about.cta.text': 'Bring your friends and compete for leaderboard glory!',
   'about.cta.button': 'Go to Homepage',
 };

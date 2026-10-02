@@ -19,6 +19,7 @@ import newsRoutes from './routes/news';
 import liveTimingRoutes from './routes/liveTiming';
 import pitwallRoutes from './routes/pitwall';
 import { startLiveTimingIngest } from './services/liveTimingService';
+import { pickLang, renderIndex } from './utils/seoMeta';
 
 dotenv.config();
 
@@ -103,7 +104,8 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from React build (after API routes)
-app.use(express.static(path.join(__dirname, '../frontend')));
+// index: false so '/' goes through the per-page <head> rendering below instead.
+app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
 
 // A missing file (robots.txt typo, old asset, bot probing /wp-login.php) should be
 // a real 404 — answering 200 with the app shell makes crawlers index it as a page.
@@ -116,7 +118,9 @@ app.get('*', (req, res, next) => {
 
 // SPA fallback - send all non-API requests to React app
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  const lang = pickLang(req.query.lang, req.headers['accept-language']);
+  res.setHeader('Vary', 'Accept-Language');
+  res.type('html').send(renderIndex(path.join(__dirname, '../frontend/index.html'), req.path, lang));
 });
 
 // Error handling middleware

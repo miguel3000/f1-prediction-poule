@@ -11,6 +11,13 @@ const STORAGE_KEY = 'lang';
 
 // First visit: follow the browser (Dutch browsers get Dutch), otherwise English.
 const initialLang = (): Lang => {
+  // A shared link (?lang=nl) wins, so a friend lands in the sender's language.
+  try {
+    const fromLink = new URLSearchParams(window.location.search).get('lang');
+    if (fromLink === 'en' || fromLink === 'nl') return fromLink;
+  } catch {
+    /* no window.location; fall through */
+  }
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'en' || stored === 'nl') return stored;
@@ -47,6 +54,22 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  // Keep the link-chosen language, then tidy the address bar so the page's
+  // canonical URL and anything the visitor re-shares stay clean.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const fromLink = url.searchParams.get('lang');
+    if (fromLink === 'en' || fromLink === 'nl') {
+      try {
+        localStorage.setItem(STORAGE_KEY, fromLink);
+      } catch {
+        /* storage blocked */
+      }
+      url.searchParams.delete('lang');
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
+  }, []);
 
   const setLang = useCallback((next: Lang) => {
     setLangState(next);

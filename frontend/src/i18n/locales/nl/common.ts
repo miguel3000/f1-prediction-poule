@@ -38,6 +38,12 @@ export const common: Record<keyof typeof enCommon, string> = {
   'nav.out': 'Uit',
   'nav.login': 'Inloggen',
 
+  'share.button': 'Nodig vrienden uit',
+  'share.title': 'Poule Position',
+  'share.text': 'Doe mee met mijn F1-poule: voorspel elke race en verslaat me in het klassement!',
+  'share.copied': 'Link gekopieerd',
+  'share.copyFailed': 'Kopieer deze link: {url}',
+
   'footer.disclaimer':
     'Onofficieel fanproject, niet verbonden aan Formula 1®-bedrijven. F1, FORMULA ONE en gerelateerde merken zijn handelsmerken van Formula One Licensing BV.',
 };

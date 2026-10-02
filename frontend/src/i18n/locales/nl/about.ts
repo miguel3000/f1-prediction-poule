@@ -50,7 +50,7 @@ export const about: Record<keyof typeof en_about, string> = {
   'about.community.title': 'Gemeenschap',
   'about.community.text': 'Poule Position is gemaakt voor Formule 1-fans, door Formule 1-fans. Of je nu af en toe kijkt of een fervent supporter bent: ons platform verwelkomt elk niveau van F1-kennis. Doe mee met onze groeiende gemeenschap en bewijs dat jij de ultieme F1-voorspeller bent!',
   'about.free.title': 'Gratis te spelen',
-  'about.free.text': 'Poule Position is helemaal gratis te gebruiken. We ondersteunen het platform met onopvallende advertenties, zodat de dienst gratis blijft voor alle gebruikers. Door ons platform te gebruiken help je ons deze dienst voor de F1-gemeenschap voort te zetten.',
+  'about.free.text': 'Poule Position is helemaal gratis te gebruiken. Er zijn geen advertenties en geen betaalde functies.',
   'about.disclaimer.title': 'Disclaimer',
   'about.disclaimer.intro': 'Poule Position is een onafhankelijk, door fans gemaakt voorspelspel en is niet verbonden aan, goedgekeurd door of gelieerd aan:',
   'about.disclaimer.4': 'Formule 1-teams of -coureurs',
@@ -67,6 +67,6 @@ export const about: Record<keyof typeof en_about, string> = {
   'about.version.updatedValue': '30 januari 2026',
   'about.version.text': 'We verbeteren Poule Position voortdurend op basis van feedback van gebruikers en de nieuwste ontwikkelingen in de Formule 1. Kijk regelmatig terug voor nieuwe functies en verbeteringen!',
   'about.cta.title': 'Klaar om te gaan voorspellen?',
-  'about.cta.text': 'Doe mee met duizenden F1-fans die strijden om de eer in het klassement!',
+  'about.cta.text': 'Neem je vrienden mee en strijd om de eer in het klassement!',
   'about.cta.button': 'Naar de homepage',
 };

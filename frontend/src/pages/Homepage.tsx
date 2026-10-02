@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Banner from '../components/Banner';
 import CircuitBackground from '../components/CircuitBackground';
 import LogoMark from '../components/LogoMark';
+import ShareButton from '../components/ShareButton';
 import PredictionInterface from '../components/PredictionInterface';
 import SprintPredictionInterface from '../components/SprintPredictionInterface';
 import RaceTypeToggle from '../components/RaceTypeToggle';
@@ -91,6 +92,9 @@ const Homepage = () => {
           >
             {t('home.loginRegister')}
           </button>
+          <div className="mt-4 flex justify-center">
+            <ShareButton />
+          </div>
         </div>
       </div>
     );

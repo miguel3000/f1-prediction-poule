@@ -36,6 +36,12 @@ export const common = {
   'nav.out': 'Out',
   'nav.login': 'Login',
 
+  'share.button': 'Invite friends',
+  'share.title': 'Poule Position',
+  'share.text': 'Join my F1 prediction poule: predict every race and beat me on the leaderboard!',
+  'share.copied': 'Link copied',
+  'share.copyFailed': 'Copy this link: {url}',
+
   'footer.disclaimer':
     'Unofficial fan project, not associated with Formula 1® companies. F1, FORMULA ONE and related marks are trademarks of Formula One Licensing BV.',
 };

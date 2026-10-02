@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getLeaderboard, getSeasonHistory, getPlayerStats } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
 import { ordinal } from '../i18n/format';
+import ShareButton from '../components/ShareButton';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -132,7 +133,10 @@ const Leaderboard = () => {
 
   return (
     <div>
-      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">{t('lb.title')}</h1>
+      <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-f1-yellow-500">{t('lb.title')}</h1>
+      <div className="flex justify-center mb-8">
+        <ShareButton />
+      </div>
 
       {/* Season Points Chart */}
       <div className="max-w-5xl mx-auto mb-10">

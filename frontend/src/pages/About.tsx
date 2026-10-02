@@ -1,4 +1,5 @@
 import { useLang } from '../i18n/LanguageContext';
+import ShareButton from '../components/ShareButton';
 
 const About = () => {
   const { t } = useLang();
@@ -122,6 +123,9 @@ const About = () => {
             >
               {t('about.cta.button')}
             </a>
+            <div className="mt-4 flex justify-center">
+              <ShareButton />
+            </div>
           </div>
         </div>
       </div>
