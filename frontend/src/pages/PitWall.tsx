@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getMyPitwallIdeas, createPitwallIdea, deleteMyPitwallIdea } from '../services/api';
 import InfoBannerRows, { InfoBannerRow } from '../components/InfoBannerRows';
+import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
 interface Idea {
   id: number;
@@ -12,15 +13,15 @@ interface Idea {
   created_at: string;
 }
 
-const KIND_LABEL: Record<Idea['kind'], string> = {
-  idea: 'Idea',
-  implementation: 'Implementation',
+const KIND_KEY: Record<Idea['kind'], TranslationKey> = {
+  idea: 'pw.kindIdea',
+  implementation: 'pw.kindImplementation',
 };
 
-const STATUS_LABEL: Record<Idea['status'], string> = {
-  pending: 'Waiting',
-  approved: 'Approved',
-  declined: 'Declined',
+const STATUS_KEY: Record<Idea['status'], TranslationKey> = {
+  pending: 'pw.waiting',
+  approved: 'pw.approved',
+  declined: 'pw.declined',
 };
 
 // Status chips stay inside the brand palette: yellow = waiting for review,
@@ -32,6 +33,7 @@ const STATUS_CLASS: Record<Idea['status'], string> = {
 };
 
 const PitWall = () => {
+  const { t, tError, locale } = useLang();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const [kind, setKind] = useState<Idea['kind']>('idea');
@@ -46,7 +48,7 @@ const PitWall = () => {
       const res = await getMyPitwallIdeas();
       setIdeas(res.data);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load your ideas');
+      setError(tError(err.response?.data?.error || 'Failed to load your ideas'));
     } finally {
       setLoading(false);
     }
@@ -65,10 +67,10 @@ const PitWall = () => {
       await createPitwallIdea(kind, title, description);
       setTitle('');
       setDescription('');
-      setSuccess('Thanks! Your suggestion is waiting for review.');
+      setSuccess(t('pw.thanks'));
       await loadIdeas();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save your idea');
+      setError(tError(err.response?.data?.error || 'Failed to save your idea'));
     } finally {
       setSaving(false);
     }
@@ -81,33 +83,33 @@ const PitWall = () => {
       await deleteMyPitwallIdea(id);
       await loadIdeas();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to remove the idea');
+      setError(tError(err.response?.data?.error || 'Failed to remove the idea'));
       loadIdeas();
     }
   };
 
   const count = (status: Idea['status']) => ideas.filter((i) => i.status === status).length;
   const bannerRows: InfoBannerRow[] = [
-    { label: 'Pit Wall', value: 'Your ideas' },
-    { label: 'Waiting', value: String(count('pending')) },
-    { label: 'Approved', value: String(count('approved')) },
-    { label: 'Declined', value: String(count('declined')) },
+    { label: t('pw.bannerLabel'), value: t('pw.bannerValue') },
+    { label: t('pw.waiting'), value: String(count('pending')) },
+    { label: t('pw.approved'), value: String(count('approved')) },
+    { label: t('pw.declined'), value: String(count('declined')) },
   ];
 
   if (loading) {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" />
-        <p className="mt-4 text-white">Loading the Pit Wall...</p>
+        <p className="mt-4 text-white">{t('pw.loading')}</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-4xl md:text-display-xl font-bold mb-2 text-center text-f1-yellow-500">Pit Wall</h1>
+      <h1 className="text-4xl md:text-display-xl font-bold mb-2 text-center text-f1-yellow-500">{t('pw.title')}</h1>
       <p className="text-center text-white text-xs mb-8">
-        Got an idea for Poule Position, or a way to build one? Add it here. Only you can see your own list.
+        {t('pw.intro')}
       </p>
 
       <div className="mb-8">
@@ -115,10 +117,10 @@ const PitWall = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="card-f1 p-6 mb-8 space-y-5">
-        <h2 className="text-xl font-bold text-f1-yellow-500">Add to the Pit Wall</h2>
+        <h2 className="text-xl font-bold text-f1-yellow-500">{t('pw.add')}</h2>
 
         <div className="grid grid-cols-2">
-          {(Object.keys(KIND_LABEL) as Idea['kind'][]).map((k) => (
+          {(Object.keys(KIND_KEY) as Idea['kind'][]).map((k) => (
             <button
               key={k}
               type="button"
@@ -127,13 +129,13 @@ const PitWall = () => {
                 kind === k ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white hover:brightness-125'
               }`}
             >
-              {KIND_LABEL[k]}
+              {t(KIND_KEY[k])}
             </button>
           ))}
         </div>
 
         <div>
-          <label htmlFor="pitwall-title" className="block text-sm font-semibold mb-2">Title</label>
+          <label htmlFor="pitwall-title" className="block text-sm font-semibold mb-2">{t('pw.fieldTitle')}</label>
           <input
             id="pitwall-title"
             type="text"
@@ -143,12 +145,12 @@ const PitWall = () => {
             minLength={3}
             maxLength={200}
             className="input-f1 w-full"
-            placeholder={kind === 'idea' ? 'What should we add?' : 'What would you build?'}
+            placeholder={kind === 'idea' ? t('pw.titleIdea') : t('pw.titleImpl')}
           />
         </div>
 
         <div>
-          <label htmlFor="pitwall-description" className="block text-sm font-semibold mb-2">Details (optional)</label>
+          <label htmlFor="pitwall-description" className="block text-sm font-semibold mb-2">{t('pw.details')}</label>
           <textarea
             id="pitwall-description"
             value={description}
@@ -156,12 +158,12 @@ const PitWall = () => {
             maxLength={2000}
             rows={4}
             className="input-f1 w-full"
-            placeholder="Explain it in a few lines"
+            placeholder={t('pw.detailsPlaceholder')}
           />
         </div>
 
         <button type="submit" disabled={saving} className="btn-f1-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
-          {saving ? 'Saving...' : 'Submit'}
+          {saving ? t('pw.saving') : t('pw.submit')}
         </button>
 
         {error && (
@@ -176,9 +178,9 @@ const PitWall = () => {
         )}
       </form>
 
-      <h2 className="text-xl font-bold text-f1-yellow-500 mb-3">Your list</h2>
+      <h2 className="text-xl font-bold text-f1-yellow-500 mb-3">{t('pw.yourList')}</h2>
       {ideas.length === 0 ? (
-        <div className="card-f1 p-8 text-center text-white">Nothing here yet. Add your first idea above.</div>
+        <div className="card-f1 p-8 text-center text-white">{t('pw.empty')}</div>
       ) : (
         <div>
           {ideas.map((idea, i) => (
@@ -191,25 +193,25 @@ const PitWall = () => {
                   <div className="min-w-0">
                     <p className="font-f1 font-bold uppercase tracking-wide text-lg leading-tight break-words">{idea.title}</p>
                     <p className="text-[10px] text-white/70 uppercase tracking-wide">
-                      {KIND_LABEL[idea.kind]} &middot; {new Date(idea.created_at).toLocaleDateString()}
+                      {t(KIND_KEY[idea.kind])} &middot; {new Date(idea.created_at).toLocaleDateString(locale)}
                     </p>
                   </div>
                   <span className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider flex-shrink-0 ${STATUS_CLASS[idea.status]}`}>
-                    {STATUS_LABEL[idea.status]}
+                    {t(STATUS_KEY[idea.status])}
                   </span>
                 </div>
                 {idea.description && (
                   <p className="text-sm text-white/90 mt-2 whitespace-pre-wrap break-words">{idea.description}</p>
                 )}
                 {idea.admin_note && (
-                  <p className="text-xs text-white/70 mt-2 italic">Note from the admin: {idea.admin_note}</p>
+                  <p className="text-xs text-white/70 mt-2 italic">{t('pw.adminNote', { note: idea.admin_note })}</p>
                 )}
                 {idea.status === 'pending' && (
                   <button
                     onClick={() => handleRemove(idea.id)}
                     className="mt-2 text-xs text-white/70 hover:text-f1-yellow-400 underline"
                   >
-                    Remove
+                    {t('common.remove')}
                   </button>
                 )}
               </div>

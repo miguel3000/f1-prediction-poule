@@ -11,6 +11,7 @@ import {
 } from '../services/api';
 import { getTeamColor } from '../utils/teamColors';
 import SegmentedTabs from '../components/SegmentedTabs';
+import { useLang } from '../i18n/LanguageContext';
 
 interface Race {
   id: number;
@@ -117,7 +118,9 @@ const DriverChip = ({ name, team, count, suffix = '' }: {
 // ── Stat card wrapper ─────────────────────────────────────────────────────────
 const StatCard = ({ emoji, title, children, isEmpty }: {
   emoji: string; title: string; children: React.ReactNode; isEmpty?: boolean;
-}) => (
+}) => {
+  const { t } = useLang();
+  return (
   <div className="card-f1 p-0 overflow-hidden">
     <div className="px-4 py-3 bg-f1-neutral-850 border-b border-f1-neutral-800 flex items-center gap-2">
       <span className="text-lg">{emoji}</span>
@@ -125,13 +128,15 @@ const StatCard = ({ emoji, title, children, isEmpty }: {
     </div>
     <div className="p-4">
       {isEmpty
-        ? <p className="text-white text-sm text-center py-2">No data yet this season</p>
+        ? <p className="text-white text-sm text-center py-2">{t('stats.noData')}</p>
         : children}
     </div>
   </div>
-);
+  );
+};
 
 const Stats = () => {
+  const { t } = useLang();
   const [races, setRaces] = useState<Race[]>([]);
   const [seasonStats, setSeasonStats] = useState<SeasonStats | null>(null);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
@@ -233,10 +238,10 @@ const Stats = () => {
 
   const sessionLabel: Record<SessionType, string> = {
     fp1: 'FP1', fp2: 'FP2', fp3: 'FP3',
-    qualifying: 'Qualifying',
-    sprint_qualifying: 'Sprint Quali',
-    sprint: 'Sprint',
-    race: 'Race',
+    qualifying: t('stats.session.qualifying'),
+    sprint_qualifying: t('stats.session.sprint_qualifying'),
+    sprint: t('stats.session.sprint'),
+    race: t('stats.session.race'),
   };
 
   const isQualiSession = selectedSession === 'qualifying' || selectedSession === 'sprint_qualifying';
@@ -246,7 +251,7 @@ const Stats = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" />
-        <p className="mt-4 text-white">Loading statistics...</p>
+        <p className="mt-4 text-white">{t('stats.loading')}</p>
       </div>
     );
   }
@@ -262,7 +267,7 @@ const Stats = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">
-        2026 Season Statistics
+        {t('stats.title', { year: 2026 })}
       </h1>
 
       {/* Season Summary */}
@@ -270,19 +275,19 @@ const Stats = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-10">
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.races.completed_races}</p>
-            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Races Completed</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">{t('stats.racesCompleted')}</p>
           </div>
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.races.completed_sprints}</p>
-            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Sprints Completed</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">{t('stats.sprintsCompleted')}</p>
           </div>
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.predictions.main_predictions}</p>
-            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Race Predictions</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">{t('stats.racePredictions')}</p>
           </div>
           <div className="bg-f1-blue p-4 text-center">
             <p className="text-3xl font-f1-badge font-black tabular-nums text-f1-yellow-400">{seasonStats.predictions.sprint_predictions}</p>
-            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Sprint Predictions</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">{t('stats.sprintPredictions')}</p>
           </div>
         </div>
       )}
@@ -291,23 +296,23 @@ const Stats = () => {
       <div className="mb-4 flex items-center gap-3">
         <div className="w-1 h-6 bg-f1-yellow-500 flex-shrink-0" />
         <div>
-          <h2 className="text-xl font-bold text-white uppercase tracking-wide">Season Highlights</h2>
-          <p className="text-white text-xs">Fun facts and stats from the 2026 season so far</p>
+          <h2 className="text-xl font-bold text-white uppercase tracking-wide">{t('stats.highlights')}</h2>
+          <p className="text-white text-xs">{t('stats.highlightsSub', { year: 2026 })}</p>
         </div>
       </div>
       {loadingFun ? (
         <div className="flex items-center gap-3 py-8 text-white">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-f1-yellow-500 flex-shrink-0" />
-          <span>Crunching the numbers...</span>
+          <span>{t('stats.crunching')}</span>
         </div>
       ) : !funStats ? (
-        <p className="text-white text-sm">Stats unavailable</p>
+        <p className="text-white text-sm">{t('stats.unavailable')}</p>
       ) : (
         <>
           {/* Poule stats: prediction accuracy */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 
-            <StatCard emoji="🔮" title="Crystal Ball — Most P1 Predictions Correct"
+            <StatCard emoji="🔮" title={t('stats.crystalBall')}
               isEmpty={funStats.crystalBall.length === 0}>
               <div className="space-y-2">
                 {funStats.crystalBall.map((u, i) => (
@@ -317,14 +322,14 @@ const Stats = () => {
                     }`}>{i + 1}</span>
                     <span className="font-semibold text-white flex-1">{u.nickname}</span>
                     <span className="font-mono text-f1-yellow-500 font-black">
-                      {u.count}× correct
+                      {t('stats.correct', { n: u.count ?? 0 })}
                     </span>
                   </div>
                 ))}
               </div>
             </StatCard>
 
-            <StatCard emoji="📈" title="Most Consistent Predictor"
+            <StatCard emoji="📈" title={t('stats.consistent')}
               isEmpty={funStats.consistency.length === 0}>
               <div className="space-y-2">
                 {funStats.consistency.map((u, i) => (
@@ -334,10 +339,10 @@ const Stats = () => {
                     }`}>{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-white">{u.nickname}</p>
-                      <p className="text-xs text-white">{u.races} races · best: {u.best_race} pts</p>
+                      <p className="text-xs text-white">{t('stats.consistentSub', { races: u.races ?? 0, best: u.best_race ?? 0 })}</p>
                     </div>
                     <span className="font-mono text-green-400 font-black">
-                      {u.avg_points} avg
+                      {t('stats.avg', { n: u.avg_points ?? 0 })}
                     </span>
                   </div>
                 ))}
@@ -347,20 +352,20 @@ const Stats = () => {
 
           {/* Poule stats: fan favorite & biggest upset */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <StatCard emoji="❤️" title="Fan Favorite — Most Picked as Winner"
+            <StatCard emoji="❤️" title={t('stats.fanFavorite')}
               isEmpty={funStats.predictedWinners.length === 0}>
               <div className="space-y-2">
                 {funStats.predictedWinners.slice(0, 3).map((d) => (
                   <DriverChip key={d.name} name={d.name} team={d.team}
-                    count={d.count} suffix="picks" />
+                    count={d.count} suffix={t('stats.picks')} />
                 ))}
                 {funStats.predictedWinners.length === 0 && (
-                  <p className="text-white text-sm text-center">No predictions yet</p>
+                  <p className="text-white text-sm text-center">{t('stats.noPredictionsYet')}</p>
                 )}
               </div>
             </StatCard>
 
-            <StatCard emoji="😱" title="Biggest Upset" isEmpty={!funStats.biggestUpset}>
+            <StatCard emoji="😱" title={t('stats.biggestUpset')} isEmpty={!funStats.biggestUpset}>
               {funStats.biggestUpset && (() => {
                 const upset = funStats.biggestUpset!;
                 const tc = getTeamColor(upset.winner_team);
@@ -369,15 +374,15 @@ const Stats = () => {
                     <p className="text-white font-bold mb-1">{upset.race_name}</p>
                     <div className={`flex items-center gap-2 my-2 border-l-4 px-3 py-2 bg-f1-neutral-850 ${tc.border}`}>
                       <span className={`font-black text-lg ${tc.text}`}>{upset.winner_acronym}</span>
-                      <span className="text-white text-sm">{upset.winner_name} won</span>
+                      <span className="text-white text-sm">{t('stats.won', { name: upset.winner_name })}</span>
                     </div>
                     <p className="text-white text-sm">
-                      Only{' '}
+                      {t('stats.upsetPre')}{' '}
                       <span className="text-f1-yellow-500 font-bold">{upset.correct}</span>
-                      {' '}of{' '}
+                      {' '}{t('stats.upsetOf')}{' '}
                       <span className="font-bold text-white">{upset.total}</span>
-                      {' '}players predicted it
-                      {' '}({Number(upset.accuracy_pct).toFixed(1)}% accuracy)
+                      {' '}{t('stats.upsetPost')}
+                      {' '}{t('stats.upsetAccuracy', { pct: Number(upset.accuracy_pct).toFixed(1) })}
                     </p>
                   </div>
                 );
@@ -389,7 +394,7 @@ const Stats = () => {
 
       {/* Race Selector */}
       <div className="mb-4 mt-10">
-        <label className="block text-xs font-bold text-white uppercase tracking-wider mb-2">Select Race</label>
+        <label className="block text-xs font-bold text-white uppercase tracking-wider mb-2">{t('stats.selectRace')}</label>
         <select
           value={selectedRound || ''}
           onChange={(e) => setSelectedRound(parseInt(e.target.value))}
@@ -399,7 +404,7 @@ const Stats = () => {
             const race = races.find(r => r.round === round && r.race_type === 'main');
             return (
               <option key={round} value={round}>
-                Round {round}: {race?.race_name}
+                {t('stats.roundOption', { round, name: race?.race_name ?? '' })}
               </option>
             );
           })}
@@ -431,10 +436,10 @@ const Stats = () => {
           {loadingSession ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-yellow-500 mx-auto" />
-              <p className="mt-2 text-white">Loading results...</p>
+              <p className="mt-2 text-white">{t('stats.loadingResults')}</p>
             </div>
           ) : sessionResults.length === 0 ? (
-            <div className="p-8 text-center text-white">No results available for this session</div>
+            <div className="p-8 text-center text-white">{t('stats.noResults')}</div>
           ) : (
             <>
               {/* Desktop/tablet: full table */}
@@ -442,7 +447,7 @@ const Stats = () => {
                 <table className="w-full">
                   <thead className="bg-f1-neutral-850">
                     <tr>
-                      <th className="px-0 py-3 text-left text-xs font-semibold text-white uppercase">Driver</th>
+                      <th className="px-0 py-3 text-left text-xs font-semibold text-white uppercase">{t('stats.colDriver')}</th>
                       {isQualiSession ? (
                         <>
                           <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{isSQSession ? 'SQ1' : 'Q1'}</th>
@@ -451,14 +456,14 @@ const Stats = () => {
                         </>
                       ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
                         <>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Time</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Pts</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{t('stats.colTime')}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{t('stats.colPts')}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{t('stats.colStatus')}</th>
                         </>
                       ) : (
                         <>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Time</th>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">Laps</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{t('stats.colTime')}</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase">{t('stats.colLaps')}</th>
                         </>
                       )}
                     </tr>
@@ -500,7 +505,7 @@ const Stats = () => {
                           </>
                         ) : (
                           <>
-                            <td className="px-4 py-3 font-mono text-sm">{result.time || 'No time'}</td>
+                            <td className="px-4 py-3 font-mono text-sm">{result.time || t('stats.noTime')}</td>
                             <td className="px-4 py-3">{result.laps}</td>
                           </>
                         )}
@@ -530,7 +535,7 @@ const Stats = () => {
                           <p className="font-mono text-sm text-f1-yellow-400 font-bold">{result.q3 || result.q2 || result.q1 || '—'}</p>
                         ) : selectedSession === 'race' || selectedSession === 'sprint' ? (
                           <>
-                            <p className="font-bold text-sm text-white">{result.points ?? '—'} pts</p>
+                            <p className="font-bold text-sm text-white">{result.points ?? '—'} {t('races.pts')}</p>
                             <span className={`text-xs px-2 py-0.5 ${
                               result.status === 'Finished' ? 'bg-green-600/30 text-green-300' : 'bg-red-600/30 text-red-300'
                             }`}>
@@ -539,8 +544,8 @@ const Stats = () => {
                           </>
                         ) : (
                           <>
-                            <p className="font-mono text-sm text-white">{result.time || 'No time'}</p>
-                            <p className="text-[10px] text-white/70">{result.laps} laps</p>
+                            <p className="font-mono text-sm text-white">{result.time || t('stats.noTime')}</p>
+                            <p className="text-[10px] text-white/70">{t('stats.laps', { n: result.laps ?? 0 })}</p>
                           </>
                         )}
                       </div>
@@ -557,25 +562,25 @@ const Stats = () => {
       {funStats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 
-          <StatCard emoji="🏆" title="Race Wins" isEmpty={funStats.wins.length === 0}>
+          <StatCard emoji="🏆" title={t('stats.raceWins')} isEmpty={funStats.wins.length === 0}>
             <div className="space-y-2">
               {funStats.wins.map((d) => (
                 <DriverChip key={d.name} name={d.name} team={d.team}
-                  count={d.count} suffix={`win${d.count !== 1 ? 's' : ''}`} />
+                  count={d.count} suffix={d.count !== 1 ? t('stats.wins') : t('stats.win')} />
               ))}
             </div>
           </StatCard>
 
-          <StatCard emoji="⚡" title="Pole Positions" isEmpty={funStats.poles.length === 0}>
+          <StatCard emoji="⚡" title={t('stats.polePositions')} isEmpty={funStats.poles.length === 0}>
             <div className="space-y-2">
               {funStats.poles.map((d) => (
                 <DriverChip key={d.name} name={d.name} team={d.team}
-                  count={d.count} suffix={`pole${d.count !== 1 ? 's' : ''}`} />
+                  count={d.count} suffix={d.count !== 1 ? t('stats.poles') : t('stats.pole')} />
               ))}
             </div>
           </StatCard>
 
-          <StatCard emoji="⏱️" title="Fastest Qualifying Lap" isEmpty={!funStats.bestLap}>
+          <StatCard emoji="⏱️" title={t('stats.fastestQuali')} isEmpty={!funStats.bestLap}>
             {funStats.bestLap && (() => {
               const tc = getTeamColor(funStats.bestLap!.team);
               return (
@@ -586,7 +591,7 @@ const Stats = () => {
                   <p className="font-bold text-white">{funStats.bestLap.name}</p>
                   <p className="text-xs text-white">{funStats.bestLap.team}</p>
                   <p className="text-xs text-white mt-1">
-                    Round {funStats.bestLap.round} — {funStats.bestLap.race_name}
+                    {t('stats.roundRace', { round: funStats.bestLap.round, name: funStats.bestLap.race_name })}
                   </p>
                 </div>
               );

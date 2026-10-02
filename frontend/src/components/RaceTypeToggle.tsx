@@ -1,3 +1,5 @@
+import { useLang } from '../i18n/LanguageContext';
+
 interface RaceTypeToggleProps {
   value: 'sprint' | 'main';
   onChange: (value: 'sprint' | 'main') => void;
@@ -8,6 +10,7 @@ interface RaceTypeToggleProps {
 // not a line). Used where Banner needs a second, single-row bar rather than
 // a generic pill toggle.
 const RaceTypeToggle = ({ value, onChange }: RaceTypeToggleProps) => {
+  const { t } = useLang();
   const fullBleed: React.CSSProperties = {
     width: '100vw',
     position: 'relative',
@@ -38,10 +41,10 @@ const RaceTypeToggle = ({ value, onChange }: RaceTypeToggleProps) => {
           style={{ backgroundColor: '#191517', transform: 'translateX(-50%) skewX(-13deg)' }}
         />
         <button onClick={() => onChange('sprint')} className={`${optionClass(value === 'sprint')} text-right pr-3`} style={shear}>
-          Sprint
+          {t('toggle.sprint')}
         </button>
         <button onClick={() => onChange('main')} className={`${optionClass(value === 'main')} text-left pl-3`} style={shear}>
-          Main Race
+          {t('toggle.main')}
         </button>
       </div>
     </div>

@@ -2,11 +2,13 @@ import { useState, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useLang } from '../i18n/LanguageContext';
 import { changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, deleteAccount as deleteAccountRequest } from '../services/api';
 
 const Profile = () => {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t, tError, locale } = useLang();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -28,10 +30,10 @@ const Profile = () => {
   if (!user || !token) {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
-        <h1 className="text-3xl font-bold mb-4 text-f1-yellow-500">Profile</h1>
-        <p className="text-white mb-6">You need to be logged in to view your profile.</p>
+        <h1 className="text-3xl font-bold mb-4 text-f1-yellow-500">{t('profile.title')}</h1>
+        <p className="text-white mb-6">{t('profile.needLogin')}</p>
         <a href="/auth" className="btn-f1-primary">
-          Login
+          {t('auth.login')}
         </a>
       </div>
     );
@@ -44,13 +46,13 @@ const Profile = () => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+      setError(t('profile.invalidFile'));
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB.');
+      setError(t('profile.fileTooBig'));
       return;
     }
 
@@ -69,21 +71,21 @@ const Profile = () => {
         }
       });
 
-      setSuccess('Avatar uploaded successfully! Refreshing...');
+      setSuccess(t('profile.avatarUploaded'));
 
       // Reload the page to show new avatar
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to upload avatar');
+      setError(tError(err.response?.data?.error || 'Failed to upload avatar'));
     } finally {
       setUploading(false);
     }
   };
 
   const handleDeleteAvatar = async () => {
-    if (!confirm('Are you sure you want to remove your avatar?')) {
+    if (!confirm(t('profile.confirmRemoveAvatar'))) {
       return;
     }
 
@@ -97,14 +99,14 @@ const Profile = () => {
         }
       });
 
-      setSuccess('Avatar removed successfully! Refreshing...');
+      setSuccess(t('profile.avatarRemoved'));
 
       // Reload the page
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to remove avatar');
+      setError(tError(err.response?.data?.error || 'Failed to delete avatar'));
     }
   };
 
@@ -116,12 +118,12 @@ const Profile = () => {
 
     try {
       await changeNicknameRequest(newNickname);
-      setSuccess('Username updated successfully! Refreshing...');
+      setSuccess(t('profile.usernameUpdated'));
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to change username');
+      setError(tError(err.response?.data?.error || 'Failed to change username'));
       setNicknameSaving(false);
     }
   };
@@ -134,12 +136,12 @@ const Profile = () => {
 
     try {
       await changeEmailRequest(newEmail, emailPassword);
-      setSuccess('Email updated successfully! Refreshing...');
+      setSuccess(t('profile.emailUpdated'));
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to change email');
+      setError(tError(err.response?.data?.error || 'Failed to change email'));
       setEmailSaving(false);
     }
   };
@@ -155,7 +157,7 @@ const Profile = () => {
       logout();
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete account');
+      setError(tError(err.response?.data?.error || 'Failed to delete account'));
       setDeleting(false);
     }
   };
@@ -163,7 +165,7 @@ const Profile = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">
-        Profile
+        {t('profile.title')}
       </h1>
 
       <div className="card-f1 space-y-6">
@@ -197,7 +199,7 @@ const Profile = () => {
               disabled={uploading}
               className="btn-f1-primary"
             >
-              {uploading ? 'Uploading...' : user.avatar_url ? 'Change Avatar' : 'Upload Avatar'}
+              {uploading ? t('profile.uploading') : user.avatar_url ? t('profile.changeAvatar') : t('profile.uploadAvatar')}
             </button>
 
             {user.avatar_url && (
@@ -205,13 +207,13 @@ const Profile = () => {
                 onClick={handleDeleteAvatar}
                 className="bg-f1-neutral-800 hover:bg-f1-yellow-600 hover:text-black text-white px-6 py-3 font-bold transition-all duration-300"
               >
-                Remove
+                {t('common.remove')}
               </button>
             )}
           </div>
 
           <p className="text-xs text-white mt-2">
-            Max 5MB. Allowed: JPEG, PNG, GIF, WebP
+            {t('profile.avatarHint')}
           </p>
         </div>
 
@@ -230,13 +232,13 @@ const Profile = () => {
 
         {/* User Information */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-f1-yellow-500">Account Information</h2>
+          <h2 className="text-2xl font-bold text-f1-yellow-500">{t('profile.accountInfo')}</h2>
 
           <div className="grid gap-4">
             <div className="bg-f1-neutral-800 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm text-white mb-1">Username</p>
+                  <p className="text-sm text-white mb-1">{t('profile.username')}</p>
                   <p className="text-lg font-bold">{user.nickname}</p>
                 </div>
                 {!showNicknameForm && (
@@ -244,7 +246,7 @@ const Profile = () => {
                     onClick={() => { setShowNicknameForm(true); setNewNickname(user.nickname); setError(''); setSuccess(''); }}
                     className="text-sm text-f1-yellow-500 hover:underline flex-shrink-0"
                   >
-                    Change
+                    {t('profile.change')}
                   </button>
                 )}
               </div>
@@ -252,7 +254,7 @@ const Profile = () => {
               {showNicknameForm && (
                 <form onSubmit={handleChangeNickname} className="mt-4 space-y-3 pt-4 border-t border-f1-neutral-700">
                   <div>
-                    <label className="block text-sm text-white mb-1">New username</label>
+                    <label className="block text-sm text-white mb-1">{t('profile.newUsername')}</label>
                     <input
                       type="text"
                       required
@@ -262,18 +264,18 @@ const Profile = () => {
                       onChange={(e) => setNewNickname(e.target.value)}
                       className="w-full bg-f1-neutral-900 border border-f1-neutral-700 px-3 py-2 text-white focus:outline-none focus:border-f1-yellow-500"
                     />
-                    <p className="text-xs text-white/60 mt-1">2-30 characters: letters, numbers, spaces and . _ ' -</p>
+                    <p className="text-xs text-white/60 mt-1">{t('profile.usernameHint')}</p>
                   </div>
                   <div className="flex gap-3">
                     <button type="submit" disabled={nicknameSaving} className="btn-f1-primary text-sm px-4 py-2">
-                      {nicknameSaving ? 'Saving...' : 'Save Username'}
+                      {nicknameSaving ? t('profile.saving') : t('profile.saveUsername')}
                     </button>
                     <button
                       type="button"
                       onClick={() => { setShowNicknameForm(false); setError(''); }}
                       className="text-sm text-white hover:underline px-2"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </form>
@@ -283,7 +285,7 @@ const Profile = () => {
             <div className="bg-f1-neutral-800 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm text-white mb-1">Email</p>
+                  <p className="text-sm text-white mb-1">{t('profile.email')}</p>
                   <p className="text-lg">{user.email}</p>
                 </div>
                 {!showEmailForm && (
@@ -291,7 +293,7 @@ const Profile = () => {
                     onClick={() => { setShowEmailForm(true); setNewEmail(user.email); setError(''); setSuccess(''); }}
                     className="text-sm text-f1-yellow-500 hover:underline flex-shrink-0"
                   >
-                    Change
+                    {t('profile.change')}
                   </button>
                 )}
               </div>
@@ -299,7 +301,7 @@ const Profile = () => {
               {showEmailForm && (
                 <form onSubmit={handleChangeEmail} className="mt-4 space-y-3 pt-4 border-t border-f1-neutral-700">
                   <div>
-                    <label className="block text-sm text-white mb-1">New email</label>
+                    <label className="block text-sm text-white mb-1">{t('profile.newEmail')}</label>
                     <input
                       type="email"
                       required
@@ -309,7 +311,7 @@ const Profile = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-white mb-1">Current password</label>
+                    <label className="block text-sm text-white mb-1">{t('profile.currentPassword')}</label>
                     <input
                       type="password"
                       required
@@ -320,14 +322,14 @@ const Profile = () => {
                   </div>
                   <div className="flex gap-3">
                     <button type="submit" disabled={emailSaving} className="btn-f1-primary text-sm px-4 py-2">
-                      {emailSaving ? 'Saving...' : 'Save Email'}
+                      {emailSaving ? t('profile.saving') : t('profile.saveEmail')}
                     </button>
                     <button
                       type="button"
                       onClick={() => { setShowEmailForm(false); setEmailPassword(''); setError(''); }}
                       className="text-sm text-white hover:underline px-2"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </form>
@@ -335,14 +337,14 @@ const Profile = () => {
             </div>
 
             <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-white mb-1">Total Points</p>
+              <p className="text-sm text-white mb-1">{t('profile.totalPoints')}</p>
               <p className="text-2xl font-bold text-f1-yellow-500">{user.total_points}</p>
             </div>
 
             {user.created_at && (
               <div className="bg-f1-neutral-800 p-4">
-                <p className="text-sm text-white mb-1">Member Since</p>
-                <p className="text-lg">{new Date(user.created_at).toLocaleDateString()}</p>
+                <p className="text-sm text-white mb-1">{t('profile.memberSince')}</p>
+                <p className="text-lg">{new Date(user.created_at).toLocaleDateString(locale)}</p>
               </div>
             )}
           </div>
@@ -354,38 +356,38 @@ const Profile = () => {
             onClick={() => navigate('/')}
             className="btn-f1-secondary flex-1"
           >
-            Back to Homepage
+            {t('mypred.backHome')}
           </button>
           <button
             onClick={logout}
             className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-6 py-3 font-bold transition-all duration-300"
           >
-            Logout
+            {t('profile.logout')}
           </button>
         </div>
 
         {/* Danger Zone */}
         <div className="pt-6 border-t border-f1-neutral-700">
-          <h2 className="text-lg font-bold text-red-400 mb-3">Danger Zone</h2>
+          <h2 className="text-lg font-bold text-red-400 mb-3">{t('profile.dangerZone')}</h2>
 
           {user.is_admin ? (
             <p className="text-sm text-white">
-              Admin accounts can't be deleted from here. Ask another admin to remove it from the Pitlane.
+              {t('profile.adminNoDelete')}
             </p>
           ) : !showDeleteForm ? (
             <button
               onClick={() => { setShowDeleteForm(true); setError(''); setSuccess(''); }}
               className="text-sm text-red-400 hover:underline"
             >
-              Delete my account
+              {t('profile.deleteAccount')}
             </button>
           ) : (
             <form onSubmit={handleDeleteAccount} className="space-y-3">
               <p className="text-sm text-white">
-                This permanently deletes your account and all of your predictions. This can't be undone.
+                {t('profile.deleteWarning')}
               </p>
               <div>
-                <label className="block text-sm text-white mb-1">Confirm your password</label>
+                <label className="block text-sm text-white mb-1">{t('profile.confirmPassword')}</label>
                 <input
                   type="password"
                   required
@@ -400,14 +402,14 @@ const Profile = () => {
                   disabled={deleting}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-bold transition-colors"
                 >
-                  {deleting ? 'Deleting...' : 'Permanently Delete Account'}
+                  {deleting ? t('profile.deleting') : t('profile.deleteForever')}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setShowDeleteForm(false); setDeletePassword(''); setError(''); }}
                   className="text-sm text-white hover:underline px-2"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>

@@ -1,3 +1,5 @@
+import { useLang } from '../i18n/LanguageContext';
+
 interface RaceWeekendBannerProps {
   raceName: string;
   venue?: string;
@@ -14,6 +16,7 @@ const MAX_COMBINED_LENGTH = 58;
 // identical height) — shown on non-sprint weekends instead of the toggle,
 // so the slot below Banner is never just empty.
 const RaceWeekendBanner = ({ raceName, venue, round }: RaceWeekendBannerProps) => {
+  const { t } = useLang();
   const fullBleed: React.CSSProperties = {
     width: '100vw',
     position: 'relative',
@@ -33,7 +36,7 @@ const RaceWeekendBanner = ({ raceName, venue, round }: RaceWeekendBannerProps) =
   const display =
     combined.length <= MAX_COMBINED_LENGTH ? combined :
     raceName.length <= MAX_COMBINED_LENGTH ? raceName :
-    `Round ${round}`;
+    t('banner.round', { n: round });
 
   return (
     <div className="w-full border-b border-f1-neutral-800" style={{ backgroundColor: '#191517' }}>

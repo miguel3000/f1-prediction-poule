@@ -1,0 +1,43 @@
+import type { common as enCommon } from '../en/common';
+
+export const common: Record<keyof typeof enCommon, string> = {
+  'common.language': 'Taal',
+  'common.loading': 'Laden...',
+  'common.pts': 'PTN',
+  'common.points': 'punten',
+  'common.cancel': 'Annuleren',
+  'common.save': 'Opslaan',
+  'common.remove': 'Verwijderen',
+  'common.refresh': 'Vernieuwen',
+  'common.back': 'Terug',
+
+  'nav.home': 'Home',
+  'nav.homeAria': 'Poule Position home',
+  'nav.races': 'Races',
+  'nav.raceOverview': 'Raceoverzicht',
+  'nav.drivers': 'Coureurs',
+  'nav.teams': 'Teams',
+  'nav.standings': 'Klassement',
+  'nav.championship': 'Kampioenschap',
+  'nav.stats': 'Stats',
+  'nav.statistics': 'Statistieken',
+  'nav.news': 'Nieuws',
+  'nav.predictions': 'Voorspellingen',
+  'nav.myPredictions': 'Mijn voorspellingen',
+  'nav.live': 'Live tijden',
+  'nav.pitwall': 'Pit Wall',
+  'nav.rules': 'Regels',
+  'nav.about': 'Over',
+  'nav.privacy': 'Privacybeleid',
+  'nav.privacyShort': 'Privacy',
+  'nav.contact': 'Contact',
+  'nav.pitlane': 'Pitlane',
+  'nav.menu': 'Menu',
+  'nav.closeMenu': 'Menu sluiten',
+  'nav.more': 'Meer',
+  'nav.out': 'Uit',
+  'nav.login': 'Inloggen',
+
+  'footer.disclaimer':
+    'Onofficieel fanproject, niet verbonden aan Formula 1®-bedrijven. F1, FORMULA ONE en gerelateerde merken zijn handelsmerken van Formula One Licensing BV.',
+};

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getLiveTiming } from '../services/api';
 import InfoBannerRows, { InfoBannerRow } from '../components/InfoBannerRows';
+import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
 interface DriverInfo {
   RacingNumber: string;
@@ -107,11 +108,40 @@ const sectorClass = (s?: SectorInfo) => {
   return 'text-white';
 };
 
-const timeAgo = (iso: string | null) => {
-  if (!iso) return 'never';
+type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string;
+
+const timeAgo = (iso: string | null, t: Translate) => {
+  if (!iso) return t('live.never');
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 60) return t('live.secondsAgo', { n: seconds });
+  return t('live.minutesAgo', { n: Math.floor(seconds / 60) });
+};
+
+// Session and track-status names arrive from the feed in English.
+const sessionLabel = (name: string | undefined, t: Translate): string => {
+  if (!name) return '';
+  const practice = /^Practice (\d)$/.exec(name);
+  if (practice) return t('live.practice', { n: practice[1] });
+  const known: Record<string, TranslationKey> = {
+    Qualifying: 'live.sessionQualifying',
+    'Sprint Qualifying': 'live.sessionSprintQualifying',
+    'Sprint Shootout': 'live.sessionSprintQualifying',
+    Sprint: 'live.sessionSprint',
+    Race: 'live.sessionRace',
+  };
+  return known[name] ? t(known[name]) : name;
+};
+
+const trackStatusLabel = (message: string, t: Translate): string => {
+  const known: Record<string, TranslationKey> = {
+    AllClear: 'live.track.AllClear',
+    Yellow: 'live.track.Yellow',
+    Red: 'live.track.Red',
+    SCDeployed: 'live.track.SCDeployed',
+    VSCDeployed: 'live.track.VSCDeployed',
+    VSCEnding: 'live.track.VSCEnding',
+  };
+  return known[message] ? t(known[message]) : message;
 };
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -138,6 +168,7 @@ const formatRemaining = (clock: ExtrapolatedClock | undefined, nowMs: number): s
 };
 
 const LiveTiming = () => {
+  const { t } = useLang();
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -202,7 +233,7 @@ const LiveTiming = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" />
-        <p className="mt-4 text-white">Connecting to live timing...</p>
+        <p className="mt-4 text-white">{t('live.connecting')}</p>
       </div>
     );
   }
@@ -234,20 +265,20 @@ const LiveTiming = () => {
   const infoRows: InfoBannerRow[] = [];
   if (snapshot?.status === 'connected') {
     infoRows.push({
-      label: snapshot.isLive ? 'Live Now' : 'Last Session',
-      value: `${session?.Meeting?.Name || 'Unknown'} — ${session?.Name || ''}`,
+      label: snapshot.isLive ? t('live.liveNow') : t('live.lastSession'),
+      value: `${session?.Meeting?.Name || t('live.unknown')} — ${sessionLabel(session?.Name, t)}`,
     });
-    if (trackStatus) infoRows.push({ label: 'Track Status', value: trackStatus.Message });
-    infoRows.push({ label: 'Time Remaining', value: formatRemaining(clock, Date.now() + skewRef.current) });
+    if (trackStatus) infoRows.push({ label: t('live.trackStatus'), value: trackStatusLabel(trackStatus.Message, t) });
+    infoRows.push({ label: t('live.timeRemaining'), value: formatRemaining(clock, Date.now() + skewRef.current) });
     infoRows.push({
-      label: 'Location',
+      label: t('live.location'),
       value: session?.Meeting?.Circuit?.ShortName || session?.Meeting?.Location || '—',
     });
     if (weather) {
-      infoRows.push({ label: 'Track / Air Temp', value: `${weather.TrackTemp}° / ${weather.AirTemp}°` });
+      infoRows.push({ label: t('live.temps'), value: `${weather.TrackTemp}° / ${weather.AirTemp}°` });
       infoRows.push({
-        label: 'Humidity / Wind',
-        value: `${weather.Humidity}% / ${weather.WindSpeed} m/s${weather.Rainfall === '1' ? ' · Rain' : ''}`,
+        label: t('live.humidityWind'),
+        value: `${weather.Humidity}% / ${weather.WindSpeed} m/s${weather.Rainfall === '1' ? ` · ${t('live.rain')}` : ''}`,
       });
     }
   }
@@ -255,24 +286,24 @@ const LiveTiming = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-2 text-center text-f1-yellow-500">
-        Live Timing
+        {t('live.title')}
       </h1>
       <p className="text-center text-white text-xs mb-8">
-        Direct from F1's own live timing feed — not an official F1 product.
+        {t('live.subtitle')}
       </p>
 
       {/* Connection / session status */}
       {snapshot?.status !== 'connected' ? (
         <div className="card-f1 p-4 mb-6 flex items-center gap-3 text-white">
           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-f1-yellow-500 flex-shrink-0" />
-          <span>Reconnecting to F1 live timing...</span>
+          <span>{t('live.reconnecting')}</span>
         </div>
       ) : (
         <div className="mb-6">
           <InfoBannerRows rows={infoRows} />
           <p className="text-center text-white/50 text-xs mt-2">
-            Updated {timeAgo(snapshot?.lastMessageAt ?? null)}
-            {!snapshot?.isLive && ' · No session is live right now — this updates automatically once one goes green.'}
+            {t('live.updated', { ago: timeAgo(snapshot?.lastMessageAt ?? null, t) })}
+            {!snapshot?.isLive && ` · ${t('live.notLive')}`}
           </p>
           <div className="flex justify-center mt-3">
             <button
@@ -280,7 +311,7 @@ const LiveTiming = () => {
               disabled={refreshing}
               className="btn-f1-primary px-6 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {refreshing ? 'Refreshing...' : 'Refresh'}
+              {refreshing ? t('live.refreshing') : t('live.refresh')}
             </button>
           </div>
         </div>
@@ -290,22 +321,22 @@ const LiveTiming = () => {
       <div className="card-f1 p-0 overflow-hidden mb-8">
         <div className="p-4 border-b border-f1-neutral-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-f1-yellow-500 flex-shrink-0" />
-          <h2 className="text-lg font-bold">Timing</h2>
+          <h2 className="text-lg font-bold">{t('live.timing')}</h2>
         </div>
 
         {sortedDrivers.length === 0 ? (
-          <div className="p-8 text-center text-white">No timing data available right now</div>
+          <div className="p-8 text-center text-white">{t('live.noTiming')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-f1-yellow-500">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Pos</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Driver</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Tyre</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Gap</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Last Lap</th>
-                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">Best Lap</th>
+                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">{t('live.colPos')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">{t('live.colDriver')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">{t('live.colTyre')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">{t('live.colGap')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">{t('live.colLast')}</th>
+                  <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">{t('live.colBest')}</th>
                   <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">S1</th>
                   <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">S2</th>
                   <th className="px-3 py-2 text-left text-xs font-bold text-black uppercase tracking-wider">S3</th>
@@ -331,9 +362,9 @@ const LiveTiming = () => {
                             <p className="font-bold text-white truncate">{driver?.Tla || line.RacingNumber}</p>
                             <p className="text-[10px] text-white/70 truncate">{driver?.TeamName}</p>
                           </div>
-                          {line.Retired && <span className="text-[10px] px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">OUT</span>}
-                          {line.InPit && <span className="text-[10px] px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold flex-shrink-0">PIT</span>}
-                          {line.Stopped && !line.Retired && <span className="text-[10px] px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">STOP</span>}
+                          {line.Retired && <span className="text-[10px] px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">{t('live.out')}</span>}
+                          {line.InPit && <span className="text-[10px] px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold flex-shrink-0">{t('live.pit')}</span>}
+                          {line.Stopped && !line.Retired && <span className="text-[10px] px-1.5 py-0.5 bg-black/30 text-white flex-shrink-0">{t('live.stop')}</span>}
                         </div>
                       </td>
                       <td className="px-3 py-2">
@@ -366,10 +397,10 @@ const LiveTiming = () => {
       <div className="card-f1 p-0 overflow-hidden mb-8">
         <div className="p-4 border-b border-f1-neutral-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-f1-yellow-500 flex-shrink-0" />
-          <h2 className="text-lg font-bold">Race Control</h2>
+          <h2 className="text-lg font-bold">{t('live.raceControl')}</h2>
         </div>
         {recentMessages.length === 0 ? (
-          <div className="p-8 text-center text-white">No messages yet</div>
+          <div className="p-8 text-center text-white">{t('live.noMessages')}</div>
         ) : (
           <div className="divide-y divide-f1-neutral-800">
             {recentMessages.map((m, i) => (

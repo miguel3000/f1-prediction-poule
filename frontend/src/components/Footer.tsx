@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useLang } from '../i18n/LanguageContext';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { t } = useLang();
 
   return (
     // Mobile/tablet (incl. landscape, up to lg): these links already live in
@@ -12,14 +14,13 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-f1-neutral-500">
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <span className="font-bold text-f1-neutral-400">&copy; {currentYear} Poule Position</span>
-            <Link to="/rules" className="hover:text-f1-yellow-500 transition-colors">Rules</Link>
-            <Link to="/about" className="hover:text-f1-yellow-500 transition-colors">About</Link>
-            <Link to="/privacy" className="hover:text-f1-yellow-500 transition-colors">Privacy</Link>
-            <a href="mailto:jameshuntf1prediction@gmail.com" className="hover:text-f1-yellow-500 transition-colors">Contact</a>
+            <Link to="/rules" className="hover:text-f1-yellow-500 transition-colors">{t('nav.rules')}</Link>
+            <Link to="/about" className="hover:text-f1-yellow-500 transition-colors">{t('nav.about')}</Link>
+            <Link to="/privacy" className="hover:text-f1-yellow-500 transition-colors">{t('nav.privacyShort')}</Link>
+            <a href="mailto:jameshuntf1prediction@gmail.com" className="hover:text-f1-yellow-500 transition-colors">{t('nav.contact')}</a>
           </div>
           <p className="text-center md:text-right max-w-md">
-            Unofficial fan project, not associated with Formula 1® companies. F1, FORMULA ONE and related
-            marks are trademarks of Formula One Licensing BV.
+            {t('footer.disclaimer')}
           </p>
         </div>
       </div>

@@ -9,6 +9,7 @@ import RaceTypeToggle from '../components/RaceTypeToggle';
 import RaceWeekendBanner from '../components/RaceWeekendBanner';
 import { getUpcomingRaces } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../i18n/LanguageContext';
 
 interface Race {
   id: number;
@@ -28,6 +29,7 @@ const Homepage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useLang();
 
   useEffect(() => {
     fetchUpcomingRaces();
@@ -67,7 +69,7 @@ const Homepage = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto" style={{ borderRadius: 0 }}></div>
-        <p className="mt-4 text-white">Loading next race...</p>
+        <p className="mt-4 text-white">{t('home.loadingNextRace')}</p>
       </div>
     );
   }
@@ -87,7 +89,7 @@ const Homepage = () => {
             onClick={() => navigate('/auth')}
             className="btn-f1-primary"
           >
-            Login / Register
+            {t('home.loginRegister')}
           </button>
         </div>
       </div>
@@ -98,8 +100,8 @@ const Homepage = () => {
     return (
       <div className="text-center py-16 max-w-2xl mx-auto">
         <div className="card-f1 p-12">
-          <h2 className="text-2xl font-bold mb-4">No Upcoming Races</h2>
-          <p className="text-white">The season has not started yet or has ended.</p>
+          <h2 className="text-2xl font-bold mb-4">{t('home.noUpcoming')}</h2>
+          <p className="text-white">{t('home.noUpcomingText')}</p>
         </div>
       </div>
     );
@@ -127,7 +129,7 @@ const Homepage = () => {
         ) : mainRace ? (
           <PredictionInterface raceId={mainRace.id} raceDate={mainRace.race_date} />
         ) : (
-          <div className="text-center py-8 text-white">No race available</div>
+          <div className="text-center py-8 text-white">{t('home.noRaceAvailable')}</div>
         )}
       </div>
     </div>

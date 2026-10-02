@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getLeaderboard, getSeasonHistory, getPlayerStats } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
+import { ordinal } from '../i18n/format';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -49,12 +51,6 @@ const CHART_COLORS = [
   '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#6366F1'
 ];
 
-const ordinal = (n: number) => {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-};
-
 const getRankColor = (rank: number) => {
   if (rank === 1) return 'bg-yellow-500 text-black';
   if (rank === 2) return 'bg-gray-300 text-black';
@@ -63,6 +59,7 @@ const getRankColor = (rank: number) => {
 };
 
 const Leaderboard = () => {
+  const { t, lang } = useLang();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [seasonRaces, setSeasonRaces] = useState<SeasonRace[]>([]);
   const [seasonUsers, setSeasonUsers] = useState<SeasonUser[]>([]);
@@ -128,18 +125,18 @@ const Leaderboard = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-white">Loading leaderboard...</p>
+        <p className="mt-4 text-white">{t('lb.loading')}</p>
       </div>
     );
   }
 
   return (
     <div>
-      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">Championship</h1>
+      <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">{t('lb.title')}</h1>
 
       {/* Season Points Chart */}
       <div className="max-w-5xl mx-auto mb-10">
-        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">Season Progression</h2>
+        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">{t('lb.progression')}</h2>
 
         {historyLoading ? (
           <div className="bg-gray-900 p-8 flex items-center justify-center">
@@ -147,7 +144,7 @@ const Leaderboard = () => {
           </div>
         ) : seasonRaces.length === 0 ? (
           <div className="bg-gray-900 p-8 text-center text-white">
-            Season data available after the first race is completed.
+            {t('lb.afterFirstRace')}
           </div>
         ) : (
           <div className="bg-gray-900 p-4 pt-6 border border-gray-800">
@@ -170,7 +167,7 @@ const Leaderboard = () => {
                   contentStyle={{ background: '#15151E', border: '1px solid #333', borderRadius: 8 }}
                   labelStyle={{ color: '#fff', fontWeight: 'bold', marginBottom: 4 }}
                   itemStyle={{ color: '#ccc', fontSize: 12 }}
-                  formatter={(value: number, name: string) => [`${value} pts`, name]}
+                  formatter={(value: number, name: string) => [`${value} ${t('races.pts')}`, name]}
                   labelFormatter={(_label, payload) => payload?.[0]?.payload?.fullName ?? _label}
                 />
                 <Legend
@@ -197,11 +194,11 @@ const Leaderboard = () => {
 
       {/* Full Leaderboard Table */}
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">Full Standings</h2>
+        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">{t('lb.fullStandings')}</h2>
 
         {leaderboard.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-white text-lg">No users have made predictions yet</p>
+            <p className="text-white text-lg">{t('lb.noUsers')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -236,12 +233,12 @@ const Leaderboard = () => {
                       </h3>
                       <div className="flex flex-wrap items-center gap-x-3 text-xs text-white/70">
                         <span>
-                          Last: {entry.last_race_points}
-                          {entry.last_race_rank && ` (${ordinal(entry.last_race_rank)})`}
+                          {t('lb.last', { pts: entry.last_race_points })}
+                          {entry.last_race_rank && ` (${ordinal(entry.last_race_rank, lang)})`}
                         </span>
                         {entry.best_race_name && (
                           <span className="hidden md:inline">
-                            Best: {entry.best_race_points} ({entry.best_race_name})
+                            {t('lb.best', { pts: entry.best_race_points, name: entry.best_race_name })}
                           </span>
                         )}
                       </div>
@@ -251,7 +248,7 @@ const Leaderboard = () => {
                   <div className="text-right shrink-0">
                     <p className="text-2xl sm:text-3xl font-f1-badge font-bold text-f1-yellow-400">{entry.total_points}</p>
                     <p className="text-[10px] text-white/70 uppercase tracking-widest">
-                      {Number(entry.rank) === 1 ? 'Leader' : `-${entry.diff_to_leader}`}
+                      {Number(entry.rank) === 1 ? t('lb.leader') : `-${entry.diff_to_leader}`}
                     </p>
                   </div>
                 </div>
@@ -263,7 +260,7 @@ const Leaderboard = () => {
 
       {/* Player Stats — deeper per-player breakdown beyond the totals column above */}
       <div className="max-w-5xl mx-auto mt-10">
-        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">Player Stats</h2>
+        <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">{t('lb.playerStats')}</h2>
 
         {statsLoading ? (
           <div className="bg-gray-900 p-8 flex items-center justify-center">
@@ -271,7 +268,7 @@ const Leaderboard = () => {
           </div>
         ) : playerStats.length === 0 ? (
           <div className="card-f1 p-8 text-center text-white">
-            Stats available after the first race is completed.
+            {t('lb.statsAfterFirstRace')}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -283,30 +280,30 @@ const Leaderboard = () => {
                   </h3>
                   {stat.best_race && (
                     <p className="text-xs text-white/70 truncate">
-                      Best race: <span className="font-bold text-white">{stat.best_race.points} pts</span> ({stat.best_race.name})
+                      {t('lb.bestRacePre')} <span className="font-bold text-white">{stat.best_race.points} {t('races.pts')}</span> ({stat.best_race.name})
                     </p>
                   )}
                 </div>
 
                 {stat.predictions_made === 0 ? (
-                  <p className="text-white text-sm">No predictions yet this season.</p>
+                  <p className="text-white text-sm">{t('lb.noPredictions')}</p>
                 ) : (
                   <div className="grid grid-cols-4 gap-2 text-center">
                     <div className="bg-f1-neutral-800 p-2">
                       <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.avg_points_per_race}</p>
-                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">Avg/Race</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">{t('lb.avgRace')}</p>
                     </div>
                     <div className="bg-f1-neutral-800 p-2">
                       <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.accuracy_pct}</p>
-                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">% Accuracy</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">{t('lb.accuracy')}</p>
                     </div>
                     <div className="bg-f1-neutral-800 p-2">
                       <p className="text-xl font-f1-badge font-bold text-f1-yellow-400">{stat.exact_picks}</p>
-                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">Exact Picks</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">{t('lb.exact')}</p>
                     </div>
                     <div className="bg-f1-neutral-800 p-2">
                       <p className="text-xl font-f1-badge font-bold text-f1-blue">{stat.current_streak}</p>
-                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">Streak</p>
+                      <p className="text-[9px] text-white uppercase tracking-wider mt-1">{t('lb.streak')}</p>
                     </div>
                   </div>
                 )}

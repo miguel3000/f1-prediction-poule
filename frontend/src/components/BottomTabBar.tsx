@@ -3,21 +3,23 @@ import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { RacingFlagIcon, CheckeredFlagIcon, TrophyIcon, ChartIcon } from './icons';
 import { MoreIcon } from './icons';
+import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
 interface BottomTabBarProps {
   onMoreClick: () => void;
   moreActive: boolean;
 }
 
-const homeTab = { path: '/', label: 'Home', icon: RacingFlagIcon, end: true };
+const homeTab = { path: '/', label: 'nav.home' as TranslationKey, icon: RacingFlagIcon, end: true };
 const memberTabs = [
-  { path: '/races', label: 'Races', icon: CheckeredFlagIcon, end: false },
-  { path: '/leaderboard', label: 'Standings', icon: TrophyIcon, end: false },
-  { path: '/stats', label: 'Stats', icon: ChartIcon, end: false },
+  { path: '/races', label: 'nav.races' as TranslationKey, icon: CheckeredFlagIcon, end: false },
+  { path: '/leaderboard', label: 'nav.standings' as TranslationKey, icon: TrophyIcon, end: false },
+  { path: '/stats', label: 'nav.stats' as TranslationKey, icon: ChartIcon, end: false },
 ];
 
 const BottomTabBar = ({ onMoreClick, moreActive }: BottomTabBarProps) => {
   const { user } = useContext(AuthContext);
+  const { t } = useLang();
   const tabs = user ? [homeTab, ...memberTabs] : [homeTab];
 
   return (
@@ -44,7 +46,7 @@ const BottomTabBar = ({ onMoreClick, moreActive }: BottomTabBarProps) => {
                   <span className={`text-[10px] font-bold uppercase tracking-wide transition-colors ${
                     isActive ? 'text-white' : 'text-f1-neutral-500'
                   }`}>
-                    {label}
+                    {t(label)}
                   </span>
                 </>
               )}
@@ -65,7 +67,7 @@ const BottomTabBar = ({ onMoreClick, moreActive }: BottomTabBarProps) => {
             <span className={`text-[10px] font-bold uppercase tracking-wide transition-colors ${
               moreActive ? 'text-white' : 'text-f1-neutral-500'
             }`}>
-              More
+              {t('nav.more')}
             </span>
           </button>
         </li>

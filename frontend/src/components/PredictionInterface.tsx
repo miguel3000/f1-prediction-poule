@@ -7,6 +7,7 @@ import { getQualifyingOrder, submitPrediction, getPrediction } from '../services
 import { haptics } from '../utils/haptics';
 import { getTeamColor } from '../utils/teamColors';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../i18n/LanguageContext';
 
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const DndBackend = isTouchDevice() ? TouchBackend : HTML5Backend;
@@ -117,6 +118,7 @@ interface GridSlotProps {
 }
 
 const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, onClear, isHeld, hasHeld }: GridSlotProps) => {
+  const { t } = useLang();
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: () => { haptics.light(); onDragStart(position); return { driver, source: 'grid' as const, sourceIndex: position - 1 }; },
@@ -171,14 +173,14 @@ const GridSlot = ({ position, driver, onDrop, onDragStart, onTap, onClear, isHel
                 <button
                   onClick={(e) => { e.stopPropagation(); onClear(position); }}
                   className="text-white/60 hover:text-red-300 text-xs px-1 flex-shrink-0 leading-none"
-                  aria-label={`Remove ${lastName(driver)} from position ${position}`}
+                  aria-label={t('predict.removeAria', { name: lastName(driver), pos: position })}
                 >✕</button>
               </>
             }
           />
         ) : (
           <span className={`m-auto text-[9px] tracking-wider uppercase ${hasHeld ? 'text-f1-yellow-600' : 'text-white'}`}>
-            {hasHeld ? 'place here' : 'empty'}
+            {hasHeld ? t('predict.placeHere') : t('predict.empty')}
           </span>
         )}
       </div>
@@ -210,6 +212,7 @@ interface PredictionInterfaceProps { raceId: number; raceDate?: string; }
 const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { t, tError } = useLang();
   const [qualifyingDrivers, setQualifyingDrivers] = useState<Driver[]>([]);
   const [predictions, setPredictions] = useState<(Driver | null)[]>(Array(10).fill(null));
   const [loading, setLoading] = useState(true);
@@ -331,25 +334,25 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
   };
 
   const handleSubmit = async () => {
-    if (predictions.some(d => d === null)) { setMessage('Please fill all 10 positions first'); return; }
+    if (predictions.some(d => d === null)) { setMessage(t('predict.fillAll10')); return; }
     setSubmitting(true);
     setMessage('');
     try {
       await submitPrediction(raceId, predictions.map(d => d!.id), dnfPick === '' ? null : dnfPick);
       setShowConfirmModal(true);
     } catch (error: any) {
-      setMessage(error.response?.data?.error || 'Failed to submit prediction');
+      setMessage(tError(error.response?.data?.error || 'Failed to submit prediction'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="text-center py-8 text-white">Loading...</div>;
+  if (loading) return <div className="text-center py-8 text-white">{t('common.loading')}</div>;
 
   const filledCount = predictions.filter(Boolean).length;
   const orderLabel =
-    orderSource === 'qualifying' ? 'Qualifying' :
-    orderSource === 'previous_race' ? 'Prev. Race' : 'Championship';
+    orderSource === 'qualifying' ? t('predict.orderQualifying') :
+    orderSource === 'previous_race' ? t('predict.orderPrevRace') : t('predict.orderChampionship');
 
   return (
     <DndProvider backend={DndBackend} options={backendOptions}>
@@ -362,18 +365,18 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-widest">Prediction Confirmed!</h2>
-            <p className="text-white text-sm mb-1">Your prediction has been saved.</p>
+            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-widest">{t('predict.confirmedTitle')}</h2>
+            <p className="text-white text-sm mb-1">{t('predict.saved')}</p>
             {user?.email && (
               <p className="text-white text-sm mb-6">
-                A confirmation email has been sent to <span className="text-white font-semibold">{user.email}</span>.
+                {t('predict.emailSentPre')}<span className="text-white font-semibold">{user.email}</span>.
               </p>
             )}
             <button
               onClick={() => setShowConfirmModal(false)}
               className="w-full py-3 bg-f1-yellow-500 hover:brightness-110 text-black font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
-              Close
+              {t('predict.close')}
             </button>
           </div>
         </div>
@@ -384,16 +387,16 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
         <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-40 p-4">
           <div className="bg-f1-neutral-900 border border-f1-yellow-500/50 max-w-sm w-full p-8 text-center shadow-2xl">
             <div className="text-4xl mb-4">🏁</div>
-            <h2 className="text-2xl font-black text-f1-yellow-500 mb-3 uppercase tracking-widest">Predictions Closed</h2>
+            <h2 className="text-2xl font-black text-f1-yellow-500 mb-3 uppercase tracking-widest">{t('predict.closedTitle')}</h2>
             <p className="text-white text-sm">
-              The deadline for this race has passed. The race has started or is about to start.
+              {t('predict.closedText')}
             </p>
-            <p className="text-white text-xs mt-4">You can still view your saved prediction below.</p>
+            <p className="text-white text-xs mt-4">{t('predict.closedView')}</p>
             <button
               onClick={() => setLockNoticeDismissed(true)}
               className="w-full py-3 mt-6 bg-f1-yellow-500 hover:brightness-110 text-black font-black text-sm tracking-widest uppercase active:scale-95 transition-all"
             >
-              Close
+              {t('predict.close')}
             </button>
           </div>
         </div>
@@ -410,9 +413,9 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
                 <button
                   onClick={fetchData}
                   className="text-[10px] text-white transition-colors"
-                  title="Refresh qualifying order"
+                  title={t('predict.refreshTitle')}
                 >
-                  ↺ Refresh
+                  {t('predict.refresh')}
                 </button>
               )}
             </div>
@@ -422,12 +425,12 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
                 className="text-[10px] text-green-400 flex items-center gap-1 mt-0.5"
               >
                 <span className="w-1.5 h-1.5 bg-green-500 inline-block" />
-                {showQualiDetails ? 'Hide times' : 'Lap times'}
+                {showQualiDetails ? t('predict.hideTimes') : t('predict.lapTimes')}
               </button>
             )}
           </div>
           <div className="flex items-start justify-between">
-            <p className="text-[10px] font-bold text-f1-yellow-500 uppercase tracking-widest">Your Grid</p>
+            <p className="text-[10px] font-bold text-f1-yellow-500 uppercase tracking-widest">{t('predict.yourGrid')}</p>
             <span className="text-[10px] text-white font-bold tabular-nums">{filledCount}/10</span>
           </div>
         </div>
@@ -450,8 +453,8 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
         {/* Hint */}
         <p className="text-center text-[10px] text-white tracking-wider uppercase">
           {heldIndex !== null
-            ? 'Tap a slot to place · Tap same slot to cancel'
-            : 'Tap to add · Tap slot to hold & reorder · Tap ✕ to remove'}
+            ? t('predict.hintHeld')
+            : t('predict.hint')}
         </p>
 
         {/* Two-column area */}
@@ -490,7 +493,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
                   }
                 />
               ) : (
-                <span className="m-auto text-white text-[9px] tracking-wider uppercase">hold</span>
+                <span className="m-auto text-white text-[9px] tracking-wider uppercase">{t('predict.hold')}</span>
               )}
             </div>
             <div className="border-t border-f1-neutral-800" />
@@ -521,8 +524,8 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
         {/* First retirement bonus pick */}
         <div className="bg-f1-neutral-900 border border-f1-neutral-800 px-3 py-2.5">
           <label htmlFor="dnf-pick" className="flex items-center justify-between text-[10px] font-bold text-f1-yellow-500 uppercase tracking-widest mb-1.5">
-            <span>First Retirement</span>
-            <span className="text-white normal-case font-normal tracking-normal">Bonus +25 pts</span>
+            <span>{t('predict.firstRetirement')}</span>
+            <span className="text-white normal-case font-normal tracking-normal">{t('predict.bonus')}</span>
           </label>
           <select
             id="dnf-pick"
@@ -530,7 +533,7 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
             onChange={(e) => setDnfPick(e.target.value === '' ? '' : Number(e.target.value))}
             className="w-full bg-f1-neutral-950 border border-f1-neutral-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-f1-yellow-500"
           >
-            <option value="">No pick</option>
+            <option value="">{t('predict.noPick')}</option>
             {qualifyingDrivers.map((driver) => (
               <option key={driver.id} value={driver.id}>{driver.name}</option>
             ))}
@@ -547,14 +550,14 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
               : 'bg-f1-yellow-500 hover:brightness-110 text-black active:scale-95'
           }`}
         >
-          {submitting ? 'Submitting...' : filledCount < 10 ? `${10 - filledCount} slots remaining` : 'Confirm Prediction'}
+          {submitting ? t('predict.submitting') : filledCount < 10 ? t('predict.slotsRemaining', { n: 10 - filledCount }) : t('predict.confirm')}
         </button>
 
         <button
           onClick={() => navigate('/predictions')}
           className="w-full py-3 font-bold text-sm text-white bg-f1-neutral-850 active:scale-95 tracking-wider uppercase"
         >
-          View All Predictions
+          {t('predict.viewAll')}
         </button>
 
         {message && (

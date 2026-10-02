@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getDriverStandings } from '../services/api';
+import { useLang } from '../i18n/LanguageContext';
 
 interface Driver {
   id: number;
@@ -11,6 +12,7 @@ interface Driver {
 }
 
 const DriverStandings = () => {
+  const { t, locale } = useLang();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,9 +60,9 @@ const DriverStandings = () => {
   };
 
   const formatDateTime = (dateString: string | null): string => {
-    if (!dateString) return 'Never';
+    if (!dateString) return t('ds.never');
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -72,7 +74,7 @@ const DriverStandings = () => {
 
   const formatNextUpdate = (): string => {
     const nextUpdate = getNextUpdateTime();
-    return nextUpdate.toLocaleString('en-US', {
+    return nextUpdate.toLocaleString(locale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -121,7 +123,7 @@ const DriverStandings = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-white">Loading driver standings...</p>
+        <p className="mt-4 text-white">{t('ds.loading')}</p>
       </div>
     );
   }
@@ -129,24 +131,24 @@ const DriverStandings = () => {
   return (
     <div>
       <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-f1-yellow-500">
-        2026 Driver's Championship
+        {t('ds.title', { year: 2026 })}
       </h1>
 
       {/* Update Information - Compact */}
       <div className="max-w-4xl mx-auto mb-4">
         <div className="text-center text-sm text-white">
-          Updated: <span className="text-white">{formatDateTime(lastUpdated)}</span>
+          {t('ds.updated')} <span className="text-white">{formatDateTime(lastUpdated)}</span>
           <span className="mx-2">•</span>
-          Next: <span className="text-white">{formatNextUpdate()}</span>
+          {t('ds.next')} <span className="text-white">{formatNextUpdate()}</span>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto">
         {drivers.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-white text-lg">No driver standings available yet</p>
+            <p className="text-white text-lg">{t('ds.none')}</p>
             <p className="text-sm text-white mt-2">
-              Standings will be updated after the first race
+              {t('ds.noneSub')}
             </p>
           </div>
         ) : (
@@ -181,7 +183,7 @@ const DriverStandings = () => {
 
                     <div className="text-right shrink-0">
                       <p className="text-2xl sm:text-3xl font-f1-badge font-bold text-f1-yellow-400">{driver.total_points}</p>
-                      <p className="text-[10px] text-white/70 uppercase tracking-widest">Points</p>
+                      <p className="text-[10px] text-white/70 uppercase tracking-widest">{t('ds.points')}</p>
                     </div>
                   </div>
                 </div>

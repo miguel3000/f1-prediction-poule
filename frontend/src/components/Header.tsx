@@ -2,6 +2,8 @@ import { useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import LogoMark from './LogoMark';
+import LanguageToggle from './LanguageToggle';
+import { useLang, TranslationKey } from '../i18n/LanguageContext';
 import { RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon, PredictionIcon, ChartIcon, NewsIcon, MoreIcon } from './icons';
 
 interface HeaderProps {
@@ -9,19 +11,20 @@ interface HeaderProps {
   moreActive: boolean;
 }
 
-const homeLink = { path: '/', label: 'Home', icon: RacingFlagIcon, end: true };
+const homeLink = { path: '/', label: 'nav.home' as TranslationKey, icon: RacingFlagIcon, end: true };
 const memberLinks = [
-  { path: '/races', label: 'Races', icon: CheckeredFlagIcon, end: false },
-  { path: '/drivers', label: 'Drivers', icon: HelmetIcon, end: false },
-  { path: '/teams', label: 'Teams', icon: TeamIcon, end: false },
-  { path: '/leaderboard', label: 'Standings', icon: TrophyIcon, end: false },
-  { path: '/stats', label: 'Stats', icon: ChartIcon, end: false },
-  { path: '/news', label: 'News', icon: NewsIcon, end: false },
+  { path: '/races', label: 'nav.races' as TranslationKey, icon: CheckeredFlagIcon, end: false },
+  { path: '/drivers', label: 'nav.drivers' as TranslationKey, icon: HelmetIcon, end: false },
+  { path: '/teams', label: 'nav.teams' as TranslationKey, icon: TeamIcon, end: false },
+  { path: '/leaderboard', label: 'nav.standings' as TranslationKey, icon: TrophyIcon, end: false },
+  { path: '/stats', label: 'nav.stats' as TranslationKey, icon: ChartIcon, end: false },
+  { path: '/news', label: 'nav.news' as TranslationKey, icon: NewsIcon, end: false },
 ];
 
 const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useLang();
   const desktopLinks = user ? [homeLink, ...memberLinks] : [homeLink];
 
   return (
@@ -33,7 +36,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
         <div className="flex items-center gap-4 h-16">
 
           {/* Logo — pinned left */}
-          <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label="Poule Position home">
+          <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label={t('nav.homeAria')}>
             <LogoMark className="h-10 w-auto" />
           </button>
 
@@ -54,7 +57,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 {({ isActive }) => (
                   <>
                     <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
-                    <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{label}</span>
+                    <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t(label)}</span>
                     <span
                       className={`absolute left-3 right-3 -bottom-[1px] h-0.5 transition-all duration-200 ${
                         isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
@@ -72,7 +75,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 {({ isActive }) => (
                   <>
                     <PredictionIcon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
-                    <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>Predictions</span>
+                    <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t('nav.predictions')}</span>
                     <span
                       className={`absolute left-3 right-3 -bottom-[1px] h-0.5 transition-all duration-200 ${
                         isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
@@ -88,6 +91,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
 
           {/* User + More */}
           <div className="flex items-center gap-3 flex-shrink-0">
+            <LanguageToggle />
             {user ? (
               <>
                 <div
@@ -95,7 +99,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                   onClick={() => navigate('/profile')}
                 >
                   <p className="text-sm font-bold text-white hover:text-f1-yellow-400 transition-colors leading-tight">{user.nickname}</p>
-                  <p className="text-xs text-f1-yellow-500 font-mono font-semibold tabular-nums leading-tight">{user.total_points} PTS</p>
+                  <p className="text-xs text-f1-yellow-500 font-mono font-semibold tabular-nums leading-tight">{user.total_points} {t('common.pts')}</p>
                 </div>
                 {user.avatar_url ? (
                   <img
@@ -117,12 +121,12 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                   onClick={logout}
                   className="hidden lg:block text-xs text-f1-neutral-500 hover:text-f1-yellow-400 transition-colors font-bold uppercase tracking-wider"
                 >
-                  Out
+                  {t('nav.out')}
                 </button>
               </>
             ) : (
               <a href="/auth" className="btn-f1-primary px-5 py-2 text-sm">
-                Login
+                {t('nav.login')}
               </a>
             )}
 
@@ -133,7 +137,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                   ? 'text-f1-yellow-500 border-f1-yellow-500'
                   : 'text-f1-neutral-400 border-f1-neutral-800 hover:text-white hover:border-f1-neutral-600'
               }`}
-              aria-label="More"
+              aria-label={t('nav.more')}
             >
               <MoreIcon className="w-4 h-4" />
             </button>

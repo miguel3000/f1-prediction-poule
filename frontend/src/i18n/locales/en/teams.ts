@@ -1,0 +1,13 @@
+export const teams = {
+  'teams.title': '{year} F1 Teams',
+  'teams.subtitle': '11 Teams - 22 Race Drivers',
+  'teams.new': 'NEW IN 2026',
+  'teams.powerUnit': 'Power Unit:',
+  'teams.raceDrivers': 'Race Drivers',
+  'teams.reserves': 'Reserve & Test Drivers',
+  'teams.roleRace': 'Race Driver',
+  'teams.roleReserve': 'Reserve Driver',
+  'teams.roleTest': 'Test Driver',
+  'teams.note': 'Driver lineup as of January 2026. Subject to change.',
+  'teams.sources': 'Sources:',
+};

@@ -1,4 +1,10 @@
+import { useLang } from '../i18n/LanguageContext';
+
 const Teams = () => {
+  const { t } = useLang();
+  const roleLabel = (role: string) =>
+    role === 'Race Driver' ? t('teams.roleRace') : role === 'Reserve Driver' ? t('teams.roleReserve') : role === 'Test Driver' ? t('teams.roleTest') : role;
+
   const teams = [
     {
       name: 'McLaren',
@@ -164,10 +170,10 @@ const Teams = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl font-bold mb-2 text-center text-f1-yellow-500">
-        2026 F1 Teams
+        {t('teams.title', { year: 2026 })}
       </h1>
       <p className="text-center text-white mb-8">
-        11 Teams - 22 Race Drivers
+        {t('teams.subtitle')}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -181,7 +187,7 @@ const Teams = () => {
               <h2 className="text-xl font-bold text-white">{team.name}</h2>
               {team.isNew && (
                 <span className="text-xs bg-white/20 px-2 py-1 text-white font-semibold">
-                  NEW IN 2026
+                  {t('teams.new')}
                 </span>
               )}
             </div>
@@ -189,14 +195,14 @@ const Teams = () => {
             <div className="p-5">
               {/* Engine */}
               <div className="mb-4 text-sm">
-                <span className="text-white">Power Unit: </span>
+                <span className="text-white">{t('teams.powerUnit')} </span>
                 <span className={team.textColor}>{team.engine}</span>
               </div>
 
               {/* Race Drivers */}
               <div className="mb-4">
                 <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wide">
-                  Race Drivers
+                  {t('teams.raceDrivers')}
                 </h3>
                 <div className="space-y-2">
                   {team.drivers.map((driver) => (
@@ -209,7 +215,7 @@ const Teams = () => {
                       </span>
                       <div>
                         <p className="font-semibold text-white">{driver.name}</p>
-                        <p className="text-xs text-white">{driver.role}</p>
+                        <p className="text-xs text-white">{roleLabel(driver.role)}</p>
                       </div>
                     </div>
                   ))}
@@ -220,7 +226,7 @@ const Teams = () => {
               {team.reserves && team.reserves.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wide">
-                    Reserve & Test Drivers
+                    {t('teams.reserves')}
                   </h3>
                   <div className="space-y-2">
                     {team.reserves.map((driver, index) => (
@@ -231,7 +237,7 @@ const Teams = () => {
                         <span className="text-white text-sm w-12 text-center">-</span>
                         <div>
                           <p className="font-medium text-white">{driver.name}</p>
-                          <p className="text-xs text-white/70">{driver.role}</p>
+                          <p className="text-xs text-white/70">{roleLabel(driver.role)}</p>
                         </div>
                       </div>
                     ))}
@@ -245,9 +251,9 @@ const Teams = () => {
 
       {/* Footer note */}
       <div className="mt-8 text-center text-sm text-white">
-        <p>Driver lineup as of January 2026. Subject to change.</p>
+        <p>{t('teams.note')}</p>
         <p className="mt-2">
-          Sources:{' '}
+          {t('teams.sources')}{' '}
           <a
             href="https://www.formula1.com/en/teams"
             target="_blank"

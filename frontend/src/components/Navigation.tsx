@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../i18n/LanguageContext';
 import {
   RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon,
   PredictionIcon, ChartIcon, NewsIcon, LiveIcon, PitWallIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon,
@@ -13,6 +14,7 @@ interface NavigationProps {
 
 const Navigation = ({ isOpen, onClose }: NavigationProps) => {
   const { user } = useContext(AuthContext);
+  const { t } = useLang();
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset';
@@ -20,31 +22,31 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
   }, [isOpen]);
 
   const menuItems = [
-    { path: '/', label: 'Homepage', icon: <RacingFlagIcon /> },
+    { path: '/', label: t('nav.home'), icon: <RacingFlagIcon /> },
   ];
   if (user) {
     menuItems.push(
-      { path: '/races',       label: 'Race Overview', icon: <CheckeredFlagIcon /> },
-      { path: '/drivers',     label: 'Drivers',       icon: <HelmetIcon /> },
-      { path: '/teams',       label: 'Teams',         icon: <TeamIcon /> },
-      { path: '/leaderboard', label: 'Championship',  icon: <TrophyIcon /> },
-      { path: '/predictions', label: 'My Predictions', icon: <PredictionIcon /> },
-      { path: '/stats',       label: 'Statistics',    icon: <ChartIcon /> },
-      { path: '/news',        label: 'News',          icon: <NewsIcon /> },
-      { path: '/live',        label: 'Live Timing',   icon: <LiveIcon /> },
+      { path: '/races',       label: t('nav.raceOverview'), icon: <CheckeredFlagIcon /> },
+      { path: '/drivers',     label: t('nav.drivers'),       icon: <HelmetIcon /> },
+      { path: '/teams',       label: t('nav.teams'),         icon: <TeamIcon /> },
+      { path: '/leaderboard', label: t('nav.championship'),  icon: <TrophyIcon /> },
+      { path: '/predictions', label: t('nav.myPredictions'), icon: <PredictionIcon /> },
+      { path: '/stats',       label: t('nav.statistics'),    icon: <ChartIcon /> },
+      { path: '/news',        label: t('nav.news'),          icon: <NewsIcon /> },
+      { path: '/live',        label: t('nav.live'),   icon: <LiveIcon /> },
     );
     // Only for players the admin has granted Pit Wall access (admins included).
     if (user.pitwall_access || user.is_admin) {
-      menuItems.push({ path: '/pitwall', label: 'Pit Wall', icon: <PitWallIcon /> });
+      menuItems.push({ path: '/pitwall', label: t('nav.pitwall'), icon: <PitWallIcon /> });
     }
   }
 
   const footerItems = [
-    { path: '/rules',   label: 'Rules',          icon: <ClipboardIcon /> },
-    { path: '/about',   label: 'About',          icon: <InfoIcon /> },
-    { path: '/privacy', label: 'Privacy Policy', icon: <ShieldIcon /> },
+    { path: '/rules',   label: t('nav.rules'),          icon: <ClipboardIcon /> },
+    { path: '/about',   label: t('nav.about'),          icon: <InfoIcon /> },
+    { path: '/privacy', label: t('nav.privacy'), icon: <ShieldIcon /> },
   ];
-  if (user?.is_admin) footerItems.push({ path: '/pitlane', label: 'Pitlane', icon: <WrenchIcon /> });
+  if (user?.is_admin) footerItems.push({ path: '/pitlane', label: t('nav.pitlane'), icon: <WrenchIcon /> });
 
   return (
     <>
@@ -64,12 +66,12 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
         <div className="flex items-center justify-between px-5 py-4 border-b border-f1-neutral-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-1 h-5 bg-f1-yellow-500" />
-            <span className="font-f1 font-black text-white text-sm uppercase tracking-widest">Menu</span>
+            <span className="font-f1 font-black text-white text-sm uppercase tracking-widest">{t('nav.menu')}</span>
           </div>
           <button
             onClick={onClose}
             className="text-f1-neutral-500 hover:text-f1-yellow-500 transition-colors"
-            aria-label="Close menu"
+            aria-label={t('nav.closeMenu')}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

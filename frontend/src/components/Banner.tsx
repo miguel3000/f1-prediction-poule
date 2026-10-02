@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLang } from '../i18n/LanguageContext';
 
 interface BannerProps {
   nextRaceDate?: Date;
@@ -29,7 +30,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 // Race's local Dutch kickoff time, independent of whatever the countdown above
 // is currently targeting (qualifying, sprint, or the race itself).
-const formatNLTime = (date: Date): string => {
+const formatNLTime = (date: Date, hoursLabel: string): string => {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Amsterdam',
     hour: '2-digit',
@@ -38,11 +39,12 @@ const formatNLTime = (date: Date): string => {
   }).formatToParts(date);
   const hh = parts.find(p => p.type === 'hour')?.value ?? '00';
   const mm = parts.find(p => p.type === 'minute')?.value ?? '00';
-  return `${hh}.${mm} HOURS`;
+  return `${hh}.${mm} ${hoursLabel}`;
 };
 
 const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: BannerProps) => {
   const [, setTick] = useState(0);
+  const { t } = useLang();
 
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000);
@@ -52,7 +54,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   if (!nextRaceDate || !nextRaceName) {
     return (
       <div className="w-full py-5 px-4 border-b border-f1-neutral-800 text-center" style={{ backgroundColor: '#191517' }}>
-        <p className="text-white font-brand text-sm tracking-widest uppercase">Fetching race data...</p>
+        <p className="text-white font-brand text-sm tracking-widest uppercase">{t('banner.fetching')}</p>
       </div>
     );
   }
@@ -60,7 +62,8 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
   const qualiLeft = qualifyingDate ? getTimeLeft(qualifyingDate) : null;
   const raceLeft  = getTimeLeft(nextRaceDate);
   const showQualifying = qualiLeft && !qualiLeft.past;
-  const targetLabel    = showQualifying ? 'QUALIFYING' : (isSprint ? 'SPRINT' : 'RACE');
+  const targetKey      = showQualifying ? 'banner.targetQualifying' : (isSprint ? 'banner.targetSprint' : 'banner.targetRace');
+  const targetLabel    = t(targetKey);
   const { days, hours, minutes, seconds, past } = showQualifying ? qualiLeft : raceLeft;
 
   // Full-bleed: breaks out of the page's centered max-width container to span
@@ -108,7 +111,7 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
         <div className={rowGrid} style={rowStyle('#2596C7', 8)}>
           <Divider offset={8} />
           <span className={`text-white ${bigType} ${sizeWide} text-right truncate pr-3`} style={shear}>
-            {isSprint ? 'Sprint Weekend' : 'Race Weekend'}
+            {isSprint ? t('banner.sprintWeekend') : t('banner.raceWeekend')}
           </span>
           <span className={`text-white ${bigType} ${sizeWide} text-left truncate pl-3`} style={shear}>
             {nextRaceName}
@@ -119,15 +122,15 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
         <div className={rowGrid} style={rowStyle('#FFD81A')}>
           <Divider />
           <span className={`text-white ${bigType} ${sizeWide} text-right pr-3`} style={shear}>
-            Countdown
+            {t('banner.countdown')}
           </span>
           {past ? (
             <span className={`text-white ${bigType} ${sizeWide} text-left truncate pl-3`} style={shear}>
-              {targetLabel === 'QUALIFYING' ? 'Qualifying in progress' : 'In progress'}
+              {showQualifying ? t('banner.qualifyingInProgress') : t('banner.inProgress')}
             </span>
           ) : (
             <span className={`text-white ${bigType} ${sizeWide} tabular-nums text-left truncate pl-3`} style={shear}>
-              {targetLabel} in &middot; {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
+              {t('banner.targetIn', { target: targetLabel })} &middot; {days > 0 && `${days}d `}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
             </span>
           )}
         </div>
@@ -136,10 +139,10 @@ const Banner = ({ nextRaceDate, nextRaceName, qualifyingDate, isSprint }: Banner
         <div className={rowGrid} style={rowStyle('#005277', -8)}>
           <Divider offset={-8} />
           <span className={`text-white ${bigType} ${sizeWide} text-right truncate pr-3`} style={shear}>
-            Race Start NL Time
+            {t('banner.raceStartNl')}
           </span>
           <span className={`text-white ${bigType} ${sizeWide} tabular-nums text-left pl-3`} style={shear}>
-            {formatNLTime(nextRaceDate)}
+            {formatNLTime(nextRaceDate, t('banner.hours'))}
           </span>
         </div>
       </div>

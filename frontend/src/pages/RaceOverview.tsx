@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRaces, getRaceResults } from '../services/api';
 import { formatNLDay, formatNLTime, formatNLDayTime } from '../utils/dateTime';
+import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
 interface Race {
   id: number;
@@ -31,6 +32,7 @@ const RaceOverview = () => {
   const [loading, setLoading] = useState(true);
   const [loadingResults, setLoadingResults] = useState(false);
   const navigate = useNavigate();
+  const { t, locale } = useLang();
 
   useEffect(() => {
     fetchRaces();
@@ -99,7 +101,7 @@ const RaceOverview = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-white">Loading races...</p>
+        <p className="mt-4 text-white">{t('races.loading')}</p>
       </div>
     );
   }
@@ -107,9 +109,9 @@ const RaceOverview = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-2 text-center text-f1-yellow-500">
-        2026 Race Calendar
+        {t('races.title', { year: 2026 })}
       </h1>
-      <p className="text-center text-white text-xs mb-8">All times are Dutch time (Amsterdam).</p>
+      <p className="text-center text-white text-xs mb-8">{t('races.timesNote')}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         {races.map((race, index) => (
@@ -130,7 +132,7 @@ const RaceOverview = () => {
                     {race.race_name}
                   </h3>
                   <span className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider flex-shrink-0 ${getStatusColor(race.status)}`}>
-                    {race.status.replace('_', ' ')}
+                    {t(`status.${race.status}` as TranslationKey)}
                   </span>
                 </div>
                 <p className="text-[10px] text-white/70 uppercase tracking-wide truncate">
@@ -140,20 +142,20 @@ const RaceOverview = () => {
                 <div className="mt-2 pt-2 border-t border-white/20 space-y-0.5">
                   {isSprint(race) ? (
                     <p className="flex items-center justify-between text-sm">
-                      <span className="text-[10px] px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold uppercase tracking-wider">Sprint</span>
-                      <span className="font-f1-badge text-xs">{formatNLDayTime(race.race_date)}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold uppercase tracking-wider">{t('races.sprint')}</span>
+                      <span className="font-f1-badge text-xs">{formatNLDayTime(race.race_date, locale)}</span>
                     </p>
                   ) : (
                     <>
                       {race.qualifying_date && (
                         <p className="flex items-center justify-between text-sm">
-                          <span className="text-[10px] text-white/70 uppercase tracking-wider">Qualifying</span>
-                          <span className="font-f1-badge text-xs">{formatNLDayTime(race.qualifying_date)}</span>
+                          <span className="text-[10px] text-white/70 uppercase tracking-wider">{t('races.qualifying')}</span>
+                          <span className="font-f1-badge text-xs">{formatNLDayTime(race.qualifying_date, locale)}</span>
                         </p>
                       )}
                       <p className="flex items-center justify-between text-sm">
-                        <span className="text-[10px] text-white/70 uppercase tracking-wider">Race start</span>
-                        <span className="font-f1-badge text-xs text-f1-yellow-400">{formatNLDayTime(race.race_date)}</span>
+                        <span className="text-[10px] text-white/70 uppercase tracking-wider">{t('races.raceStart')}</span>
+                        <span className="font-f1-badge text-xs text-f1-yellow-400">{formatNLDayTime(race.race_date, locale)}</span>
                       </p>
                     </>
                   )}
@@ -184,13 +186,13 @@ const RaceOverview = () => {
                   )}
                 </div>
                 <p className="text-white/70 text-sm mt-2 uppercase tracking-wide">
-                  Round {selectedRace.round} &middot; {selectedRace.circuit_name} &middot; {selectedRace.country}
+                  {t('banner.round', { n: selectedRace.round })} &middot; {selectedRace.circuit_name} &middot; {selectedRace.country}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedRace(null)}
                 className="text-white text-3xl leading-none hover:text-f1-yellow-500 flex-shrink-0"
-                aria-label="Close"
+                aria-label={t('races.close')}
               >
                 &times;
               </button>
@@ -199,18 +201,18 @@ const RaceOverview = () => {
             <div className="mb-6">
               {!isSprint(selectedRace) && selectedRace.qualifying_date && (
                 <div className="flex items-center bg-f1-blue text-white">
-                  <span className="w-40 shrink-0 px-4 py-2 text-xs uppercase tracking-wider text-white/80">Qualifying</span>
+                  <span className="w-40 shrink-0 px-4 py-2 text-xs uppercase tracking-wider text-white/80">{t('races.qualifying')}</span>
                   <span className="px-4 py-2 font-f1-badge text-sm">
-                    {formatNLDay(selectedRace.qualifying_date)} &middot; {formatNLTime(selectedRace.qualifying_date)}
+                    {formatNLDay(selectedRace.qualifying_date, locale)} &middot; {formatNLTime(selectedRace.qualifying_date, locale)}
                   </span>
                 </div>
               )}
               <div className={`flex items-center text-white ${!isSprint(selectedRace) && selectedRace.qualifying_date ? 'bg-f1-blue-dark' : 'bg-f1-blue'}`}>
                 <span className="w-40 shrink-0 px-4 py-2 text-xs uppercase tracking-wider text-white/80">
-                  {isSprint(selectedRace) ? 'Sprint start' : 'Race start'}
+                  {isSprint(selectedRace) ? t('races.sprintStart') : t('races.raceStart')}
                 </span>
                 <span className="px-4 py-2 font-f1-badge text-sm text-f1-yellow-400">
-                  {formatNLDay(selectedRace.race_date)} &middot; {formatNLTime(selectedRace.race_date)}
+                  {formatNLDay(selectedRace.race_date, locale)} &middot; {formatNLTime(selectedRace.race_date, locale)}
                 </span>
               </div>
             </div>
@@ -218,13 +220,13 @@ const RaceOverview = () => {
             {(selectedRace.status === 'completed' || selectedRace.status === 'provisional') && (
               <div className="mt-6">
                 <h3 className="font-f1 font-bold uppercase tracking-wide text-2xl mb-4">
-                  {isSprint(selectedRace) ? 'Sprint Results' : 'Race Results'}
+                  {isSprint(selectedRace) ? t('races.sprintResults') : t('races.raceResults')}
                   {selectedRace.status === 'provisional' && (
-                    <span className="text-sm ml-2 text-f1-yellow-500">(Provisional)</span>
+                    <span className="text-sm ml-2 text-f1-yellow-500">{t('races.provisional')}</span>
                   )}
                 </h3>
                 {loadingResults ? (
-                  <p className="text-center text-white">Loading results...</p>
+                  <p className="text-center text-white">{t('races.loadingResults')}</p>
                 ) : raceResults.length > 0 ? (
                   <div>
                     {raceResults.map((result, i) => (
@@ -238,7 +240,7 @@ const RaceOverview = () => {
                             <p className="text-[10px] text-white/70 uppercase tracking-wide truncate">{result.team}</p>
                           </div>
                           <div className="text-right flex-shrink-0">
-                            <p className="font-bold text-sm text-f1-yellow-400">{result.points} pts</p>
+                            <p className="font-bold text-sm text-f1-yellow-400">{result.points} {t('races.pts')}</p>
                             <p className="text-[10px] text-white/70">{result.status}</p>
                           </div>
                         </div>
@@ -246,7 +248,7 @@ const RaceOverview = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-white">No results available yet</p>
+                  <p className="text-center text-white">{t('races.noResults')}</p>
                 )}
               </div>
             )}
@@ -254,10 +256,10 @@ const RaceOverview = () => {
             {selectedRace.status === 'upcoming' && (
               <div className="mt-6 text-center">
                 <p className="text-white mb-4">
-                  {isSprint(selectedRace) ? 'Sprint race' : 'Race'} has not started yet
+                  {isSprint(selectedRace) ? t('races.sprintNotStarted') : t('races.raceNotStarted')}
                 </p>
                 <button onClick={() => navigate('/')} className="btn-f1-primary">
-                  Make Your {isSprint(selectedRace) ? 'Sprint ' : ''}Prediction
+                  {isSprint(selectedRace) ? t('races.makeSprintPrediction') : t('races.makePrediction')}
                 </button>
               </div>
             )}

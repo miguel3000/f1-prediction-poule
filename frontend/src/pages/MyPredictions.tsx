@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserPredictions, getUserSprintPredictions } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useLang } from '../i18n/LanguageContext';
 
 interface Driver {
   id: number;
@@ -37,6 +38,7 @@ const MyPredictions = () => {
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t, locale } = useLang();
 
   useEffect(() => {
     if (user) {
@@ -66,7 +68,7 @@ const MyPredictions = () => {
       setPredictions(allPredictions);
     } catch (error: any) {
       console.error('Failed to fetch predictions:', error);
-      setError('Failed to load your predictions');
+      setError(t('mypred.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -76,15 +78,15 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">My Predictions</h1>
+          <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">{t('mypred.title')}</h1>
           <p className="text-white mb-8 text-lg">
-            Please log in to view your predictions
+            {t('mypred.loginPrompt')}
           </p>
           <button
             onClick={() => navigate('/auth')}
             className="btn-f1-primary"
           >
-            Login / Register
+            {t('home.loginRegister')}
           </button>
         </div>
       </div>
@@ -95,7 +97,7 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
-        <p className="mt-4 text-white">Loading your predictions...</p>
+        <p className="mt-4 text-white">{t('mypred.loading')}</p>
       </div>
     );
   }
@@ -104,13 +106,13 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="card-f1 p-8 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold mb-4 text-red-500">Error</h2>
+          <h2 className="text-2xl font-bold mb-4 text-red-500">{t('mypred.errorTitle')}</h2>
           <p className="text-white">{error}</p>
           <button
             onClick={() => navigate('/')}
             className="btn-f1-primary mt-6"
           >
-            Back to Homepage
+            {t('mypred.backHome')}
           </button>
         </div>
       </div>
@@ -121,15 +123,15 @@ const MyPredictions = () => {
     return (
       <div className="text-center py-16">
         <div className="card-f1 p-12 max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">My Predictions</h1>
+          <h1 className="text-4xl font-bold mb-4 text-f1-yellow-500">{t('mypred.title')}</h1>
           <p className="text-white mb-8 text-lg">
-            You haven't made any predictions yet
+            {t('mypred.none')}
           </p>
           <button
             onClick={() => navigate('/')}
             className="btn-f1-primary"
           >
-            Make Your First Prediction
+            {t('mypred.first')}
           </button>
         </div>
       </div>
@@ -140,20 +142,20 @@ const MyPredictions = () => {
     switch (status) {
       case 'completed':
         return (
-          <span className="text-xs px-3 py-1 bg-green-600 text-white font-semibold">
-            COMPLETED
+          <span className="text-xs px-3 py-1 bg-green-600 text-white font-semibold uppercase">
+            {t('status.completed')}
           </span>
         );
       case 'in_progress':
         return (
-          <span className="text-xs px-3 py-1 bg-yellow-600 text-white font-semibold">
-            IN PROGRESS
+          <span className="text-xs px-3 py-1 bg-yellow-600 text-white font-semibold uppercase">
+            {t('status.in_progress')}
           </span>
         );
       default:
         return (
-          <span className="text-xs px-3 py-1 bg-gray-600 text-white font-semibold">
-            UPCOMING
+          <span className="text-xs px-3 py-1 bg-gray-600 text-white font-semibold uppercase">
+            {t('status.upcoming')}
           </span>
         );
     }
@@ -163,7 +165,7 @@ const MyPredictions = () => {
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
         <h1 className="text-4xl md:text-display-xl font-bold text-f1-yellow-500">
-          My Predictions
+          {t('mypred.title')}
         </h1>
       </div>
 
@@ -187,12 +189,12 @@ const MyPredictions = () => {
                     </h2>
                     {isSprint && (
                       <span className="text-xs px-2 py-1 bg-f1-blue text-white font-bold">
-                        SPRINT
+                        {t('mypred.sprintBadge')}
                       </span>
                     )}
                   </div>
                   <p className="text-white">
-                    {new Date(prediction.race_date).toLocaleDateString('en-US', {
+                    {new Date(prediction.race_date).toLocaleDateString(locale, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -204,7 +206,7 @@ const MyPredictions = () => {
                   {getStatusBadge(prediction.status)}
                   {prediction.points !== undefined && (
                     <div className={`text-2xl font-bold ${isSprint ? 'text-f1-yellow-400' : 'text-f1-yellow-500'}`}>
-                      {prediction.points} pts
+                      {prediction.points} {t('races.pts')}
                     </div>
                   )}
                 </div>
@@ -229,7 +231,7 @@ const MyPredictions = () => {
                       {pts !== undefined && (
                         <div className="text-right flex-shrink-0">
                           <p className="text-xs text-white/80">
-                            {pts.actualPosition ? `→ P${pts.actualPosition}` : '→ DNF'}
+                            {pts.actualPosition ? `→ P${pts.actualPosition}` : t('mypred.dnf')}
                           </p>
                           <p className={`font-bold text-sm ${pts.pointsEarned > 0 ? 'text-f1-yellow-400' : 'text-white/60'}`}>
                             {pts.pointsEarned > 0 ? `+${pts.pointsEarned}${pts.hasBonus ? ' ★' : ''}` : '0'}
@@ -244,9 +246,9 @@ const MyPredictions = () => {
               {!isSprint && prediction.dnfPick && (
                 <div className="mt-4 pt-4 border-t border-f1-neutral-700 flex items-center justify-between text-sm">
                   <span className="text-white">
-                    First retirement pick: <span className="font-semibold">{prediction.dnfPick.name}</span>
+                    {t('mypred.firstRetirementPick')} <span className="font-semibold">{prediction.dnfPick.name}</span>
                     {prediction.status === 'completed' && prediction.firstOutDriverName && (
-                      <span className="text-white"> (actual: {prediction.firstOutDriverName})</span>
+                      <span className="text-white"> {t('mypred.actual', { name: prediction.firstOutDriverName })}</span>
                     )}
                   </span>
                   {prediction.status === 'completed' && (
@@ -267,7 +269,7 @@ const MyPredictions = () => {
                         : 'btn-f1-primary'
                     }`}
                   >
-                    Edit {isSprint ? 'Sprint ' : ''}Prediction
+                    {isSprint ? t('mypred.editSprint') : t('mypred.edit')}
                   </button>
                 </div>
               )}

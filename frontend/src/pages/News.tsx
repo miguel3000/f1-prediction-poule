@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getNews } from '../services/api';
+import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
 interface NewsItem {
   title: string;
@@ -9,38 +10,41 @@ interface NewsItem {
   publishedAt: string | null;
 }
 
-const formatRelative = (iso: string | null): string => {
+type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string;
+
+const formatRelative = (iso: string | null, t: Translate, locale: string): string => {
   if (!iso) return '';
   const date = new Date(iso);
   const diffMs = Date.now() - date.getTime();
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-  if (diffHours < 1) return 'Just now';
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 1) return t('news.justNow');
+  if (diffHours < 24) return t('news.hoursAgo', { n: diffHours });
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  if (diffDays < 7) return t('news.daysAgo', { n: diffDays });
+  return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 };
 
 const News = () => {
+  const { t, locale } = useLang();
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     getNews()
       .then((res) => setItems(res.data))
-      .catch(() => setError('Failed to load news. Try refreshing in a bit.'))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-2 text-center text-f1-yellow-500">
-        News
+        {t('news.title')}
       </h1>
       <p className="text-center text-white mb-8">
-        Latest from around the paddock, pulled from F1's own site and independent motorsport press.
+        {t('news.intro')}
       </p>
 
       {loading && (
@@ -51,12 +55,12 @@ const News = () => {
 
       {!loading && error && (
         <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 text-center">
-          {error}
+          {t('news.loadFailed')}
         </div>
       )}
 
       {!loading && !error && items.length === 0 && (
-        <div className="card-f1 p-8 text-center text-white">No news available right now.</div>
+        <div className="card-f1 p-8 text-center text-white">{t('news.none')}</div>
       )}
 
       {!loading && !error && items.length > 0 && (
@@ -79,7 +83,7 @@ const News = () => {
                 {item.publishedAt && (
                   <>
                     <span className="text-white">&middot;</span>
-                    <span className="text-white normal-case font-normal tracking-normal">{formatRelative(item.publishedAt)}</span>
+                    <span className="text-white normal-case font-normal tracking-normal">{formatRelative(item.publishedAt, t, locale)}</span>
                   </>
                 )}
               </div>
