@@ -737,6 +737,50 @@ export const sendPitwallApproved = async (idea: {
   }
 };
 
+// Sent to the admin the moment a player submits something on the Pit Wall, so
+// new ideas don't sit unseen until someone opens the Pitlane. Player-written
+// text throughout, so it is escaped and kept out of the subject's control characters.
+export const sendPitwallSubmitted = async (idea: {
+  nickname: string;
+  kind: string;
+  title: string;
+  description: string;
+}): Promise<boolean> => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.error('ADMIN_EMAIL not configured — cannot send Pit Wall submission notice');
+    return false;
+  }
+
+  const oneLine = (text: string) => text.replace(/[\r\n]+/g, ' ').trim();
+  const pitlaneUrl = `${process.env.FRONTEND_URL}/pitlane`;
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: adminEmail,
+    subject: `Pit Wall: new ${oneLine(idea.kind)} from ${oneLine(idea.nickname)}`.slice(0, 200),
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('New Pit Wall Suggestion', { url: pitlaneUrl, bg: BRAND_BLUE, color: '#ffffff' })}
+      <p><strong>${escapeHtml(idea.nickname)}</strong> submitted an <strong>${escapeHtml(idea.kind)}</strong>:</p>
+      <h2 style="color: ${BRAND_NAVY}; margin-bottom: 8px;">${escapeHtml(idea.title)}</h2>
+      ${idea.description ? `<p style="white-space: pre-wrap;">${escapeHtml(idea.description)}</p>` : ''}
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        It is waiting for your decision in the Pitlane (Pit Wall Ideas).
+      </p>
+      ${emailFooter()}
+    `),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Pit Wall submission notice sent');
+    return true;
+  } catch (error) {
+    console.error('Error sending Pit Wall submission notice:', error);
+    return false;
+  }
+};
+
 // Internal ops alert — e.g. results still unavailable from the API after the retry window
 export const sendAdminAlert = async (subject: string, message: string): Promise<boolean> => {
   const adminEmail = process.env.ADMIN_EMAIL;

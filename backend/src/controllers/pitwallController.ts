@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
+import { sendPitwallSubmitted } from '../services/emailService';
 
 const KINDS = ['idea', 'implementation'];
 const MAX_PENDING_PER_USER = 10;
@@ -60,6 +61,19 @@ export const createIdea = async (req: Request, res: Response) => {
       [userId, kind, title, description]
     );
     res.status(201).json(result.rows[0]);
+
+    // Tell the admin right away. The idea is already saved and the player has
+    // their answer, so a mail problem is only logged.
+    query('SELECT nickname FROM users WHERE id = $1', [userId])
+      .then((owner) =>
+        sendPitwallSubmitted({
+          nickname: owner.rows[0]?.nickname || 'A player',
+          kind,
+          title,
+          description,
+        })
+      )
+      .catch((mailError) => console.error('Pit Wall submission notice failed:', mailError));
   } catch (error) {
     console.error('Create pit wall idea error:', error);
     res.status(500).json({ error: 'Failed to save your idea' });
