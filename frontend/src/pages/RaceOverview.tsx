@@ -126,7 +126,7 @@ const RaceOverview = () => {
               </span>
               <div className={`flex-1 min-w-0 px-4 py-3 text-white ${index % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-f1 font-bold text-xl uppercase tracking-wide leading-tight truncate">
+                  <h3 className="font-f1 font-bold text-xl uppercase tracking-wide leading-tight break-words min-w-0">
                     {race.race_name}
                   </h3>
                   <span className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider flex-shrink-0 ${getStatusColor(race.status)}`}>
