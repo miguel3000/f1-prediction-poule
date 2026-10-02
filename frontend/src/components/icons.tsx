@@ -78,6 +78,16 @@ export const LiveIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
     <path d="M18.5 5.5a9.5 9.5 0 0 1 0 13"/>
   </svg>
 );
+export const PitWallIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="3" y="4" width="4" height="4"/>
+    <rect x="3" y="10" width="4" height="4"/>
+    <rect x="3" y="16" width="4" height="4"/>
+    <line x1="10" y1="6" x2="21" y2="6"/>
+    <line x1="10" y1="12" x2="21" y2="12"/>
+    <line x1="10" y1="18" x2="21" y2="18"/>
+  </svg>
+);
 export const MoreIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect x="4" y="4" width="7" height="7" rx="0"/>

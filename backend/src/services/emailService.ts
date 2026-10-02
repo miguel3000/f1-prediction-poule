@@ -692,6 +692,51 @@ export const sendBroadcastEmail = async (
   }
 };
 
+// Sent to the admin when an idea from a player is approved for the Pit Wall.
+// Everything in it is player-written text, so it is escaped everywhere and
+// kept out of the subject line's control characters.
+export const sendPitwallApproved = async (idea: {
+  nickname: string;
+  kind: string;
+  title: string;
+  description: string;
+  adminNote?: string | null;
+}): Promise<boolean> => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.error('ADMIN_EMAIL not configured — cannot send Pit Wall approval');
+    return false;
+  }
+
+  const oneLine = (text: string) => text.replace(/[\r\n]+/g, ' ').trim();
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: adminEmail,
+    subject: `Pit Wall: approved ${oneLine(idea.kind)} from ${oneLine(idea.nickname)}`.slice(0, 200),
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('Approved For The Pit Wall', { bg: BRAND_BLUE, color: '#ffffff' })}
+      <p><strong>${escapeHtml(idea.nickname)}</strong> suggested an <strong>${escapeHtml(idea.kind)}</strong> and you approved it:</p>
+      <h2 style="color: ${BRAND_NAVY}; margin-bottom: 8px;">${escapeHtml(idea.title)}</h2>
+      ${idea.description ? `<p style="white-space: pre-wrap;">${escapeHtml(idea.description)}</p>` : ''}
+      ${idea.adminNote ? `<p style="color: #666;"><em>Your note: ${escapeHtml(idea.adminNote)}</em></p>` : ''}
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        It is marked approved in the Pitlane. Add it to the definitive Pit Wall when you are ready.
+      </p>
+      ${emailFooter()}
+    `),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Pit Wall approval email sent');
+    return true;
+  } catch (error) {
+    console.error('Error sending Pit Wall approval email:', error);
+    return false;
+  }
+};
+
 // Internal ops alert — e.g. results still unavailable from the API after the retry window
 export const sendAdminAlert = async (subject: string, message: string): Promise<boolean> => {
   const adminEmail = process.env.ADMIN_EMAIL;

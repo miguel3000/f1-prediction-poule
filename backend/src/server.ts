@@ -17,6 +17,7 @@ import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
 import newsRoutes from './routes/news';
 import liveTimingRoutes from './routes/liveTiming';
+import pitwallRoutes from './routes/pitwall';
 import { startLiveTimingIngest } from './services/liveTimingService';
 
 dotenv.config();
@@ -81,6 +82,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/live-timing', liveTimingLimiter, liveTimingRoutes);
+app.use('/api/pitwall', pitwallRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

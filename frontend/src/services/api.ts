@@ -134,6 +134,16 @@ export const deleteAvatar = () =>
 export const getNews = () =>
   api.get('/api/news');
 
+// Pit Wall (players with access)
+export const getMyPitwallIdeas = () =>
+  api.get('/api/pitwall/ideas');
+
+export const createPitwallIdea = (kind: 'idea' | 'implementation', title: string, description: string) =>
+  api.post('/api/pitwall/ideas', { kind, title, description });
+
+export const deleteMyPitwallIdea = (id: number) =>
+  api.delete(`/api/pitwall/ideas/${id}`);
+
 // Live Timing
 export const getLiveTiming = () =>
   api.get('/api/live-timing');

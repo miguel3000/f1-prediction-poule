@@ -11,7 +11,10 @@ import {
   sendBroadcastToAllUsers,
   sendLastRaceResults,
   getRacePredictionStatus,
-  setUserPassword
+  setUserPassword,
+  setPitwallAccess,
+  listPitwallIdeas,
+  decidePitwallIdea
 } from '../controllers/adminController';
 import { syncDrivers } from '../controllers/driverController';
 import { syncRaces } from '../controllers/raceController';
@@ -23,6 +26,11 @@ const router = express.Router();
 router.get('/users', authenticateAdmin, getAllUsers);
 router.delete('/users/:id', authenticateAdmin, deleteUser);
 router.post('/users/:userId/password', authenticateAdmin, setUserPassword);
+
+// Player Pit Wall: who has access, and reviewing what they submit
+router.put('/users/:id/pitwall-access', authenticateAdmin, setPitwallAccess);
+router.get('/pitwall-ideas', authenticateAdmin, listPitwallIdeas);
+router.put('/pitwall-ideas/:id', authenticateAdmin, decidePitwallIdea);
 
 // Cronjob management
 router.get('/cronjobs', authenticateAdmin, getCronJobs);

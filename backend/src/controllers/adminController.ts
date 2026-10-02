@@ -5,7 +5,7 @@ import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
 import * as openF1Service from '../services/openF1Service';
 import { calculateRacePoints } from './leaderboardController';
-import { sendBroadcastEmail, sendPersonalRaceResults } from '../services/emailService';
+import { sendBroadcastEmail, sendPersonalRaceResults, sendPitwallApproved } from '../services/emailService';
 import { f1Cache } from '../utils/cache';
 
 const SALT_ROUNDS = 10;
@@ -29,7 +29,7 @@ const cronJobStatus: {
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const result = await query(
-      `SELECT id, nickname, email, avatar_url, total_points, is_admin, created_at
+      `SELECT id, nickname, email, avatar_url, total_points, is_admin, pitwall_access, created_at
        FROM users
        ORDER BY created_at DESC`
     );
@@ -38,6 +38,98 @@ export const getAllUsers = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get all users error:', error);
     res.status(500).json({ error: 'Failed to get users' });
+  }
+};
+
+// Grant or revoke a player's access to the player Pit Wall.
+export const setPitwallAccess = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { enabled } = req.body || {};
+
+    if (Number.isNaN(id) || typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'A user id and enabled (true/false) are required' });
+    }
+
+    const result = await query(
+      'UPDATE users SET pitwall_access = $1 WHERE id = $2 RETURNING id, nickname, pitwall_access',
+      [enabled, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Set pit wall access error:', error);
+    res.status(500).json({ error: 'Failed to update Pit Wall access' });
+  }
+};
+
+// Everyone's submitted ideas, pending first, for the admin to review.
+export const listPitwallIdeas = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT i.id, i.kind, i.title, i.description, i.status, i.admin_note,
+              i.created_at, i.decided_at, u.nickname
+       FROM pitwall_ideas i
+       JOIN users u ON u.id = i.user_id
+       ORDER BY (i.status = 'pending') DESC, i.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('List pit wall ideas (admin) error:', error);
+    res.status(500).json({ error: 'Failed to load Pit Wall ideas' });
+  }
+};
+
+// Approve or decline a pending idea. The WHERE status = 'pending' makes the
+// decision happen exactly once, so a double click can't send two emails or
+// flip a decline into an approval.
+export const decidePitwallIdea = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { status } = req.body || {};
+    const adminNote =
+      typeof req.body?.adminNote === 'string' && req.body.adminNote.trim()
+        ? req.body.adminNote.trim().slice(0, 1000)
+        : null;
+
+    if (Number.isNaN(id) || !['approved', 'declined'].includes(status)) {
+      return res.status(400).json({ error: 'status must be approved or declined' });
+    }
+
+    const result = await query(
+      `UPDATE pitwall_ideas
+       SET status = $1, admin_note = $2, decided_at = NOW()
+       WHERE id = $3 AND status = 'pending'
+       RETURNING id, user_id, kind, title, description, status, admin_note, created_at, decided_at`,
+      [status, adminNote, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(409).json({ error: 'That idea was already reviewed, or no longer exists' });
+    }
+    const idea = result.rows[0];
+
+    // The decision is already saved; a mail problem must not undo or fail it.
+    if (status === 'approved') {
+      try {
+        const owner = await query('SELECT nickname FROM users WHERE id = $1', [idea.user_id]);
+        await sendPitwallApproved({
+          nickname: owner.rows[0]?.nickname || 'A player',
+          kind: idea.kind,
+          title: idea.title,
+          description: idea.description,
+          adminNote: idea.admin_note,
+        });
+      } catch (mailError) {
+        console.error('Pit Wall approval email failed:', mailError);
+      }
+    }
+
+    res.json(idea);
+  } catch (error) {
+    console.error('Decide pit wall idea error:', error);
+    res.status(500).json({ error: 'Failed to save the decision' });
   }
 };
 

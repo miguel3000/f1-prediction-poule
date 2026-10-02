@@ -122,6 +122,26 @@ const runMigration = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_practice_results_lookup ON practice_results(season, round, session)`);
     console.log('practice_results table ensured.');
 
+    // Player Pit Wall: the admin grants individual players access, players
+    // submit ideas/implementations, the admin approves or declines them.
+    console.log('Checking for pitwall_access column and pitwall_ideas table...');
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pitwall_access BOOLEAN NOT NULL DEFAULT FALSE`);
+    await query(`
+      CREATE TABLE IF NOT EXISTS pitwall_ideas (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        kind VARCHAR(20) NOT NULL CHECK (kind IN ('idea', 'implementation')),
+        title VARCHAR(200) NOT NULL,
+        description TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
+        admin_note TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        decided_at TIMESTAMPTZ
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_pitwall_ideas_user ON pitwall_ideas(user_id, created_at DESC)`);
+    console.log('pitwall_access and pitwall_ideas ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

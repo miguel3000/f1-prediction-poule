@@ -10,7 +10,20 @@ interface User {
   avatar_url?: string;
   total_points: number;
   is_admin?: boolean;
+  pitwall_access?: boolean;
   created_at: string;
+}
+
+interface PitwallIdea {
+  id: number;
+  kind: 'idea' | 'implementation';
+  title: string;
+  description: string;
+  status: 'pending' | 'approved' | 'declined';
+  admin_note: string | null;
+  created_at: string;
+  decided_at: string | null;
+  nickname: string;
 }
 
 interface SyncJobState {
@@ -80,12 +93,17 @@ const Admin = () => {
   const [predictionStatusLoading, setPredictionStatusLoading] = useState(false);
   const [predictionStatusError, setPredictionStatusError] = useState<string | null>(null);
 
+  const [pitwallIdeas, setPitwallIdeas] = useState<PitwallIdea[]>([]);
+  const [ideaNotes, setIdeaNotes] = useState<Record<number, string>>({});
+  const [ideaBusyId, setIdeaBusyId] = useState<number | null>(null);
+
   useEffect(() => {
     if (!user?.is_admin) return;
     getRaces(2026)
       .then(res => setPredictionRaces(res.data))
       .catch(() => { /* race list is a nice-to-have; ignore failures */ });
     fetchUsers();
+    fetchPitwallIdeas();
   }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
@@ -118,6 +136,37 @@ const Admin = () => {
       setError(err.response?.data?.error || 'Failed to fetch users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPitwallIdeas = async () => {
+    try {
+      const response = await api.get('/api/admin/pitwall-ideas');
+      setPitwallIdeas(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch Pit Wall ideas');
+    }
+  };
+
+  const handleTogglePitwall = async (target: User) => {
+    try {
+      await api.put(`/api/admin/users/${target.id}/pitwall-access`, { enabled: !target.pitwall_access });
+      setUsers((prev) => prev.map((u) => (u.id === target.id ? { ...u, pitwall_access: !target.pitwall_access } : u)));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update Pit Wall access');
+    }
+  };
+
+  const handleDecideIdea = async (id: number, status: 'approved' | 'declined') => {
+    setIdeaBusyId(id);
+    try {
+      await api.put(`/api/admin/pitwall-ideas/${id}`, { status, adminNote: ideaNotes[id] || '' });
+      await fetchPitwallIdeas();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to save the decision');
+      fetchPitwallIdeas();
+    } finally {
+      setIdeaBusyId(null);
     }
   };
 
@@ -1266,6 +1315,19 @@ const Admin = () => {
                       </button>
                       {!user.is_admin && (
                         <button
+                          onClick={() => handleTogglePitwall(user)}
+                          className={`px-3 py-1 text-sm font-bold transition-colors ${
+                            user.pitwall_access
+                              ? 'bg-f1-yellow-500 text-black hover:brightness-110'
+                              : 'bg-f1-blue-dark text-white hover:brightness-125'
+                          }`}
+                          title="Let this player submit ideas on the Pit Wall"
+                        >
+                          Pit Wall: {user.pitwall_access ? 'ON' : 'OFF'}
+                        </button>
+                      )}
+                      {!user.is_admin && (
+                        <button
                           onClick={() => handleDeleteUser(user.id, user.nickname)}
                           className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors"
                         >
@@ -1318,6 +1380,16 @@ const Admin = () => {
                   </button>
                   {!user.is_admin && (
                     <button
+                      onClick={() => handleTogglePitwall(user)}
+                      className={`flex-1 px-3 py-2 text-sm font-bold transition-colors ${
+                        user.pitwall_access ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white'
+                      }`}
+                    >
+                      Pit Wall: {user.pitwall_access ? 'ON' : 'OFF'}
+                    </button>
+                  )}
+                  {!user.is_admin && (
+                    <button
                       onClick={() => handleDeleteUser(user.id, user.nickname)}
                       className="flex-1 bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-2 text-sm transition-colors"
                     >
@@ -1340,6 +1412,88 @@ const Admin = () => {
         <div className="mt-6 text-sm text-white">
           Total users: <span className="text-white font-bold">{users.length}</span>
         </div>
+      </div>
+
+      {/* Pit Wall ideas submitted by players */}
+      <div className="card-f1 mt-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">Pit Wall Ideas</h2>
+            <p className="text-xs text-white/60 mt-1">
+              Submitted by players with Pit Wall access. Approving one emails it to you.
+            </p>
+          </div>
+          <button onClick={fetchPitwallIdeas} className="btn-f1-secondary text-sm py-2 px-4">
+            Refresh
+          </button>
+        </div>
+
+        {pitwallIdeas.length === 0 ? (
+          <p className="text-center text-white py-6">No ideas submitted yet</p>
+        ) : (
+          <div>
+            {pitwallIdeas.map((idea, i) => (
+              <div key={idea.id} className="flex items-stretch">
+                <span className="w-12 shrink-0 flex items-center justify-center bg-f1-yellow-500 text-black font-f1-badge font-bold text-lg">
+                  {idea.status === 'approved' ? '\u2713' : idea.status === 'declined' ? '\u2715' : pitwallIdeas.filter((x) => x.status === 'pending').indexOf(idea) + 1}
+                </span>
+                <div className={`flex-1 min-w-0 px-4 py-3 text-white ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="font-f1 font-bold uppercase tracking-wide text-lg leading-tight break-words">{idea.title}</p>
+                      <p className="text-[10px] text-white/70 uppercase tracking-wide">
+                        {idea.nickname} &middot; {idea.kind} &middot; {new Date(idea.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider flex-shrink-0 ${
+                        idea.status === 'pending'
+                          ? 'bg-f1-yellow-500 text-black'
+                          : idea.status === 'approved'
+                          ? 'bg-white text-f1-blue-dark'
+                          : 'bg-black/30 text-white/70'
+                      }`}
+                    >
+                      {idea.status}
+                    </span>
+                  </div>
+                  {idea.description && (
+                    <p className="text-sm text-white/90 mt-2 whitespace-pre-wrap break-words">{idea.description}</p>
+                  )}
+                  {idea.status !== 'pending' && idea.admin_note && (
+                    <p className="text-xs text-white/70 mt-2 italic">Note: {idea.admin_note}</p>
+                  )}
+                  {idea.status === 'pending' && (
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={ideaNotes[idea.id] || ''}
+                        onChange={(e) => setIdeaNotes((prev) => ({ ...prev, [idea.id]: e.target.value }))}
+                        placeholder="Optional note"
+                        maxLength={1000}
+                        className="flex-1 bg-f1-neutral-900 border border-f1-neutral-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-f1-yellow-500"
+                      />
+                      <button
+                        onClick={() => handleDecideIdea(idea.id, 'approved')}
+                        disabled={ideaBusyId === idea.id}
+                        className="bg-f1-yellow-500 text-black font-bold px-4 py-2 text-sm hover:brightness-110 disabled:opacity-50"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleDecideIdea(idea.id, 'declined')}
+                        disabled={ideaBusyId === idea.id}
+                        className="bg-black/30 text-white font-bold px-4 py-2 text-sm hover:bg-black/50 disabled:opacity-50"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Set Password Modal */}

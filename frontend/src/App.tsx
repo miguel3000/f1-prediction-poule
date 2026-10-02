@@ -21,6 +21,7 @@ import Teams from './pages/Teams';
 import News from './pages/News';
 import LiveTiming from './pages/LiveTiming';
 import ResetPassword from './pages/ResetPassword';
+import PitWall from './pages/PitWall';
 import { AuthContext } from './context/AuthContext';
 import { getProfile } from './services/api';
 
@@ -89,6 +90,7 @@ function App() {
               <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
               <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
               <Route path="/live" element={<ProtectedRoute><LiveTiming /></ProtectedRoute>} />
+              <Route path="/pitwall" element={<ProtectedRoute requirePitwall><PitWall /></ProtectedRoute>} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/about" element={<About />} />
             </Routes>

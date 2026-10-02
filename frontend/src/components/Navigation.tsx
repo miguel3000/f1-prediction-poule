@@ -3,7 +3,7 @@ import { useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import {
   RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon,
-  PredictionIcon, ChartIcon, NewsIcon, LiveIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon,
+  PredictionIcon, ChartIcon, NewsIcon, LiveIcon, PitWallIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon,
 } from './icons';
 
 interface NavigationProps {
@@ -33,6 +33,10 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
       { path: '/news',        label: 'News',          icon: <NewsIcon /> },
       { path: '/live',        label: 'Live Timing',   icon: <LiveIcon /> },
     );
+    // Only for players the admin has granted Pit Wall access (admins included).
+    if (user.pitwall_access || user.is_admin) {
+      menuItems.push({ path: '/pitwall', label: 'Pit Wall', icon: <PitWallIcon /> });
+    }
   }
 
   const footerItems = [
