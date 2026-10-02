@@ -418,7 +418,9 @@ const unsubscribePage = (lang: EmailLang, messageKey: EmailKey, ok: boolean) => 
 // gated only by the signed token embedded in the link.
 export const unsubscribe = async (req: Request, res: Response) => {
   // Until we know who this is, go by the browser's language.
-  const requestLang: EmailLang = req.acceptsLanguages('nl', 'en') === 'nl' ? 'nl' : 'en';
+  // (Express treats a missing header as "accepts anything", so check it exists.)
+  const requestLang: EmailLang =
+    req.headers['accept-language'] && req.acceptsLanguages('nl', 'en') === 'nl' ? 'nl' : 'en';
   try {
     const { token } = req.query;
     if (!token || typeof token !== 'string') {
