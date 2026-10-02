@@ -308,7 +308,11 @@ async function fetchPracticeResults(year: number, sessionNumber: number, raceDat
       return {
         position: i + 1,
         driver_number: r.driver_number,
-        driver_name: d?.full_name || `Driver #${r.driver_number}`,
+        // OpenF1 writes surnames in capitals ("Max VERSTAPPEN"); match the
+        // "Max Verstappen" form used everywhere else.
+        driver_name: d?.full_name
+          ? d.full_name.split(' ').map((w) => (w.length > 1 && w === w.toUpperCase() ? w[0] + w.slice(1).toLowerCase() : w)).join(' ')
+          : `Driver #${r.driver_number}`,
         driver_code: d?.name_acronym || null,
         team: d?.team_name || null,
         best_time: secondsToTimeStr(seconds) || '',
