@@ -2,41 +2,68 @@ import { Request, Response } from 'express';
 import * as jolpiService from '../services/jolpiService';
 import * as openF1Service from '../services/openF1Service';
 import { query } from '../config/database';
+import { savePracticeRows } from '../services/practiceResultsService';
 
+interface PracticeResultRow {
+  position: number;
+  driver_number: number;
+  driver_name: string;
+  driver_code: string | null;
+  team: string | null;
+  best_time: string | null;
+  laps: number | null;
+}
 
-// Get practice session results for a race
+const formatPracticeRows = (rows: PracticeResultRow[]) =>
+  rows.map((r) => ({
+    position: r.position,
+    driverNumber: String(r.driver_number),
+    driverName: r.driver_name,
+    driverCode: r.driver_code || '',
+    team: r.team || 'Unknown',
+    time: r.best_time || 'No time',
+    laps: r.laps || 0,
+  }));
+
+// Practice session results. Jolpi has no practice endpoint at all, so the
+// source of truth is practice_results — filled from the live timing feed
+// while a session runs (liveTimingService) — with OpenF1 as a backfill for
+// sessions the server missed (e.g. it was down), saved back for next time.
 export const getPracticeResults = async (req: Request, res: Response) => {
   try {
     const { round, session } = req.params;
     const season = parseInt(req.query.season as string) || 2026;
-    const sessionNum = parseInt(session) as 1 | 2 | 3;
+    const roundNum = parseInt(round);
+    const sessionNum = parseInt(session);
 
-    if (![1, 2, 3].includes(sessionNum)) {
+    if (![1, 2, 3].includes(sessionNum) || Number.isNaN(roundNum)) {
       return res.status(400).json({ error: 'Session must be 1, 2, or 3' });
     }
 
-    // Weekend's race_date decides how long the practice results get cached —
-    // see getPracticeResults in jolpiService for why this matters for live data.
-    const raceRow = await query(
-      `SELECT race_date FROM races WHERE season = $1 AND round = $2
-       ORDER BY (race_type = 'main') DESC LIMIT 1`,
-      [season, parseInt(round)]
+    const stored = await query(
+      `SELECT position, driver_number, driver_name, driver_code, team, best_time, laps
+       FROM practice_results
+       WHERE season = $1 AND round = $2 AND session = $3
+       ORDER BY position ASC`,
+      [season, roundNum, sessionNum]
     );
-    const raceDate = raceRow.rows[0]?.race_date;
+    if (stored.rows.length > 0) {
+      return res.json(formatPracticeRows(stored.rows));
+    }
 
-    const results = await jolpiService.getPracticeResults(season, parseInt(round), sessionNum, raceDate);
+    const raceRow = await query(
+      `SELECT race_date FROM races WHERE season = $1 AND round = $2 AND race_type = 'main'`,
+      [season, roundNum]
+    );
+    if (raceRow.rows.length === 0) return res.json([]);
 
-    const formattedResults = results.map((r: any, index: number) => ({
-      position: parseInt(r.position) || index + 1,
-      driverNumber: r.number,
-      driverName: `${r.Driver.givenName} ${r.Driver.familyName}`,
-      driverCode: r.Driver.code,
-      team: r.Constructor?.name || 'Unknown',
-      time: r.Time?.time || 'No time',
-      laps: parseInt(r.laps) || 0
-    }));
+    const backfill = await openF1Service.getPracticeResults(season, sessionNum, raceRow.rows[0].race_date);
+    if (backfill.rows.length === 0 || !backfill.rows.some((r) => r.best_time)) return res.json([]);
 
-    res.json(formattedResults);
+    // Only mark it final when the session has really ended — a final row set
+    // can no longer be updated by the live feed.
+    await savePracticeRows(season, roundNum, sessionNum, backfill.rows, backfill.over, 'openf1');
+    res.json(formatPracticeRows(backfill.rows));
   } catch (error) {
     console.error('Get practice results error:', error);
     res.status(500).json({ error: 'Failed to get practice results' });

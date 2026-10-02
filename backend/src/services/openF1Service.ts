@@ -251,3 +251,95 @@ export const getLatestDrivers = async (): Promise<OpenF1Driver[]> => {
     return [];
   }
 };
+
+export interface OpenF1PracticeRow {
+  position: number;
+  driver_number: number;
+  driver_name: string;
+  driver_code: string | null;
+  team: string | null;
+  best_time: string;
+  laps: number;
+}
+
+// Practice sessions of one weekend, looked up by name and by starting 0-4 days
+// before the main race. Unlike findSessionKey this never caches a miss for the
+// life of the process (a session OpenF1 hasn't published yet would otherwise
+// stay "missing" until a restart); misses are remembered for a minute only, and
+// concurrent requests for the same session share one upstream call.
+export interface OpenF1PracticeResult {
+  rows: OpenF1PracticeRow[];
+  // True once the session's scheduled end has passed, so the rows are final.
+  over: boolean;
+}
+
+const practiceCache = new Map<string, { at: number; result: OpenF1PracticeResult }>();
+const practiceInFlight = new Map<string, Promise<OpenF1PracticeResult>>();
+const PRACTICE_MISS_TTL_MS = 60 * 1000;
+
+async function fetchPracticeResults(year: number, sessionNumber: number, raceDate: Date | string): Promise<OpenF1PracticeResult> {
+  const raceMs = new Date(raceDate).getTime();
+  const sessionsRes = await axios.get(`${OPENF1_API_URL}/sessions`, {
+    params: { session_name: `Practice ${sessionNumber}`, year },
+  });
+  const sessions: OpenF1Session[] = sessionsRes.data;
+  const session = sessions
+    .filter((s) => {
+      const lead = raceMs - new Date(s.date_start).getTime();
+      return lead >= 0 && lead <= 4 * 24 * 60 * 60 * 1000;
+    })
+    .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  if (!session) return { rows: [], over: false };
+
+  const [resultsRes, drivers] = await Promise.all([
+    axios.get(`${OPENF1_API_URL}/session_result`, { params: { session_key: session.session_key } }),
+    getDrivers(session.session_key),
+  ]);
+  const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
+
+  // For practice, `duration` is the single best lap in seconds.
+  const raw: any[] = resultsRes.data;
+  const rows = raw
+    .filter((r) => r && typeof r.driver_number === 'number')
+    .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+    .map((r, i) => {
+      const d = driverMap.get(r.driver_number);
+      const seconds = typeof r.duration === 'number' ? r.duration : r.duration?.[0];
+      return {
+        position: i + 1,
+        driver_number: r.driver_number,
+        driver_name: d?.full_name || `Driver #${r.driver_number}`,
+        driver_code: d?.name_acronym || null,
+        team: d?.team_name || null,
+        best_time: secondsToTimeStr(seconds) || '',
+        laps: Number(r.number_of_laps) || 0,
+      };
+    });
+  return { rows, over: new Date(session.date_end).getTime() < Date.now() };
+}
+
+export const getPracticeResults = async (
+  year: number,
+  sessionNumber: number,
+  raceDate: Date | string
+): Promise<OpenF1PracticeResult> => {
+  const key = `${year}:${sessionNumber}:${new Date(raceDate).getTime()}`;
+  const cached = practiceCache.get(key);
+  if (cached && (cached.result.over || Date.now() - cached.at < PRACTICE_MISS_TTL_MS)) return cached.result;
+
+  const pending = practiceInFlight.get(key);
+  if (pending) return pending;
+
+  const request = fetchPracticeResults(year, sessionNumber, raceDate)
+    .catch((error) => {
+      console.error(`Error fetching FP${sessionNumber} results from OpenF1:`, error?.message || error);
+      return { rows: [], over: false } as OpenF1PracticeResult;
+    })
+    .then((result) => {
+      practiceCache.set(key, { at: Date.now(), result });
+      practiceInFlight.delete(key);
+      return result;
+    });
+  practiceInFlight.set(key, request);
+  return request;
+};

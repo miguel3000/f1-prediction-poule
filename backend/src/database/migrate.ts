@@ -94,6 +94,34 @@ const runMigration = async () => {
     await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT FALSE`);
     console.log('reminder_sent column ensured.');
 
+    // Practice session results (FP1/FP2/FP3). Jolpi has no practice endpoint,
+    // so these are captured from the live timing feed (and OpenF1 as backup).
+    // Keyed by season/round/session instead of race_id so the main/sprint rows
+    // of one weekend don't duplicate them. A session's rows are always replaced
+    // as one set; `final` marks a finished session that live writes must not touch.
+    console.log('Checking for practice_results table...');
+    await query(`
+      CREATE TABLE IF NOT EXISTS practice_results (
+        id SERIAL PRIMARY KEY,
+        season INTEGER NOT NULL,
+        round INTEGER NOT NULL,
+        session SMALLINT NOT NULL,
+        position INTEGER NOT NULL,
+        driver_number INTEGER NOT NULL,
+        driver_name VARCHAR(255) NOT NULL,
+        driver_code VARCHAR(10),
+        team VARCHAR(255),
+        best_time VARCHAR(20),
+        laps INTEGER DEFAULT 0,
+        final BOOLEAN NOT NULL DEFAULT FALSE,
+        source VARCHAR(20) NOT NULL DEFAULT 'live',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(season, round, session, driver_number)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_practice_results_lookup ON practice_results(season, round, session)`);
+    console.log('practice_results table ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

@@ -187,9 +187,20 @@ const Stats = () => {
     if (selectedRound !== null) fetchSessionResults();
   }, [selectedRound, selectedSession]);
 
-  const fetchSessionResults = async () => {
+  // While the selected weekend is still in progress, keep the table fresh
+  // without the loading spinner so practice standings update as laps are set.
+  useEffect(() => {
+    const race = races.find(r => r.round === selectedRound && r.race_type === 'main');
+    if (selectedRound === null || race?.status !== 'upcoming') return;
+    const timer = setInterval(() => {
+      if (!document.hidden) fetchSessionResults(true);
+    }, 20000);
+    return () => clearInterval(timer);
+  }, [races, selectedRound, selectedSession]);
+
+  const fetchSessionResults = async (silent = false) => {
     if (selectedRound === null) return;
-    setLoadingSession(true);
+    if (!silent) setLoadingSession(true);
     try {
       let response;
       switch (selectedSession) {
@@ -201,11 +212,12 @@ const Stats = () => {
         case 'sprint': response = await getSprintResultsStats(selectedRound, 2026); break;
         case 'race': default: response = await getRaceResultsStats(selectedRound, 2026); break;
       }
-      setSessionResults(response.data);
+      // A silent refresh must never blank a table that already has rows.
+      if (!silent || response.data.length > 0) setSessionResults(response.data);
     } catch {
-      setSessionResults([]);
+      if (!silent) setSessionResults([]);
     } finally {
-      setLoadingSession(false);
+      if (!silent) setLoadingSession(false);
     }
   };
 
