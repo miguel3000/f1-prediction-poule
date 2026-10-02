@@ -36,6 +36,7 @@ export const getProfile = async (req: Request, res: Response) => {
       total_points: user.total_points,
       is_admin: user.is_admin,
       pitwall_access: user.pitwall_access ?? false,
+      language: user.language ?? null,
       created_at: user.created_at
     });
   } catch (error) {
@@ -48,6 +49,8 @@ export const getProfile = async (req: Request, res: Response) => {
 export const registerWithPassword = async (req: Request, res: Response) => {
   try {
     const { nickname, email, password } = req.body;
+    // Whatever language the visitor was using when they signed up
+    const language = req.body.language === 'en' || req.body.language === 'nl' ? req.body.language : null;
 
     if (!nickname || !email || !password) {
       return res.status(400).json({ error: 'Nickname, email, and password are required' });
@@ -72,8 +75,8 @@ export const registerWithPassword = async (req: Request, res: Response) => {
 
     // Create new user with password
     const result = await query(
-      'INSERT INTO users (nickname, email, password_hash) VALUES ($1, $2, $3) RETURNING *',
-      [nickname, email, passwordHash]
+      'INSERT INTO users (nickname, email, password_hash, language) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nickname, email, passwordHash, language]
     );
 
     const user = result.rows[0];
@@ -95,7 +98,8 @@ export const registerWithPassword = async (req: Request, res: Response) => {
         avatar_url: user.avatar_url,
         total_points: user.total_points,
         is_admin: user.is_admin,
-        pitwall_access: user.pitwall_access ?? false
+        pitwall_access: user.pitwall_access ?? false,
+        language: user.language ?? null
       }
     });
   } catch (error) {
@@ -183,6 +187,28 @@ export const changeNickname = async (req: Request, res: Response) => {
     }
     console.error('Change nickname error:', error);
     res.status(500).json({ error: 'Failed to change username' });
+  }
+};
+
+// Saves the player's preferred site language so it follows them to every device.
+export const changeLanguage = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const language = req.body?.language;
+
+    if (language !== 'en' && language !== 'nl') {
+      return res.status(400).json({ error: 'Language must be en or nl' });
+    }
+
+    const updated = await query('UPDATE users SET language = $1 WHERE id = $2', [language, userId]);
+    if (updated.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ language });
+  } catch (error) {
+    console.error('Change language error:', error);
+    res.status(500).json({ error: 'Failed to save language' });
   }
 };
 
@@ -362,7 +388,8 @@ export const loginWithPassword = async (req: Request, res: Response) => {
         avatar_url: user.avatar_url,
         total_points: user.total_points,
         is_admin: user.is_admin,
-        pitwall_access: user.pitwall_access ?? false
+        pitwall_access: user.pitwall_access ?? false,
+        language: user.language ?? null
       }
     });
   } catch (error) {

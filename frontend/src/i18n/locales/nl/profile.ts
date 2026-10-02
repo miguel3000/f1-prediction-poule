@@ -35,4 +35,7 @@ export const profile: Record<keyof typeof en_profile, string> = {
   'profile.confirmPassword': 'Bevestig je wachtwoord',
   'profile.deleting': 'Verwijderen...',
   'profile.deleteForever': 'Account definitief verwijderen',
+  'profile.language': 'Taal',
+  'profile.languageHint': 'Je keuze wordt in je account bewaard en geldt op elk apparaat waarop je inlogt.',
+  'profile.languageSaved': 'Taal opgeslagen',
 };

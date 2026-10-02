@@ -2,17 +2,19 @@ import { useState, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { useLang } from '../i18n/LanguageContext';
-import { changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, deleteAccount as deleteAccountRequest } from '../services/api';
+import { useLang, Lang } from '../i18n/LanguageContext';
+import { saveLanguage, changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, deleteAccount as deleteAccountRequest } from '../services/api';
 
 const Profile = () => {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { t, tError, locale } = useLang();
+  const { t, tError, locale, lang, setLang } = useLang();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const [languageStatus, setLanguageStatus] = useState<'idle' | 'saved' | 'error'>('idle');
 
   const [showNicknameForm, setShowNicknameForm] = useState(false);
   const [newNickname, setNewNickname] = useState('');
@@ -107,6 +109,17 @@ const Profile = () => {
       }, 1000);
     } catch (err: any) {
       setError(tError(err.response?.data?.error || 'Failed to delete avatar'));
+    }
+  };
+
+  const handleChangeLanguage = async (next: Lang) => {
+    setLang(next);
+    setLanguageStatus('idle');
+    try {
+      await saveLanguage(next);
+      setLanguageStatus('saved');
+    } catch {
+      setLanguageStatus('error');
     }
   };
 
@@ -333,6 +346,31 @@ const Profile = () => {
                     </button>
                   </div>
                 </form>
+              )}
+            </div>
+
+            <div className="bg-f1-neutral-800 p-4">
+              <p className="text-sm text-white mb-2">{t('profile.language')}</p>
+              <div className="grid grid-cols-2 max-w-xs">
+                {([['en', 'English'], ['nl', 'Nederlands']] as [Lang, string][]).map(([code, label]) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => handleChangeLanguage(code)}
+                    aria-pressed={lang === code}
+                    className={`py-2 text-sm font-bold uppercase tracking-wider transition-colors ${
+                      lang === code ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white hover:brightness-125'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-white/60 mt-2">
+                {languageStatus === 'saved' ? t('profile.languageSaved') : t('profile.languageHint')}
+              </p>
+              {languageStatus === 'error' && (
+                <p className="text-xs text-red-400 mt-1">{tError('Failed to save language')}</p>
               )}
             </div>
 

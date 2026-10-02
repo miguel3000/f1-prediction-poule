@@ -33,4 +33,7 @@ export const profile = {
   'profile.confirmPassword': 'Confirm your password',
   'profile.deleting': 'Deleting...',
   'profile.deleteForever': 'Permanently Delete Account',
+  'profile.language': 'Language',
+  'profile.languageHint': 'Your choice is saved to your account and used on every device you log in on.',
+  'profile.languageSaved': 'Language saved',
 };

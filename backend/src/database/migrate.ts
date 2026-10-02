@@ -122,6 +122,12 @@ const runMigration = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_practice_results_lookup ON practice_results(season, round, session)`);
     console.log('practice_results table ensured.');
 
+    // Preferred site language per player ('en' | 'nl'); NULL = not chosen yet,
+    // in which case the browser's language decides.
+    console.log('Checking for language column on users...');
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR(2) CHECK (language IN ('en', 'nl'))`);
+    console.log('language column ensured.');
+
     // Player Pit Wall: the admin grants individual players access, players
     // submit ideas/implementations, the admin approves or declines them.
     console.log('Checking for pitwall_access column and pitwall_ideas table...');

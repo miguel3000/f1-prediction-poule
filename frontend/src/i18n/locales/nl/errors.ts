@@ -62,4 +62,6 @@ export const errors: Record<keyof typeof enErrors, string> = {
   'err.Failed to remove the idea': 'Het idee verwijderen mislukt',
   'err.Idea not found or already reviewed': 'Idee niet gevonden of al beoordeeld',
   'err.Invalid idea id': 'Ongeldig idee',
+  'err.Language must be en or nl': 'De taal moet en of nl zijn',
+  'err.Failed to save language': 'Taal opslaan mislukt',
 };

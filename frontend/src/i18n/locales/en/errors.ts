@@ -62,4 +62,6 @@ export const errors = {
   'err.Failed to remove the idea': 'Failed to remove the idea',
   'err.Idea not found or already reviewed': 'Idea not found or already reviewed',
   'err.Invalid idea id': 'Invalid idea id',
+  'err.Language must be en or nl': 'Language must be en or nl',
+  'err.Failed to save language': 'Failed to save language',
 };

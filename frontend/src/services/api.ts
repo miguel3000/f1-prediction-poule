@@ -21,8 +21,8 @@ api.interceptors.request.use((config) => {
 });
 
 // Auth
-export const registerWithPassword = (nickname: string, email: string, password: string) =>
-  api.post('/api/auth/register-password', { nickname, email, password });
+export const registerWithPassword = (nickname: string, email: string, password: string, language?: string) =>
+  api.post('/api/auth/register-password', { nickname, email, password, language });
 
 export const loginWithPassword = (email: string, password: string) =>
   api.post('/api/auth/login-password', { email, password });
@@ -35,6 +35,9 @@ export const changeEmail = (newEmail: string, password: string) =>
 
 export const changeNickname = (newNickname: string) =>
   api.put('/api/auth/nickname', { newNickname });
+
+export const saveLanguage = (language: 'en' | 'nl') =>
+  api.put('/api/auth/language', { language });
 
 export const forgotPassword = (email: string) =>
   api.post('/api/auth/forgot-password', { email });

@@ -23,9 +23,11 @@ import LiveTiming from './pages/LiveTiming';
 import ResetPassword from './pages/ResetPassword';
 import PitWall from './pages/PitWall';
 import { AuthContext } from './context/AuthContext';
+import { useLang } from './i18n/LanguageContext';
 import { getProfile } from './services/api';
 
 function App() {
+  const { setLang } = useLang();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -41,6 +43,10 @@ function App() {
     try {
       const response = await getProfile();
       setUser(response.data);
+      // A language saved on the account wins over this browser's own choice.
+      if (response.data.language === 'en' || response.data.language === 'nl') {
+        setLang(response.data.language);
+      }
     } catch (error: any) {
       console.error('Failed to fetch user profile:', error);
       const status = error?.response?.status;

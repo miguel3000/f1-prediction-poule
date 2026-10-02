@@ -1,4 +1,5 @@
 import { useLang, Lang } from '../i18n/LanguageContext';
+import { saveLanguage } from '../services/api';
 
 const OPTIONS: Lang[] = ['en', 'nl'];
 
@@ -13,7 +14,12 @@ const LanguageToggle = () => {
         <button
           key={option}
           type="button"
-          onClick={() => setLang(option)}
+          onClick={() => {
+            setLang(option);
+            // Logged-in players keep this choice on every device. A failure just
+            // means it stays a this-browser choice.
+            if (localStorage.getItem('token')) saveLanguage(option).catch(() => undefined);
+          }}
           aria-pressed={lang === option}
           className={`px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
             lang === option ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white hover:brightness-125'

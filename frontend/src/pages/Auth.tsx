@@ -8,7 +8,7 @@ import { useLang } from '../i18n/LanguageContext';
 const Auth = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const { t, tError } = useLang();
+  const { t, tError, lang } = useLang();
 
   const [isRegister, setIsRegister] = useState(false);
   const [isForgot, setIsForgot] = useState(false);
@@ -45,7 +45,7 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        const response = await registerWithPassword(nickname, email, password);
+        const response = await registerWithPassword(nickname, email, password, lang);
         // Auto-login after registration
         login(response.data.token);
         navigate('/');

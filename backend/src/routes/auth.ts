@@ -6,6 +6,7 @@ import {
   loginWithPassword,
   changeEmail,
   changeNickname,
+  changeLanguage,
   forgotPassword,
   resetPassword,
   deleteAccount,
@@ -39,6 +40,7 @@ router.post('/reset-password', resetLimiter, resetPassword);
 router.get('/profile', authenticate, getProfile);
 router.put('/email', authenticate, changeEmail);
 router.put('/nickname', authenticate, changeNickname);
+router.put('/language', authenticate, changeLanguage);
 router.delete('/account', authenticate, deleteAccount);
 
 // Public — reached directly from an email link, not the app
