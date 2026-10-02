@@ -9,6 +9,8 @@ interface Driver {
   team: string;
   nationality?: string;
   total_points: number;
+  wins?: number;
+  podiums?: number;
 }
 
 const DriverStandings = () => {
@@ -179,6 +181,11 @@ const DriverStandings = () => {
                         {driver.name}
                       </h3>
                       <p className="text-xs text-white/70 uppercase tracking-wide truncate">{driver.team}</p>
+                      <p className="text-[10px] text-white/70 uppercase tracking-wider mt-0.5">
+                        {t('ds.wins')} <span className="font-f1-badge text-white">{driver.wins ?? 0}</span>
+                        <span className="mx-2">&middot;</span>
+                        {t('ds.podiums')} <span className="font-f1-badge text-white">{driver.podiums ?? 0}</span>
+                      </p>
                     </div>
 
                     <div className="text-right shrink-0">

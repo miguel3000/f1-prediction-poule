@@ -9,4 +9,6 @@ export const ds: Record<keyof typeof en_ds, string> = {
   'ds.none': 'Nog geen coureursklassement beschikbaar',
   'ds.noneSub': 'Het klassement wordt bijgewerkt na de eerste race',
   'ds.points': 'Punten',
+  'ds.wins': 'Zeges',
+  'ds.podiums': 'Podiums',
 };

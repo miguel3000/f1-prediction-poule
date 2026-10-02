@@ -1,7 +1,34 @@
+import { useState, useEffect } from 'react';
 import { useLang } from '../i18n/LanguageContext';
+import { getDriverStandings, getTeamStandings } from '../services/api';
+import { teamKey, driverKey } from '../utils/teamKey';
+
+interface DriverStat { points: number; wins: number }
+interface TeamStat { points: number; position: number }
 
 const Teams = () => {
   const { t } = useLang();
+  const [driverStats, setDriverStats] = useState<Map<string, DriverStat>>(new Map());
+  const [teamStats, setTeamStats] = useState<Map<string, TeamStat>>(new Map());
+
+  // Live points: per driver from our standings, per team from the official
+  // constructor standings. If either call fails the page just shows the line-up.
+  useEffect(() => {
+    getDriverStandings(2026)
+      .then((res) => {
+        const drivers: any[] = res.data.drivers || res.data;
+        setDriverStats(
+          new Map(drivers.map((d) => [driverKey(d.name), { points: d.total_points, wins: d.wins ?? 0 }]))
+        );
+      })
+      .catch(() => undefined);
+    getTeamStandings(2026)
+      .then((res) => {
+        setTeamStats(new Map((res.data as any[]).map((x) => [teamKey(x.name), { points: x.points, position: x.position }])));
+      })
+      .catch(() => undefined);
+  }, []);
+
   const roleLabel = (role: string) =>
     role === 'Race Driver' ? t('teams.roleRace') : role === 'Reserve Driver' ? t('teams.roleReserve') : role === 'Test Driver' ? t('teams.roleTest') : role;
 
@@ -122,7 +149,7 @@ const Teams = () => {
       ],
     },
     {
-      name: 'Kick Sauber',
+      name: 'Audi',
       color: 'bg-green-500',
       textColor: 'text-green-400',
       borderColor: 'border-green-400/50',
@@ -167,6 +194,10 @@ const Teams = () => {
     },
   ];
 
+  const ranked = teams
+    .map((team) => ({ ...team, stat: teamStats.get(teamKey(team.name)) }))
+    .sort((a, b) => (a.stat?.position ?? 99) - (b.stat?.position ?? 99));
+
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl font-bold mb-2 text-center text-f1-yellow-500">
@@ -177,19 +208,31 @@ const Teams = () => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {teams.map((team) => (
+        {ranked.map((team) => (
           <div
             key={team.name}
             className={`bg-f1-neutral-800 overflow-hidden border ${team.borderColor}`}
           >
             {/* Team Header */}
-            <div className={`${team.color} px-5 py-3 flex items-center justify-between`}>
-              <h2 className="text-xl font-bold text-white">{team.name}</h2>
-              {team.isNew && (
-                <span className="text-xs bg-white/20 px-2 py-1 text-white font-semibold">
-                  {t('teams.new')}
-                </span>
-              )}
+            <div className={`${team.color} px-5 py-3 flex items-center justify-between gap-3`}>
+              <div className="flex items-center gap-3 min-w-0">
+                {team.stat && (
+                  <span className="font-f1-badge font-bold text-white/80">{team.stat.position}</span>
+                )}
+                <h2 className="text-xl font-bold text-white truncate">{team.name}</h2>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {team.isNew && (
+                  <span className="text-xs bg-white/20 px-2 py-1 text-white font-semibold">
+                    {t('teams.new')}
+                  </span>
+                )}
+                {team.stat && (
+                  <span className="font-f1-badge font-bold text-white">
+                    {team.stat.points} {t('teams.pts')}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="p-5">
@@ -213,10 +256,22 @@ const Teams = () => {
                       <span className={`text-2xl font-bold ${team.textColor} w-12 text-center`}>
                         #{driver.number}
                       </span>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-white">{driver.name}</p>
                         <p className="text-xs text-white">{roleLabel(driver.role)}</p>
                       </div>
+                      {driverStats.get(driverKey(driver.name)) && (
+                        <div className="text-right flex-shrink-0">
+                          <p className={`font-bold ${team.textColor}`}>
+                            {driverStats.get(driverKey(driver.name))!.points} {t('teams.pts')}
+                          </p>
+                          {driverStats.get(driverKey(driver.name))!.wins > 0 && (
+                            <p className="text-xs text-white/70">
+                              {driverStats.get(driverKey(driver.name))!.wins} {t('teams.wins')}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

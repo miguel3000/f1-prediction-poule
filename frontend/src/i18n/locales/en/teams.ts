@@ -10,4 +10,6 @@ export const teams = {
   'teams.roleTest': 'Test Driver',
   'teams.note': 'Driver lineup as of January 2026. Subject to change.',
   'teams.sources': 'Sources:',
+  'teams.pts': 'pts',
+  'teams.wins': 'wins',
 };

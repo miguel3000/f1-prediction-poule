@@ -42,8 +42,24 @@ export const getDriverStandings = async (req: Request, res: Response) => {
     const { season } = req.query;
     const seasonYear = season ? parseInt(season as string) : 2026;
 
+    // Wins and podiums come from our own stored grand prix results (sprints
+    // don't count), which matches the official counts.
     const result = await query(
-      'SELECT * FROM drivers WHERE season = $1 ORDER BY total_points DESC, name ASC',
+      `SELECT d.*,
+              COALESCE(s.wins, 0)::int AS wins,
+              COALESCE(s.podiums, 0)::int AS podiums
+       FROM drivers d
+       LEFT JOIN (
+         SELECT rr.driver_id,
+                COUNT(*) FILTER (WHERE rr.position = 1) AS wins,
+                COUNT(*) FILTER (WHERE rr.position <= 3) AS podiums
+         FROM race_results rr
+         JOIN races r ON r.id = rr.race_id
+         WHERE r.race_type = 'main' AND r.season = $1
+         GROUP BY rr.driver_id
+       ) s ON s.driver_id = d.id
+       WHERE d.season = $1
+       ORDER BY d.total_points DESC, d.name ASC`,
       [seasonYear]
     );
 
@@ -62,6 +78,28 @@ export const getDriverStandings = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get driver standings error:', error);
     res.status(500).json({ error: 'Failed to get driver standings' });
+  }
+};
+
+// Official constructor standings (points per team), straight from Jolpi so
+// mid-season driver swaps are counted for the team that actually scored.
+export const getTeamStandings = async (req: Request, res: Response) => {
+  try {
+    const { season } = req.query;
+    const seasonYear = season ? parseInt(season as string) : 2026;
+    const standings = await jolpiService.getConstructorStandings(seasonYear);
+
+    res.json(
+      standings.map((s) => ({
+        position: parseInt(s.position),
+        name: s.Constructor.name,
+        points: parseFloat(s.points),
+        wins: parseInt(s.wins),
+      }))
+    );
+  } catch (error) {
+    console.error('Get team standings error:', error);
+    res.status(500).json({ error: 'Failed to get team standings' });
   }
 };
 

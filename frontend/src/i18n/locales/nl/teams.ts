@@ -12,4 +12,6 @@ export const teams: Record<keyof typeof en_teams, string> = {
   'teams.roleTest': 'Testcoureur',
   'teams.note': 'Coureursopstelling per januari 2026. Wijzigingen voorbehouden.',
   'teams.sources': 'Bronnen:',
+  'teams.pts': 'ptn',
+  'teams.wins': 'zeges',
 };

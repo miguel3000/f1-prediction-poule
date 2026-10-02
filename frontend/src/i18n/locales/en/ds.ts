@@ -7,4 +7,6 @@ export const ds = {
   'ds.none': 'No driver standings available yet',
   'ds.noneSub': 'Standings will be updated after the first race',
   'ds.points': 'Points',
+  'ds.wins': 'Wins',
+  'ds.podiums': 'Podiums',
 };

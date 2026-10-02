@@ -77,6 +77,9 @@ export const getDriver = (id: number) =>
 export const getDriverStandings = (season?: number) =>
   api.get('/api/drivers/standings', { params: { season } });
 
+export const getTeamStandings = (season?: number) =>
+  api.get('/api/drivers/team-standings', { params: { season } });
+
 export const syncDrivers = () =>
   api.post('/api/drivers/sync');
 

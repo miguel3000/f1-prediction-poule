@@ -10,6 +10,7 @@ const JOLPI_API_URL = process.env.JOLPI_API_URL || 'https://api.jolpi.ca/ergast/
 const cacheKey = {
   races: (season: number) => `races:${season}`,
   driverStandings: (season: number) => `standings:${season}`,
+  constructorStandings: (season: number) => `constructor_standings:${season}`,
   raceResults: (season: number, round: number) => `race:${season}:${round}`,
   qualifying: (season: number, round: number) => `quali:${season}:${round}`,
   sprintQualifying: (season: number, round: number) => `sprint_quali:${season}:${round}`,
@@ -97,6 +98,32 @@ export const getDriverStandings = async (season: number = 2026): Promise<JolpiSt
     return standings;
   } catch (error) {
     console.error('Error fetching driver standings from Jolpi:', error);
+    throw error;
+  }
+};
+
+export interface JolpiConstructorStanding {
+  position: string;
+  points: string;
+  wins: string;
+  Constructor: {
+    constructorId: string;
+    name: string;
+  };
+}
+
+export const getConstructorStandings = async (season: number = 2026): Promise<JolpiConstructorStanding[]> => {
+  const key = cacheKey.constructorStandings(season);
+  const cached = f1Cache.get<JolpiConstructorStanding[]>(key);
+  if (cached) return cached;
+
+  try {
+    const response = await axios.get(`${JOLPI_API_URL}/${season}/constructorStandings.json`);
+    const standings = response.data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+    f1Cache.set(key, standings, CACHE_TTL.DRIVER_STANDINGS);
+    return standings;
+  } catch (error) {
+    console.error('Error fetching constructor standings from Jolpi:', error);
     throw error;
   }
 };
