@@ -1,7 +1,7 @@
 export const about = {
   'about.title': 'About Poule Position',
   'about.welcome.title': 'Welcome to Poule Position',
-  'about.welcome.text': 'Poule Position is a fun and competitive Formula 1 prediction game where racing enthusiasts can test their knowledge of the sport by predicting race results and competing against your friends on a season leaderboard.',
+  'about.welcome.text': 'Poule Position is a fun and competitive Formula 1 prediction game where racing enthusiasts can test their knowledge of the sport by predicting race results and competing against their friends on a season leaderboard.',
   'about.what.title': 'What We Do',
   'about.what.intro': 'Our platform allows you to:',
   'about.what.1.label': 'Make Predictions:',

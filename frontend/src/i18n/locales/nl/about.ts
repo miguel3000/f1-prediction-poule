@@ -3,7 +3,7 @@ import type { about as en_about } from '../en/about';
 export const about: Record<keyof typeof en_about, string> = {
   'about.title': 'Over Poule Position',
   'about.welcome.title': 'Welkom bij Poule Position',
-  'about.welcome.text': 'Poule Position is een leuk en competitief voorspelspel voor Formule 1, waarin racefans hun kennis van de sport testen door raceuitslagen te voorspellen en het op te nemen tegen je vrienden in een seizoensklassement.',
+  'about.welcome.text': 'Poule Position is een leuk en competitief voorspelspel voor Formule 1, waarin racefans hun kennis van de sport testen door raceuitslagen te voorspellen en het op te nemen tegen hun vrienden in een seizoensklassement.',
   'about.what.title': 'Wat we doen',
   'about.what.intro': 'Met ons platform kun je:',
   'about.what.1.label': 'Voorspellingen doen:',
