@@ -61,6 +61,7 @@ interface WeatherData {
 }
 
 interface ExtrapolatedClock {
+  Utc?: string;
   Remaining: string;
   Extrapolating: boolean;
 }
@@ -86,6 +87,7 @@ interface LiveTimingData {
 interface Snapshot {
   status: 'connecting' | 'connected' | 'disconnected';
   lastMessageAt: string | null;
+  serverTime?: string;
   isLive: boolean;
   data: LiveTimingData;
 }
@@ -112,29 +114,89 @@ const timeAgo = (iso: string | null) => {
   return `${Math.floor(seconds / 60)}m ago`;
 };
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+const parseHMS = (s: string): number | null => {
+  const m = /^(\d+):(\d{2}):(\d{2})/.exec(s);
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : null;
+};
+
+// The feed only re-sends ExtrapolatedClock when it changes: Remaining is the
+// time left as of Utc, and while Extrapolating the clock is meant to keep
+// running on the client. nowMs is the server-corrected current time.
+const formatRemaining = (clock: ExtrapolatedClock | undefined, nowMs: number): string => {
+  if (!clock?.Remaining) return '—';
+  const base = parseHMS(clock.Remaining);
+  if (base === null) return clock.Remaining;
+  let secs = base;
+  if (clock.Extrapolating && clock.Utc) {
+    // The feed sends 7 fractional digits; trim to 3 so Safari can parse it.
+    const sentAt = Date.parse(clock.Utc.replace(/(\.\d{3})\d+/, '$1'));
+    if (!Number.isNaN(sentAt)) secs = Math.max(0, base - Math.floor((nowMs - sentAt) / 1000));
+  }
+  return `${pad2(Math.floor(secs / 3600))}:${pad2(Math.floor((secs % 3600) / 60))}:${pad2(secs % 60)}`;
+};
+
 const LiveTiming = () => {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [, setTick] = useState(0);
+  const isLiveRef = useRef(false);
+  const backoffRef = useRef(0);
+  // serverTime - device time at the last fetch, so the countdown is right even
+  // when the device clock is off.
+  const skewRef = useRef(0);
 
-  const fetchSnapshot = async () => {
+  const fetchSnapshot = async (manual = false) => {
+    if (manual) setRefreshing(true);
     try {
       const res = await getLiveTiming();
       setSnapshot(res.data);
-    } catch (error) {
+      isLiveRef.current = !!res.data.isLive;
+      backoffRef.current = 0;
+      if (res.data.serverTime) skewRef.current = Date.parse(res.data.serverTime) - Date.now();
+    } catch (error: any) {
       console.error('Failed to fetch live timing:', error);
+      if (error?.response?.status === 429) backoffRef.current = Math.min(backoffRef.current + 1, 4);
     } finally {
       setLoading(false);
+      if (manual) setRefreshing(false);
     }
   };
 
+  // Poll fast while a session is live, slowly otherwise; skip while the tab is
+  // hidden and back off after a 429 so this page can never starve other calls.
   useEffect(() => {
-    fetchSnapshot();
-    pollRef.current = setInterval(fetchSnapshot, 3000);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const loop = async () => {
+      if (!document.hidden) await fetchSnapshot();
+      if (cancelled) return;
+      const base = isLiveRef.current ? 3000 : 15000;
+      timer = setTimeout(loop, base * 2 ** backoffRef.current);
+    };
+    const onVisible = () => {
+      if (!document.hidden) fetchSnapshot();
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    loop();
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      cancelled = true;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
+
+  // Re-render every second only while a running session clock needs it.
+  const needsTick = !!(snapshot?.isLive && snapshot.data.ExtrapolatedClock?.Extrapolating);
+  useEffect(() => {
+    if (!needsTick) return;
+    const t = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [needsTick]);
 
   if (loading) {
     return (
@@ -176,7 +238,7 @@ const LiveTiming = () => {
       value: `${session?.Meeting?.Name || 'Unknown'} — ${session?.Name || ''}`,
     });
     if (trackStatus) infoRows.push({ label: 'Track Status', value: trackStatus.Message });
-    infoRows.push({ label: 'Time Remaining', value: clock?.Remaining || '—' });
+    infoRows.push({ label: 'Time Remaining', value: formatRemaining(clock, Date.now() + skewRef.current) });
     infoRows.push({
       label: 'Location',
       value: session?.Meeting?.Circuit?.ShortName || session?.Meeting?.Location || '—',
@@ -212,6 +274,15 @@ const LiveTiming = () => {
             Updated {timeAgo(snapshot?.lastMessageAt ?? null)}
             {!snapshot?.isLive && ' · No session is live right now — this updates automatically once one goes green.'}
           </p>
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={() => fetchSnapshot(true)}
+              disabled={refreshing}
+              className="btn-f1-primary px-6 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
         </div>
       )}
 

@@ -75,6 +75,8 @@ let ws: WebSocket | null = null;
 export const getLiveTimingSnapshot = () => ({
   status,
   lastMessageAt,
+  // Lets the client correct for a wrong device clock when ticking the countdown.
+  serverTime: new Date().toISOString(),
   // The feed keeps serving the last completed session's full data on
   // subscribe even when nothing is happening (confirmed live: it handed
   // back the prior race in full outside a session) — ArchiveStatus.Status
