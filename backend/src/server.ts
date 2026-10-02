@@ -89,8 +89,30 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// pouleposition.nl is the one address search engines should list. The same app
+// is also reachable on other hostnames (f1.miguelm.nl), which are asked not to
+// be indexed so the two never compete as duplicates. Local development is left alone.
+const CANONICAL_HOST = 'pouleposition.nl';
+app.use((req, res, next) => {
+  const host = req.hostname.toLowerCase();
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+  if (!isLocal && host !== CANONICAL_HOST && host !== `www.${CANONICAL_HOST}`) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
+  next();
+});
+
 // Serve static files from React build (after API routes)
 app.use(express.static(path.join(__dirname, '../frontend')));
+
+// A missing file (robots.txt typo, old asset, bot probing /wp-login.php) should be
+// a real 404 — answering 200 with the app shell makes crawlers index it as a page.
+app.get('*', (req, res, next) => {
+  if (path.extname(req.path)) {
+    return res.status(404).type('text/plain').send('Not found');
+  }
+  next();
+});
 
 // SPA fallback - send all non-API requests to React app
 app.get('*', (req, res) => {

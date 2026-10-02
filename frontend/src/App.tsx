@@ -21,6 +21,7 @@ import Teams from './pages/Teams';
 import News from './pages/News';
 import LiveTiming from './pages/LiveTiming';
 import ResetPassword from './pages/ResetPassword';
+import PageMeta from './components/PageMeta';
 import PitWall from './pages/PitWall';
 import { AuthContext } from './context/AuthContext';
 import { useLang } from './i18n/LanguageContext';
@@ -76,6 +77,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
       <Router>
+        <PageMeta />
         <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: '#121012' }}>
           <Header onMoreToggle={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
           <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />

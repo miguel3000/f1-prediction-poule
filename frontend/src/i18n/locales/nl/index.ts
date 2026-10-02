@@ -15,6 +15,7 @@ import { pw } from './pw';
 import { rules } from './rules';
 import { about } from './about';
 import { privacy } from './privacy';
+import { meta } from './meta';
 
 export const nl: Record<keyof typeof en, string> = {
   ...common,
@@ -33,4 +34,5 @@ export const nl: Record<keyof typeof en, string> = {
   ...rules,
   ...about,
   ...privacy,
+  ...meta,
 };
