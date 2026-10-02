@@ -82,7 +82,7 @@ const PrivacyPolicy = () => {
           <Section title={t('s9.title')}>
             <p className="mb-3">{t('s9.intro')}</p>
             <ul className="list-none ml-4 space-y-1">
-              <li><strong>{t('s9.email')}</strong> noreply@pouleposition.nl</li>
+              <li><strong>{t('s9.email')}</strong> kimi@pouleposition.nl</li>
               <li><strong>{t('s9.website')}</strong> https://pouleposition.nl</li>
             </ul>
           </Section>

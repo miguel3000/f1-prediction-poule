@@ -17,7 +17,7 @@ const Footer = () => {
             <Link to="/rules" className="hover:text-f1-yellow-500 transition-colors">{t('nav.rules')}</Link>
             <Link to="/about" className="hover:text-f1-yellow-500 transition-colors">{t('nav.about')}</Link>
             <Link to="/privacy" className="hover:text-f1-yellow-500 transition-colors">{t('nav.privacyShort')}</Link>
-            <a href="mailto:jameshuntf1prediction@gmail.com" className="hover:text-f1-yellow-500 transition-colors">{t('nav.contact')}</a>
+            <a href="mailto:kimi@pouleposition.nl" className="hover:text-f1-yellow-500 transition-colors">{t('nav.contact')}</a>
           </div>
           <p className="text-center md:text-right max-w-md">
             {t('footer.disclaimer')}

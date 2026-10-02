@@ -97,7 +97,7 @@ const About = () => {
             <h2 className="text-2xl font-bold text-white mb-3">{t('about.contact.title')}</h2>
             <p className="mb-3">{t('about.contact.intro')}</p>
             <ul className="list-none ml-4 space-y-1">
-              <li><strong>{t('about.contact.email')}</strong> <a href="mailto:jameshuntf1prediction@gmail.com" className="text-f1-yellow-500 hover:underline">jameshuntf1prediction@gmail.com</a></li>
+              <li><strong>{t('about.contact.email')}</strong> <a href="mailto:kimi@pouleposition.nl" className="text-f1-yellow-500 hover:underline">kimi@pouleposition.nl</a></li>
               <li><strong>{t('about.contact.website')}</strong> http://localhost:5000</li>
             </ul>
             <p className="mt-3">
