@@ -56,4 +56,5 @@ export const home = {
   'predict.confirm': 'Confirm Prediction',
   'predict.confirmSprint': 'Confirm Sprint Prediction',
   'predict.viewAll': 'View All Predictions',
+  'predict.fpLink': 'Check the practice results first →',
 };

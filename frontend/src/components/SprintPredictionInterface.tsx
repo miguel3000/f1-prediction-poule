@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
@@ -212,9 +212,10 @@ interface SprintPredictionInterfaceProps {
   raceId: number;
   mainRaceId?: number;
   raceDate?: string;
+  round?: number;
 }
 
-const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfaceProps) => {
+const SprintPredictionInterface = ({ raceId, raceDate, round }: SprintPredictionInterfaceProps) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { t, tError } = useLang();
@@ -412,6 +413,16 @@ const SprintPredictionInterface = ({ raceId, raceDate }: SprintPredictionInterfa
         <div className="flex items-center justify-center gap-2 bg-f1-blue text-white py-1.5 px-4 text-xs font-black tracking-widest uppercase mx-auto">
           {t('predict.sprintRace')}
         </div>
+
+        {/* Practice results — handy to check before locking in a pick */}
+        {round !== undefined && (
+          <Link
+            to={`/stats?round=${round}`}
+            className="text-center text-xs font-bold text-f1-yellow-500 uppercase tracking-wider hover:underline"
+          >
+            {t('predict.fpLink')}
+          </Link>
+        )}
 
         {/* Column headers */}
         <div className="grid grid-cols-2 gap-2 px-1">

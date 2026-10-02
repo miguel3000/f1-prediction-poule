@@ -29,7 +29,7 @@ export const rules = {
   'rules.deadlines.2': 'You can modify your predictions as many times as you want before the deadline',
   'rules.deadlines.3': 'Once the deadline passes, predictions are **locked** and cannot be changed',
   'rules.deadlines.4': 'You\'ll receive an email confirmation every time you submit or update predictions',
-  'rules.deadlines.5': 'Forgot to predict? Your last prediction is copied in automatically when the race locks, and we email you what was entered',
+  'rules.deadlines.5': 'Forgot to predict? Your most recent prediction is copied in automatically when the race locks (for a sprint, your latest main-race or sprint pick counts), and we email you what was entered',
   'rules.example.title': 'Example',
   'rules.example.predicted': 'Let\'s say you predicted:',
   'rules.example.more': '... (and 7 more drivers)',
@@ -61,4 +61,6 @@ export const rules = {
   'rules.stages.note': '**Note:** Your leaderboard position may change after the 24-hour final results if disqualifications or penalties are applied.',
   'rules.questions.title': 'Questions?',
   'rules.questions.text': 'If you have any questions about the rules or how the game works, feel free to contact the administrator. Good luck and may the best predictor win! 🏎️',
+  'rules.fair.title': 'Fair Play',
+  'rules.fair.text': 'Predictions lock automatically 1 minute before a race or sprint starts, and that lock is the same for every player. Nothing can be changed after it. If a lock time ever looks wrong, or something else seems off, tell the admin so it can be fixed. We count on everyone playing fair.',
 };

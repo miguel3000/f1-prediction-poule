@@ -37,4 +37,5 @@ export const races: Record<keyof typeof en_races, string> = {
   'mypred.actual': '(werkelijk: {name})',
   'mypred.edit': 'Voorspelling aanpassen',
   'mypred.editSprint': 'Sprintvoorspelling aanpassen',
+  'races.practiceLink': 'Trainingsuitslagen',
 };

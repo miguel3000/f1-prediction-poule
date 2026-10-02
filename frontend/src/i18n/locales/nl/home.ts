@@ -58,4 +58,5 @@ export const home: Record<keyof typeof en_home, string> = {
   'predict.confirm': 'Voorspelling bevestigen',
   'predict.confirmSprint': 'Sprintvoorspelling bevestigen',
   'predict.viewAll': 'Bekijk alle voorspellingen',
+  'predict.fpLink': 'Bekijk eerst de trainingsuitslagen →',
 };

@@ -31,7 +31,7 @@ export const rules: Record<keyof typeof en_rules, string> = {
   'rules.deadlines.2': 'Je kunt je voorspelling zo vaak aanpassen als je wilt vóór de deadline',
   'rules.deadlines.3': 'Zodra de deadline voorbij is, zijn voorspellingen **vergrendeld** en kunnen ze niet meer worden aangepast',
   'rules.deadlines.4': 'Je ontvangt elke keer dat je een voorspelling verstuurt of aanpast een bevestigingsmail',
-  'rules.deadlines.5': 'Vergeten te voorspellen? Je laatste voorspelling wordt automatisch overgenomen zodra de race sluit, en we mailen je wat er is ingevuld',
+  'rules.deadlines.5': 'Vergeten te voorspellen? Je meest recente voorspelling wordt automatisch overgenomen zodra de race sluit (voor een sprint telt je laatste hoofdrace- of sprintvoorspelling), en we mailen je wat er is ingevuld',
   'rules.example.title': 'Voorbeeld',
   'rules.example.predicted': 'Stel dat je dit voorspelde:',
   'rules.example.more': '... (en nog 7 coureurs)',
@@ -63,4 +63,6 @@ export const rules: Record<keyof typeof en_rules, string> = {
   'rules.stages.note': '**Let op:** je positie in het klassement kan veranderen na de definitieve uitslag van 24 uur als er diskwalificaties of straffen worden toegepast.',
   'rules.questions.title': 'Vragen?',
   'rules.questions.text': 'Heb je vragen over de regels of over hoe het spel werkt? Neem gerust contact op met de beheerder. Veel succes en moge de beste voorspeller winnen! 🏎️',
+  'rules.fair.title': 'Fair play',
+  'rules.fair.text': 'Voorspellingen sluiten automatisch 1 minuut voor de start van een race of sprint, en die sluiting is voor elke speler hetzelfde. Daarna kan er niets meer worden aangepast. Lijkt een sluitingstijd ooit niet te kloppen, of valt je iets anders op? Laat het de beheerder weten, dan wordt het opgelost. We rekenen erop dat iedereen eerlijk speelt.',
 };

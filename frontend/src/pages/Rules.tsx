@@ -211,6 +211,11 @@ const Rules = () => {
         </section>
 
         <section className="bg-gray-800 p-6">
+          <h2 className="text-2xl font-bold mb-4 text-f1-yellow-500"><ClockIcon />{t('rules.fair.title')}</h2>
+          <p>{t('rules.fair.text')}</p>
+        </section>
+
+        <section className="bg-gray-800 p-6">
           <h2 className="text-2xl font-bold mb-4 text-f1-yellow-500"><HelpCircleIcon />{t('rules.questions.title')}</h2>
           <p>{t('rules.questions.text')}</p>
         </section>

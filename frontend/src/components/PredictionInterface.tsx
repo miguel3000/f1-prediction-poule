@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
@@ -207,9 +207,9 @@ const RemoveZone = ({ onDrop, children }: RemoveZoneProps) => {
 };
 
 // ── Main component ─────────────────────────────────────────────────────────
-interface PredictionInterfaceProps { raceId: number; raceDate?: string; }
+interface PredictionInterfaceProps { raceId: number; raceDate?: string; round?: number; }
 
-const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => {
+const PredictionInterface = ({ raceId, raceDate, round }: PredictionInterfaceProps) => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const { t, tError } = useLang();
@@ -403,6 +403,16 @@ const PredictionInterface = ({ raceId, raceDate }: PredictionInterfaceProps) => 
       )}
 
       <div className="flex flex-col gap-3">
+
+        {/* Practice results — handy to check before locking in a pick */}
+        {round !== undefined && (
+          <Link
+            to={`/stats?round=${round}`}
+            className="text-center text-xs font-bold text-f1-yellow-500 uppercase tracking-wider hover:underline"
+          >
+            {t('predict.fpLink')}
+          </Link>
+        )}
 
         {/* Column headers */}
         <div className="grid grid-cols-2 gap-2 px-1">

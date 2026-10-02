@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   getCompletedRaces,
   getSeasonStats,
@@ -137,6 +138,7 @@ const StatCard = ({ emoji, title, children, isEmpty }: {
 
 const Stats = () => {
   const { t } = useLang();
+  const [searchParams] = useSearchParams();
   const [races, setRaces] = useState<Race[]>([]);
   const [seasonStats, setSeasonStats] = useState<SeasonStats | null>(null);
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
@@ -163,11 +165,27 @@ const Stats = () => {
 
       const mainRaces = racesRes.data.filter((r: Race) => r.race_type === 'main');
       if (mainRaces.length > 0) {
-        const latest = mainRaces[mainRaces.length - 1];
-        setSelectedRound(latest.round);
-        // Weekend still in progress — land on FP1 instead of the (empty) Race tab
-        if (latest.status === 'upcoming') {
-          setSelectedSession('fp1');
+        // A ?round= link (from the prediction screen or the race overview) wins
+        // over the default of the most recent weekend.
+        const wanted = Number(searchParams.get('round'));
+        const target =
+          mainRaces.find((r: Race) => r.round === wanted) || mainRaces[mainRaces.length - 1];
+        setSelectedRound(target.round);
+
+        // Weekend still in progress — open the newest practice session that
+        // already has results instead of the (empty) Race tab.
+        if (target.status === 'upcoming') {
+          let session: SessionType = 'fp1';
+          const checks = await Promise.all(
+            ([3, 2, 1] as const).map((n) =>
+              getPracticeResults(target.round, n, 2026)
+                .then((res) => res.data.length > 0)
+                .catch(() => false)
+            )
+          );
+          if (checks[0]) session = 'fp3';
+          else if (checks[1]) session = 'fp2';
+          setSelectedSession(session);
         }
       }
     } catch (error) {

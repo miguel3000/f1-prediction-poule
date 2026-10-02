@@ -125,9 +125,9 @@ const Homepage = () => {
 
       <div className="mt-4">
         {hasSprint && activeTab === 'sprint' && sprintRace ? (
-          <SprintPredictionInterface raceId={sprintRace.id} mainRaceId={mainRace?.id} raceDate={sprintRace.race_date} />
+          <SprintPredictionInterface raceId={sprintRace.id} mainRaceId={mainRace?.id} raceDate={sprintRace.race_date} round={sprintRace.round} />
         ) : mainRace ? (
-          <PredictionInterface raceId={mainRace.id} raceDate={mainRace.race_date} />
+          <PredictionInterface raceId={mainRace.id} raceDate={mainRace.race_date} round={mainRace.round} />
         ) : (
           <div className="text-center py-8 text-white">{t('home.noRaceAvailable')}</div>
         )}

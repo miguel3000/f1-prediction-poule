@@ -35,4 +35,5 @@ export const races = {
   'mypred.actual': '(actual: {name})',
   'mypred.edit': 'Edit Prediction',
   'mypred.editSprint': 'Edit Sprint Prediction',
+  'races.practiceLink': 'Practice results',
 };
