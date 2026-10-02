@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { EmailLang, normalizeLang, et } from './emailI18n';
 
 dotenv.config();
 
@@ -14,6 +15,9 @@ const escapeHtml = (text: string): string => {
   };
   return text.replace(/[&<>"']/g, char => htmlEscapes[char]);
 };
+
+// Bold, HTML-safe snippet to drop into a translated sentence's {placeholder}.
+const bold = (text: string): string => `<strong>${escapeHtml(text)}</strong>`;
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -116,10 +120,10 @@ const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: 
 // Shared footer, with an optional one-click unsubscribe link for non-essential
 // (announcement/broadcast) mail — transactional emails like prediction
 // confirmations don't get this, since opting out of those would break the game.
-const emailFooter = (unsubscribeUrl?: string) => `
+const emailFooter = (unsubscribeUrl?: string, lang: EmailLang = 'en') => `
   <p style="color: #666; font-size: 12px; margin-top: 30px;">
     Poule Position &middot; pouleposition.nl
-    ${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe from announcement emails</a>` : ''}
+    ${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color: #999;">${et(lang, 'common.unsubscribe')}</a>` : ''}
   </p>
 `;
 
@@ -129,9 +133,9 @@ const emailFooter = (unsubscribeUrl?: string) => `
 // needs dark-mode treatment when the email doesn't say otherwise; declaring
 // "light" here tells it this email is already themed and shouldn't be
 // reinterpreted.
-const emailDocument = (bodyHtml: string) => `
+const emailDocument = (bodyHtml: string, lang: EmailLang = 'en') => `
   <!DOCTYPE html>
-  <html lang="en" style="margin: 0; padding: 0;">
+  <html lang="${lang}" style="margin: 0; padding: 0;">
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -158,8 +162,10 @@ export const sendPredictionConfirmation = async (
   nickname: string,
   raceName: string,
   predictions: PredictionPickForEmail[],
-  dnfPickName?: string | null
+  dnfPickName?: string | null,
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const rows: UserPredictionResult[] = predictions.map((p, i) => ({
     predictedPosition: i + 1,
     driverName: p.driverName,
@@ -172,26 +178,26 @@ export const sendPredictionConfirmation = async (
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `Prediction Confirmed - ${raceName}`,
+    subject: et(lang, 'predConfirm.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
-      <h2 style="color: ${BRAND_NAVY};">Prediction Confirmed!</h2>
-      <p>Hello ${escapeHtml(nickname)}!</p>
-      <p>Your prediction for <strong>${escapeHtml(raceName)}</strong> has been saved:</p>
-      ${emailPredictionRows(rows)}
-      ${dnfPickName ? `<p>First retirement pick: <strong>${escapeHtml(dnfPickName)}</strong> (+25 pts if correct)</p>` : ''}
+      <h2 style="color: ${BRAND_NAVY};">${et(lang, 'predConfirm.title')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p>${et(lang, 'predConfirm.intro', { race: bold(raceName) })}</p>
+      ${emailPredictionRows(rows, lang)}
+      ${dnfPickName ? `<p>${et(lang, 'predConfirm.dnf', { name: bold(dnfPickName) })}</p>` : ''}
       <p style="margin-top: 20px;">
-        You can update your prediction until 1 minute before the race starts.
+        ${et(lang, 'predConfirm.update')}
       </p>
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        Good luck! 🏎️
+        ${et(lang, 'common.goodLuck')}
       </p>
-    `),
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Prediction confirmation email sent to:', email);
+    console.log('Prediction confirmation email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending prediction confirmation:', error);
   }
@@ -219,7 +225,7 @@ export interface UserPredictionResult {
 // banners) since this is a stack of colored rows, not one bar. Blue/navy are
 // both medium-to-low luminance, so unlike the broadcast yellow they don't
 // need the background-image workaround — confirmed live during that fix.
-const emailPredictionRows = (rows: UserPredictionResult[]) => {
+const emailPredictionRows = (rows: UserPredictionResult[], lang: EmailLang = 'en') => {
   const hasResults = rows.some((r) => r.actualPosition !== undefined);
 
   return `
@@ -230,7 +236,7 @@ const emailPredictionRows = (rows: UserPredictionResult[]) => {
           const resultCell = hasResults
             ? `
               <td bgcolor="${bg}" align="right" style="background-color: ${bg}; padding: 10px 14px 10px 8px; white-space: nowrap; vertical-align: top;">
-                <div style="color: rgba(255,255,255,0.8); font-size: 12px;">${r.actualPosition ? `&rarr; P${r.actualPosition}` : '&rarr; DNF'}</div>
+                <div style="color: rgba(255,255,255,0.8); font-size: 12px;">${r.actualPosition ? `&rarr; P${r.actualPosition}` : `&rarr; ${et(lang, 'common.dnf')}`}</div>
                 <div style="font-weight: 800; font-size: 14px; color: ${r.pointsEarned > 0 ? BRAND_YELLOW : 'rgba(255,255,255,0.6)'};">
                   ${r.pointsEarned > 0 ? `+${r.pointsEarned}${r.hasBonus ? ' &#9733;' : ''}` : '0'}
                 </div>
@@ -259,26 +265,28 @@ export const sendProvisionalResults = async (
   raceName: string,
   raceResults: RaceResultForEmail[],
   userPrediction: UserPredictionResult[],
-  totalPoints: number
+  totalPoints: number,
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const top10Results = raceResults.slice(0, 10);
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `Race Results - ${raceName} (Provisional)`,
+    subject: et(lang, 'provisional.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
-      <h2 style="color: ${BRAND_NAVY};">Provisional Race Results</h2>
-      <p>Hello ${escapeHtml(nickname)}!</p>
-      <p>The <strong>${escapeHtml(raceName)}</strong> has finished! Here are the provisional results:</p>
+      <h2 style="color: ${BRAND_NAVY};">${et(lang, 'provisional.title')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p>${et(lang, 'provisional.intro', { race: bold(raceName) })}</p>
 
-      <h3 style="color: #333; margin-top: 20px;">Race Results (Top 10)</h3>
+      <h3 style="color: #333; margin-top: 20px;">${et(lang, 'provisional.top10')}</h3>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr style="background-color: ${BRAND_NAVY}; color: white;">
-          <th style="padding: 8px; text-align: left;">Pos</th>
-          <th style="padding: 8px; text-align: left;">Driver</th>
-          <th style="padding: 8px; text-align: right;">Points</th>
+          <th style="padding: 8px; text-align: left;">${et(lang, 'provisional.pos')}</th>
+          <th style="padding: 8px; text-align: left;">${et(lang, 'provisional.driver')}</th>
+          <th style="padding: 8px; text-align: right;">${et(lang, 'provisional.points')}</th>
         </tr>
         ${top10Results.map((r, i) => `
           <tr style="background-color: ${i % 2 === 0 ? '#f9f9f9' : '#fff'};">
@@ -289,23 +297,22 @@ export const sendProvisionalResults = async (
         `).join('')}
       </table>
 
-      <h3 style="color: #333;">Your Prediction Results</h3>
-      ${emailPredictionRows(userPrediction)}
+      <h3 style="color: #333;">${et(lang, 'provisional.yourResults')}</h3>
+      ${emailPredictionRows(userPrediction, lang)}
 
       <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; text-align: center;">
-        <strong>Your Total Points: ${totalPoints}</strong>
+        <strong>${et(lang, 'provisional.total', { points: totalPoints })}</strong>
       </div>
 
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        Note: These are provisional results. Final points will be calculated 24 hours after the race
-        to account for any disqualifications or penalties.
+        ${et(lang, 'provisional.note')}
       </p>
-    `),
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Provisional results email sent to:', email);
+    console.log('Provisional results email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending provisional results email:', error);
   }
@@ -318,54 +325,56 @@ export const sendFinalResults = async (
   totalPoints: number,
   hasChanges: boolean,
   previousPoints?: number,
-  userPrediction?: UserPredictionResult[]
+  userPrediction?: UserPredictionResult[],
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const changesSection = hasChanges && previousPoints !== undefined
     ? `
       <div style="background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-        <strong>Results Updated!</strong><br>
-        Due to post-race penalties/disqualifications, your points have changed:<br>
-        Previous: ${previousPoints} points → Final: ${totalPoints} points
+        <strong>${et(lang, 'final.updatedTitle')}</strong><br>
+        ${et(lang, 'final.updatedText')}<br>
+        ${et(lang, 'final.updatedChange', { previous: previousPoints, final: totalPoints })}
       </div>
     `
     : '';
 
   const predictionTable = userPrediction && userPrediction.length > 0
     ? `
-      <h3 style="color: #333;">Your Prediction Results</h3>
-      ${emailPredictionRows(userPrediction)}
+      <h3 style="color: #333;">${et(lang, 'final.yourResults')}</h3>
+      ${emailPredictionRows(userPrediction, lang)}
     `
     : '';
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `Final Results - ${raceName}`,
+    subject: et(lang, 'final.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
-      <h2 style="color: ${BRAND_NAVY};">Final Race Results Confirmed</h2>
-      <p>Hello ${escapeHtml(nickname)}!</p>
-      <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been confirmed.</p>
+      <h2 style="color: ${BRAND_NAVY};">${et(lang, 'final.title')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p>${et(lang, 'final.intro', { race: bold(raceName) })}</p>
 
       ${changesSection}
 
       ${predictionTable}
 
       <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; text-align: center;">
-        <strong>Your Final Points: ${totalPoints}</strong>
+        <strong>${et(lang, 'final.total', { points: totalPoints })}</strong>
       </div>
 
-      ${emailBanner('View Leaderboard', { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
+      ${emailBanner(et(lang, 'common.viewLeaderboard'), { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
 
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        See you at the next race! 🏎️
+        ${et(lang, 'common.seeYou')}
       </p>
-    `),
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Final results email sent to:', email);
+    console.log('Final results email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending final results email:', error);
   }
@@ -375,27 +384,29 @@ export const sendRaceReminder = async (
   email: string,
   nickname: string,
   raceName: string,
-  raceDate: Date
+  raceDate: Date,
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `Reminder: ${raceName} - Submit Your Prediction!`,
+    subject: et(lang, 'raceReminder.subject', { race: raceName }),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${emailHeader}
-        <h2 style="color: ${BRAND_NAVY};">Race Day Reminder!</h2>
-        <p>Hello ${escapeHtml(nickname)}!</p>
-        <p><strong>${escapeHtml(raceName)}</strong> is coming up on ${raceDate.toLocaleDateString()}!</p>
-        <p>Don't forget to submit your prediction before the race starts.</p>
+        <h2 style="color: ${BRAND_NAVY};">${et(lang, 'raceReminder.title')}</h2>
+        <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+        <p>${et(lang, 'raceReminder.text', { race: bold(raceName), date: lang === 'nl' ? raceDate.toLocaleDateString('nl-NL') : raceDate.toLocaleDateString() })}</p>
+        <p>${et(lang, 'raceReminder.dont')}</p>
         <a href="${process.env.FRONTEND_URL}"
            style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
                   padding: 12px 24px; text-decoration: none; border-radius: 5px;
                   margin: 20px 0;">
-          Submit Prediction
+          ${et(lang, 'common.submitPrediction')}
         </a>
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          Good luck! 🏎️
+          ${et(lang, 'common.goodLuck')}
         </p>
       </div>
     `,
@@ -403,7 +414,7 @@ export const sendRaceReminder = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Race reminder email sent to:', email);
+    console.log('Race reminder email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending race reminder:', error);
   }
@@ -416,35 +427,35 @@ export const sendMissedPredictionReminder = async (
   email: string,
   nickname: string,
   raceName: string,
-  isSprint: boolean
+  isSprint: boolean,
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `1 Hour Left — Submit Your Prediction for ${raceName}!`,
+    subject: et(lang, 'missed.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
-      ${emailBanner('1 Hour To Lights Out', { bg: BRAND_YELLOW })}
-      <h2 style="color: ${BRAND_NAVY};">Don't Miss Out!</h2>
-      <p>Hello ${escapeHtml(nickname)}!</p>
+      ${emailBanner(et(lang, 'missed.banner'), { bg: BRAND_YELLOW })}
+      <h2 style="color: ${BRAND_NAVY};">${et(lang, 'missed.title')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p>
-        You haven't submitted a ${isSprint ? 'sprint' : ''} prediction yet for
-        <strong>${escapeHtml(raceName)}</strong>, and it locks in about 1 hour.
+        ${et(lang, isSprint ? 'missed.bodySprint' : 'missed.bodyRace', { race: bold(raceName) })}
       </p>
       <p>
-        If you don't submit in time, your last prediction will be copied in
-        automatically — so get your own picks in while you still can!
+        ${et(lang, 'missed.fallback')}
       </p>
-      ${emailBanner('Submit Prediction', { url: process.env.FRONTEND_URL!, bg: BRAND_NAVY, color: '#ffffff' })}
+      ${emailBanner(et(lang, 'common.submitPrediction'), { url: process.env.FRONTEND_URL!, bg: BRAND_NAVY, color: '#ffffff' })}
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        Good luck! 🏎️
+        ${et(lang, 'common.goodLuck')}
       </p>
-    `),
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Missed-prediction reminder email sent to:', email);
+    console.log('Missed-prediction reminder email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending missed-prediction reminder:', error);
   }
@@ -452,32 +463,31 @@ export const sendMissedPredictionReminder = async (
 
 // Password reset link. Transactional, so no unsubscribe link. Deliberately
 // never logs the URL — it contains the reset token.
-export const sendPasswordReset = async (email: string, nickname: string, resetUrl: string) => {
+export const sendPasswordReset = async (email: string, nickname: string, resetUrl: string, language?: string | null) => {
+  const lang = normalizeLang(language);
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: 'Reset your Poule Position password',
+    subject: et(lang, 'reset.subject'),
     html: emailDocument(`
       ${emailHeader}
-      ${emailBanner('Reset Your Password', { url: resetUrl, bg: BRAND_NAVY, color: '#ffffff' })}
-      <p>Hello ${escapeHtml(nickname)}!</p>
+      ${emailBanner(et(lang, 'reset.banner'), { url: resetUrl, bg: BRAND_NAVY, color: '#ffffff' })}
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p>
-        Someone asked to reset the password for your Poule Position account.
-        Use the button above to choose a new one. The link works for 1 hour and
-        only once.
+        ${et(lang, 'reset.intro')}
       </p>
       <p style="color: #666; font-size: 12px; word-break: break-all;">
-        Button not working? Paste this link into your browser:<br />
+        ${et(lang, 'reset.fallback')}<br />
         <a href="${escapeHtml(resetUrl)}" style="color: #666;">${escapeHtml(resetUrl)}</a>
       </p>
-      <p>If you didn't ask for this, you can ignore this email. Your password stays the same.</p>
-      ${emailFooter()}
-    `),
+      <p>${et(lang, 'reset.ignore')}</p>
+      ${emailFooter(undefined, lang)}
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent to:', email);
+    console.log('Password reset email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending password reset email:', error);
   }
@@ -490,8 +500,10 @@ export const sendAutoFillNotice = async (
   email: string,
   nickname: string,
   raceName: string,
-  predictions: PredictionPickForEmail[]
+  predictions: PredictionPickForEmail[],
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const rows: UserPredictionResult[] = predictions.map((p, i) => ({
     predictedPosition: i + 1,
     driverName: p.driverName,
@@ -504,31 +516,28 @@ export const sendAutoFillNotice = async (
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `We Filled In Your Prediction - ${raceName}`,
+    subject: et(lang, 'autofill.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
-      ${emailBanner('Prediction Auto-Filled', { bg: BRAND_YELLOW })}
-      <h2 style="color: ${BRAND_NAVY};">You Didn't Predict In Time</h2>
-      <p>Hello ${escapeHtml(nickname)}!</p>
+      ${emailBanner(et(lang, 'autofill.banner'), { bg: BRAND_YELLOW })}
+      <h2 style="color: ${BRAND_NAVY};">${et(lang, 'autofill.title')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p>
-        <strong>${escapeHtml(raceName)}</strong> locked before you submitted a
-        prediction, so we copied in your picks from your last race to keep you
-        in the game:
+        ${et(lang, 'autofill.intro', { race: bold(raceName) })}
       </p>
-      ${emailPredictionRows(rows)}
+      ${emailPredictionRows(rows, lang)}
       <p style="margin-top: 20px;">
-        Nothing to do now — this prediction is locked in for this race. Don't
-        forget to submit your own next time!
+        ${et(lang, 'autofill.nothing')}
       </p>
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        Good luck! 🏎️
+        ${et(lang, 'common.goodLuck')}
       </p>
-    `),
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Auto-fill notice email sent to:', email);
+    console.log('Auto-fill notice email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending auto-fill notice:', error);
   }
@@ -538,29 +547,31 @@ export const sendAutoFillNotice = async (
 export const sendResultsAreInEmail = async (
   email: string,
   nickname: string,
-  raceName: string
+  raceName: string,
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   const leaderboardUrl = `${process.env.FRONTEND_URL}/leaderboard`;
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `The results are in! - ${raceName}`,
+    subject: et(lang, 'resultsIn.subject', { race: raceName }),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${emailHeader}
-        <h2 style="color: ${BRAND_NAVY};">The results are in!</h2>
-        <p>Hello ${escapeHtml(nickname)}!</p>
-        <p>The final results for <strong>${escapeHtml(raceName)}</strong> have been processed and the leaderboard has been updated.</p>
-        <p>Check out where you stand!</p>
+        <h2 style="color: ${BRAND_NAVY};">${et(lang, 'resultsIn.title')}</h2>
+        <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+        <p>${et(lang, 'resultsIn.text', { race: bold(raceName) })}</p>
+        <p>${et(lang, 'resultsIn.check')}</p>
         <a href="${leaderboardUrl}"
            style="display: inline-block; background-color: ${BRAND_NAVY}; color: white;
                   padding: 12px 24px; text-decoration: none; border-radius: 5px;
                   margin: 20px 0;">
-          View Leaderboard
+          ${et(lang, 'common.viewLeaderboard')}
         </a>
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          See you at the next race! 🏎️
+          ${et(lang, 'common.seeYou')}
         </p>
       </div>
     `,
@@ -568,7 +579,7 @@ export const sendResultsAreInEmail = async (
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Results-are-in email sent to:', email);
+    console.log('Results-are-in email sent to:', email, `[${lang}]`);
   } catch (error) {
     console.error('Error sending results-are-in email to', email, ':', error);
   }
@@ -588,11 +599,12 @@ export const sendPersonalRaceResults = async (
   predictions: PersonalPredictionPosition[],
   actuals: PersonalPredictionPosition[],
   pointsEarned: number,
-  totalSeasonPoints: number
+  totalSeasonPoints: number,
+  language?: string | null
 ): Promise<boolean> => {
+  const lang = normalizeLang(language);
   const isSprint = raceType === 'sprint';
   const accentColor = isSprint ? BRAND_BLUE : BRAND_NAVY;
-  const label = isSprint ? 'Sprint Race' : 'Race';
 
   const mainPointsMap: { [key: number]: number } = { 1:25, 2:18, 3:15, 4:12, 5:10, 6:8, 7:6, 8:4, 9:2, 10:1 };
   const sprintPointsMap: { [key: number]: number } = { 1:8, 2:7, 3:6, 4:5, 5:4, 6:3, 7:2, 8:1 };
@@ -620,34 +632,34 @@ export const sendPersonalRaceResults = async (
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `Your ${label} Predictions — ${raceName}`,
+    subject: et(lang, isSprint ? 'personal.subjectSprint' : 'personal.subjectRace', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
-      <h2 style="color:${accentColor};">Your ${escapeHtml(label)} Predictions</h2>
-      <p>Hello ${escapeHtml(nickname)}!</p>
-      <p>Here's how your prediction for <strong>${escapeHtml(raceName)}</strong> compared to the actual result:</p>
+      <h2 style="color:${accentColor};">${et(lang, isSprint ? 'personal.titleSprint' : 'personal.titleRace')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p>${et(lang, 'personal.intro', { race: bold(raceName) })}</p>
 
-      ${emailPredictionRows(predictionRows)}
+      ${emailPredictionRows(predictionRows, lang)}
 
-      <p style="font-size:12px;color:#555;margin-bottom:20px;">A gold points value means an exact match; a ★ means a near miss (±1 position, half points).</p>
+      <p style="font-size:12px;color:#555;margin-bottom:20px;">${et(lang, 'personal.legend')}</p>
 
       <div style="background-color:${accentColor};color:white;padding:15px;text-align:center;margin-bottom:16px;">
-        <strong>Points earned this race: ${pointsEarned}</strong>
+        <strong>${et(lang, 'personal.earned', { points: pointsEarned })}</strong>
       </div>
 
       <div style="background-color:#333;color:white;padding:12px;text-align:center;margin-bottom:24px;">
-        Season total: <strong>${totalSeasonPoints}</strong> pts
+        ${et(lang, 'personal.season', { points: `<strong>${totalSeasonPoints}</strong>` })}
       </div>
 
-      ${emailBanner('View Leaderboard', { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
+      ${emailBanner(et(lang, 'common.viewLeaderboard'), { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
 
-      <p style="color:#666;font-size:12px;margin-top:30px;">See you at the next race! 🏎️</p>
-    `),
+      <p style="color:#666;font-size:12px;margin-top:30px;">${et(lang, 'common.seeYou')}</p>
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Personal race results email sent to:', email);
+    console.log('Personal race results email sent to:', email, `[${lang}]`);
     return true;
   } catch (error) {
     console.error('Error sending personal race results email to', email, ':', error);
@@ -661,30 +673,32 @@ export const sendBroadcastEmail = async (
   nickname: string,
   subject: string,
   message: string,
-  unsubscribeUrl?: string
+  unsubscribeUrl?: string,
+  language?: string | null
 ) => {
+  const lang = normalizeLang(language);
   // Convert newlines to <br> for HTML
   const htmlMessage = escapeHtml(message).replace(/\n/g, '<br>');
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: email,
-    subject: `Poule Position - ${subject}`,
+    subject: et(lang, 'broadcast.subject', { subject }),
     html: emailDocument(`
       ${emailHeader}
       ${emailBanner(subject, { bg: BRAND_BLUE, color: '#ffffff' })}
-      <p>Hello ${escapeHtml(nickname)}!</p>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <div style="background-color: #f5f5f5; padding: 20px; margin: 20px 0;">
         ${htmlMessage}
       </div>
-      ${emailBanner('Visit Poule Position', { url: process.env.FRONTEND_URL! })}
-      ${emailFooter(unsubscribeUrl)}
-    `),
+      ${emailBanner(et(lang, 'common.visit'), { url: process.env.FRONTEND_URL! })}
+      ${emailFooter(unsubscribeUrl, lang)}
+    `, lang),
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Broadcast email sent to:', email);
+    console.log('Broadcast email sent to:', email, `[${lang}]`);
     return true;
   } catch (error) {
     console.error('Error sending broadcast email to', email, ':', error);

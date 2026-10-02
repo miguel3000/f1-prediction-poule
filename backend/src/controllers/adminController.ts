@@ -671,7 +671,7 @@ export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
     }
 
     // Get all users who haven't opted out of announcement emails
-    const usersResult = await query('SELECT id, email, nickname FROM users WHERE email_opt_out = FALSE ORDER BY nickname');
+    const usersResult = await query('SELECT id, email, nickname, language FROM users WHERE email_opt_out = FALSE ORDER BY nickname');
     const users = usersResult.rows;
 
     if (users.length === 0) {
@@ -686,7 +686,7 @@ export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
     for (const user of users) {
       const unsubscribeToken = jwt.sign({ userId: user.id, purpose: 'unsubscribe' }, process.env.JWT_SECRET!);
       const unsubscribeUrl = `${process.env.FRONTEND_URL}/api/auth/unsubscribe?token=${unsubscribeToken}`;
-      const success = await sendBroadcastEmail(user.email, user.nickname, subject, message, unsubscribeUrl);
+      const success = await sendBroadcastEmail(user.email, user.nickname, subject, message, unsubscribeUrl, user.language);
       if (success) {
         successCount++;
       } else {
@@ -747,7 +747,7 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
     // Get all users with predictions for this race
     const posColumns = Array.from({ length: maxPositions }, (_, i) => `p.position_${i + 1}`).join(', ');
     const predictionsResult = await query(
-      `SELECT u.email, u.nickname, u.total_points, p.points_earned, ${posColumns}
+      `SELECT u.email, u.nickname, u.language, u.total_points, p.points_earned, ${posColumns}
        FROM ${predictionsTable} p
        JOIN users u ON p.user_id = u.id
        WHERE p.race_id = $1`,
@@ -799,7 +799,8 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
         predictions,
         actuals,
         pred.points_earned || 0,
-        pred.total_points
+        pred.total_points,
+        pred.language
       );
 
       if (ok) successCount++; else failCount++;

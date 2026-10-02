@@ -71,11 +71,11 @@ export const submitSprintPrediction = async (req: Request, res: Response) => {
       .map((d: any) => ({ driverName: d.name, team: d.team }));
 
     // Get user info
-    const userResult = await query('SELECT nickname, email FROM users WHERE id = $1', [userId]);
+    const userResult = await query('SELECT nickname, email, language FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
     // Send confirmation email
-    await sendPredictionConfirmation(user.email, user.nickname, `${race.race_name} (Sprint)`, driverPicks);
+    await sendPredictionConfirmation(user.email, user.nickname, `${race.race_name} (Sprint)`, driverPicks, undefined, user.language);
 
     res.json({ message: 'Sprint prediction submitted successfully', raceId, positions });
   } catch (error) {

@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { query } from '../config/database';
 import { sendPasswordReset } from '../services/emailService';
+import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
 
 const SALT_ROUNDS = 10;
 
@@ -225,7 +226,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
   try {
     const result = await query(
-      'SELECT id, nickname, email, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, nickname, email, password_hash, language FROM users WHERE LOWER(email) = LOWER($1)',
       [email]
     );
     if (result.rows.length === 0) return;
@@ -241,7 +242,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       { expiresIn: '1h' }
     );
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(token)}`;
-    await sendPasswordReset(user.email, user.nickname, resetUrl);
+    await sendPasswordReset(user.email, user.nickname, resetUrl, user.language);
   } catch (error: any) {
     // Never log the token or the link.
     console.error('Forgot password error:', error?.message || error);
@@ -400,14 +401,14 @@ export const loginWithPassword = async (req: Request, res: Response) => {
 
 // Simple standalone confirmation page — this is opened directly from an
 // email link, not the app, so it can't rely on the React frontend.
-const unsubscribePage = (message: string, ok: boolean) => `
+const unsubscribePage = (lang: EmailLang, messageKey: EmailKey, ok: boolean) => `
   <!DOCTYPE html>
-  <html>
+  <html lang="${lang}">
     <head><meta charset="utf-8" /><title>Poule Position</title></head>
     <body style="font-family: Arial, sans-serif; background: #121012; color: #fff; margin: 0; padding: 60px 20px; text-align: center;">
       <h1 style="color: #FFD81A; margin-bottom: 16px;">Poule Position</h1>
-      <p style="font-size: 16px; max-width: 420px; margin: 0 auto;">${message}</p>
-      ${ok ? `<p style="margin-top: 24px;"><a href="${process.env.FRONTEND_URL}" style="color: #2596C7;">Back to Poule Position</a></p>` : ''}
+      <p style="font-size: 16px; max-width: 420px; margin: 0 auto;">${et(lang, messageKey)}</p>
+      ${ok ? `<p style="margin-top: 24px;"><a href="${process.env.FRONTEND_URL}" style="color: #2596C7;">${et(lang, 'unsub.back')}</a></p>` : ''}
     </body>
   </html>
 `;
@@ -416,27 +417,31 @@ const unsubscribePage = (message: string, ok: boolean) => `
 // directly from a mail client, so it's a public GET with no auth header,
 // gated only by the signed token embedded in the link.
 export const unsubscribe = async (req: Request, res: Response) => {
+  // Until we know who this is, go by the browser's language.
+  const requestLang: EmailLang = req.acceptsLanguages('nl', 'en') === 'nl' ? 'nl' : 'en';
   try {
     const { token } = req.query;
     if (!token || typeof token !== 'string') {
-      return res.status(400).send(unsubscribePage('This unsubscribe link is invalid.', false));
+      return res.status(400).send(unsubscribePage(requestLang, 'unsub.invalid', false));
     }
 
     let payload: any;
     try {
       payload = jwt.verify(token, process.env.JWT_SECRET!);
     } catch {
-      return res.status(400).send(unsubscribePage('This unsubscribe link is invalid or has expired.', false));
+      return res.status(400).send(unsubscribePage(requestLang, 'unsub.expired', false));
     }
 
     if (payload.purpose !== 'unsubscribe' || !payload.userId) {
-      return res.status(400).send(unsubscribePage('This unsubscribe link is invalid.', false));
+      return res.status(400).send(unsubscribePage(requestLang, 'unsub.invalid', false));
     }
 
-    await query('UPDATE users SET email_opt_out = TRUE WHERE id = $1', [payload.userId]);
-    res.send(unsubscribePage("You've been unsubscribed from Poule Position announcement emails. You'll still get emails about your own predictions and results.", true));
+    const updated = await query('UPDATE users SET email_opt_out = TRUE WHERE id = $1 RETURNING language', [payload.userId]);
+    // The player's saved language wins once we know who they are.
+    const lang = updated.rows[0]?.language ? normalizeLang(updated.rows[0].language) : requestLang;
+    res.send(unsubscribePage(lang, 'unsub.done', true));
   } catch (error) {
     console.error('Unsubscribe error:', error);
-    res.status(500).send(unsubscribePage('Something went wrong. Please try again later.', false));
+    res.status(500).send(unsubscribePage(requestLang, 'unsub.error', false));
   }
 };

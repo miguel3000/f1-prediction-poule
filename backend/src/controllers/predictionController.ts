@@ -76,11 +76,11 @@ export const submitPrediction = async (req: Request, res: Response) => {
     const dnfPickName = dnfPickId != null ? driverMap.get(dnfPickId)?.name ?? null : null;
 
     // Get user info
-    const userResult = await query('SELECT nickname, email FROM users WHERE id = $1', [userId]);
+    const userResult = await query('SELECT nickname, email, language FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
     // Send confirmation email
-    await sendPredictionConfirmation(user.email, user.nickname, race.race_name, driverPicks, dnfPickName);
+    await sendPredictionConfirmation(user.email, user.nickname, race.race_name, driverPicks, dnfPickName, user.language);
 
     res.json({ message: 'Prediction submitted successfully', raceId, positions });
   } catch (error) {

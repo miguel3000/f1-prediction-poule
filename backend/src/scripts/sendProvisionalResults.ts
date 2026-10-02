@@ -112,7 +112,7 @@ async function processProvisionalResults() {
 
         // Get all predictions for this race with user info (now including points_earned)
         const predictionsResult = await query(
-          `SELECT p.*, u.email, u.nickname
+          `SELECT p.*, u.email, u.nickname, u.language
            FROM ${predictionTable} p
            JOIN users u ON p.user_id = u.id
            WHERE p.race_id = $1`,
@@ -178,7 +178,8 @@ async function processProvisionalResults() {
               race.race_name,
               raceResultsForEmail,
               userPredictionResults,
-              prediction.points_earned
+              prediction.points_earned,
+              prediction.language
             );
 
           } catch (emailError) {

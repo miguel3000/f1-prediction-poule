@@ -42,7 +42,7 @@ async function copyMissingPredictions() {
       // sprint, an earlier main-race prediction counts too (its top 8 is used),
       // so a player who has never predicted a sprint still gets covered.
       const usersWithoutPrediction = await query(
-        `SELECT DISTINCT u.id, u.nickname, u.email
+        `SELECT DISTINCT u.id, u.nickname, u.email, u.language
          FROM users u
          WHERE (
            EXISTS (SELECT 1 FROM ${predictionTable} p2 WHERE p2.user_id = u.id)
@@ -133,7 +133,7 @@ async function copyMissingPredictions() {
         }));
 
         try {
-          await sendAutoFillNotice(user.email, user.nickname, race.race_name, copiedPicks);
+          await sendAutoFillNotice(user.email, user.nickname, race.race_name, copiedPicks, user.language);
         } catch (emailError) {
           console.error(`[CRON] Error sending auto-fill notice to ${user.email}:`, emailError);
         }

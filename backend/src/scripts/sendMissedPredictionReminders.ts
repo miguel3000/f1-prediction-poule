@@ -39,7 +39,7 @@ async function sendMissedPredictionReminders() {
       console.log(`[CRON] Checking missing ${isSprint ? 'sprint ' : ''}predictions for ${race.race_name} (Round ${race.round})...`);
 
       const usersWithoutPrediction = await query(
-        `SELECT u.id, u.nickname, u.email
+        `SELECT u.id, u.nickname, u.email, u.language
          FROM users u
          WHERE NOT EXISTS (
            SELECT 1 FROM ${predictionTable} p WHERE p.user_id = u.id AND p.race_id = $1
@@ -51,7 +51,7 @@ async function sendMissedPredictionReminders() {
 
       for (const user of usersWithoutPrediction.rows) {
         try {
-          await sendMissedPredictionReminder(user.email, user.nickname, race.race_name, isSprint);
+          await sendMissedPredictionReminder(user.email, user.nickname, race.race_name, isSprint, user.language);
         } catch (emailError) {
           console.error(`[CRON] Error sending missed-prediction reminder to ${user.email}:`, emailError);
         }

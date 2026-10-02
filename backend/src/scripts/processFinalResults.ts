@@ -106,7 +106,7 @@ async function processFinalResults() {
           : { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
 
         const newPredictions = await query(
-          `SELECT p.*, u.email, u.nickname
+          `SELECT p.*, u.email, u.nickname, u.language
            FROM ${predictionTable} p
            JOIN users u ON p.user_id = u.id
            WHERE p.race_id = $1`,
@@ -169,7 +169,8 @@ async function processFinalResults() {
               pred.points_earned,
               hasChanges,
               hasChanges ? previousPoints : undefined,
-              userPredictionResults
+              userPredictionResults,
+              pred.language
             );
           } catch (emailError) {
             console.error(`[CRON] Error sending final results email to ${pred.email}:`, emailError);
@@ -177,11 +178,11 @@ async function processFinalResults() {
         }
 
         // Send "The results are in!" email to all users
-        const allUsers = await query('SELECT email, nickname FROM users');
+        const allUsers = await query('SELECT email, nickname, language FROM users');
         console.log(`[CRON] Sending "The results are in!" email to ${allUsers.rows.length} users...`);
         for (const user of allUsers.rows) {
           try {
-            await sendResultsAreInEmail(user.email, user.nickname, race.race_name);
+            await sendResultsAreInEmail(user.email, user.nickname, race.race_name, user.language);
           } catch (emailError) {
             console.error(`[CRON] Error sending results-are-in email to ${user.email}:`, emailError);
           }
