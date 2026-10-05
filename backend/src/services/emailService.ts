@@ -127,7 +127,7 @@ const emailSignature = () => `
   <div style="margin-top: 8px; font-size: 14px; color: #222222;">
     <p style="margin: 0; line-height: 1.5;">&nbsp;</p>
     <p style="margin: 0; line-height: 1.5;">&nbsp;</p>
-    <p style="margin: 0; line-height: 1.5;">Kimi</p>
+    <p style="margin: 0; line-height: 1.5;">Kimi.</p>
     <p style="margin: 0; line-height: 1.5;">&nbsp;</p>
     <a href="${SIGNATURE_URL}" style="text-decoration: none;">
       <img src="${process.env.FRONTEND_URL}/logo-email.png?v=2" alt="Poule Position" width="56" style="display: block; width: 56px; max-width: 56px; height: auto; border: 0;" />
