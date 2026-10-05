@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { getRaces } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import ResultsCheckPanel from '../components/ResultsCheckPanel';
 
 interface User {
   id: number;
@@ -764,6 +765,8 @@ const Admin = () => {
           </div>
         )}
       </div>
+
+      <ResultsCheckPanel />
 
       {/* Send Last Race Results */}
       <div className="card-f1 mb-8">

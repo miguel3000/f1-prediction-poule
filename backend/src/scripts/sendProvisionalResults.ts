@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import * as jolpiService from '../services/jolpiService';
+import { decideRace, applyDecision, notifyAdminOfDecision } from '../services/resultCheckService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
 import {
   sendProvisionalResults,
@@ -55,50 +55,21 @@ async function processProvisionalResults() {
         const maxPositions = isSprint ? 8 : 10;
         console.log(`[CRON] Processing provisional results for ${race.race_name} (${isSprint ? 'Sprint' : 'Main'})...`);
 
-        // Fetch results from Jolpi API
-        const jolpiResults = isSprint
-          ? await jolpiService.getSprintResults(race.season, race.round)
-          : await jolpiService.getRaceResults(race.season, race.round);
+        // Compare the sources and only go ahead when the results can be trusted
+        // (or when waiting any longer would hold players up for no reason).
+        const decision = await decideRace(race, 'provisional');
+        await notifyAdminOfDecision(race, 'provisional', decision);
 
-        if (jolpiResults.length === 0) {
-          console.log(`[CRON] ⚠ No results available yet for ${race.race_name}, will retry later`);
+        if (decision.action !== 'apply') {
+          console.log(`[CRON] ${decision.action === 'hold' ? '⚠ Holding' : '…'} ${race.race_name}: ${decision.reason}`);
           continue;
         }
+        console.log(`[CRON] ${race.race_name}: ${decision.reason}${decision.warning ? ` (${decision.warning})` : ''}`);
 
-        // Clear existing results and insert new ones
+        // Validated, then swapped in one transaction — a failure never wipes stored results.
+        const applied = await applyDecision(race, decision);
+        const raceResultsForEmail: RaceResultForEmail[] = applied.podium;
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
-        await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
-
-        // Build driver lookup map
-        const driverNumbers = jolpiResults.map((r: any) => parseInt(r.number));
-        const driversResult = await query(
-          'SELECT id, driver_number, name FROM drivers WHERE driver_number = ANY($1) AND season = $2',
-          [driverNumbers, race.season]
-        );
-        const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
-
-        // Insert race results
-        const raceResultsForEmail: RaceResultForEmail[] = [];
-        for (const result of jolpiResults) {
-          const driverNumber = parseInt(result.number);
-          const driver = driverMap.get(driverNumber);
-
-          if (driver) {
-            await query(
-              `INSERT INTO ${resultsTable} (race_id, driver_id, position, points, status)
-               VALUES ($1, $2, $3, $4, $5)`,
-              [race.id, driver.id, parseInt(result.position), parseFloat(result.points), result.status]
-            );
-
-            if (parseInt(result.position) <= maxPositions) {
-              raceResultsForEmail.push({
-                position: parseInt(result.position),
-                driverName: driver.name,
-                points: pointsMap[parseInt(result.position)] || 0
-              });
-            }
-          }
-        }
 
         // Update race status to provisional
         await query(
@@ -210,12 +181,20 @@ async function processProvisionalResults() {
     );
 
     for (const race of staleResult.rows) {
+      const check = await query('SELECT verdict FROM result_checks WHERE race_id = $1', [race.id]);
+      const verdict = check.rows[0]?.verdict;
+      const why =
+        verdict === 'conflict'
+          ? `The sources disagreed about the result, so it was held back (see the earlier results check email). `
+          : verdict === 'single'
+            ? `Only one source ever had results, so they were never confirmed. `
+            : `The APIs never had data in time. `;
       const sent = await sendAdminAlert(
         `No results after 6h — ${race.race_name}`,
-        `Round ${race.round} (${race.race_name}) still has no results from the API 6 hours ` +
-        `after the race started. Provisional results were never sent to players. ` +
-        `Check Jolpi/OpenF1 manually, or use the "Sync Race Results" / "Send Last Race ` +
-        `Results" buttons in Pitlane once results are available.`
+        `Round ${race.round} (${race.race_name}) still has no applied results 6 hours ` +
+        `after the race started. Provisional results were never sent to players. ${why}` +
+        `Compare the sources in Pitlane and use "Force Re-sync" for this race once you know ` +
+        `which result is right.`
       );
       if (sent) {
         await query('UPDATE races SET provisional_alert_sent = TRUE WHERE id = $1', [race.id]);

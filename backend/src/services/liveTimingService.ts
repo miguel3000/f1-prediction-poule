@@ -1,6 +1,7 @@
 import axios from 'axios';
 import WebSocket from 'ws';
 import { persistPracticeFromState } from './practiceResultsService';
+import { persistRaceClassificationFromState } from './raceClassificationService';
 
 // Connects to F1's own live timing feed — the same unofficial SignalR stream
 // that every open-source F1 dashboard (f1-dash, FastF1's livetiming module,
@@ -168,6 +169,7 @@ function connect() {
             // replay of the last finished one (e.g. after a redeploy) —
             // either way it is worth keeping.
             persistPracticeFromState(state);
+            persistRaceClassificationFromState(state);
             continue;
           }
 
@@ -185,6 +187,7 @@ function connect() {
               console.log('[live-timing] New session detected, reconnecting for a fresh snapshot...');
               // Save the session that just ended before its state is replaced.
               persistPracticeFromState(state);
+              persistRaceClassificationFromState(state);
               ws?.close();
               continue;
             }
@@ -192,7 +195,10 @@ function connect() {
             state = merge(state, { [topic]: data });
             lastMessageAt = new Date().toISOString();
 
-            if (topic === 'SessionStatus') persistPracticeFromState(state);
+            if (topic === 'SessionStatus') {
+              persistPracticeFromState(state);
+              persistRaceClassificationFromState(state);
+            }
           }
         }
       });
@@ -221,5 +227,8 @@ export const startLiveTimingIngest = () => {
   // Keep the practice standings in the DB fresh while a session runs, and pick
   // up lap times that land after the chequered flag. A no-op when nothing
   // changed, so this costs nothing outside a session.
-  setInterval(() => persistPracticeFromState(state), 15_000);
+  setInterval(() => {
+    persistPracticeFromState(state);
+    persistRaceClassificationFromState(state);
+  }, 15_000);
 };

@@ -1,4 +1,4 @@
-import { replaceRaceResults, ResultRow } from '../utils/replaceResults';
+import { decideRace, applyDecision, notifyAdminOfDecision, compareRace } from '../services/resultCheckService';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -529,84 +529,29 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         const isSprint = race.race_type === 'sprint';
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
 
-        // Clear Jolpi cache so we get fresh data
-        jolpiService.clearRaceCache(race.season, race.round);
+        // Compare Jolpi, OpenF1 and the F1 live feed. Confirmed results are applied;
+        // when the sources disagree nothing changes unless this sync was forced (or
+        // aimed at this one race), in which case the first source in priority order is used.
+        const decision = await decideRace(race, 'manual', { force: force || !!raceId });
+        await notifyAdminOfDecision(race, 'manual', decision);
 
-        // ── Try OpenF1 first (results available within ~10 min of session end) ─
-        let normalizedResults: Array<{ number: string; position: string; points: string; status: string }> = [];
-        let dataSource = 'none';
-
-        try {
-          const sessionKey = isSprint
-            ? await openF1Service.getSprintSessionKey(race.season, race.race_date)
-            : await openF1Service.getRaceSessionKey(race.season, race.race_date);
-
-          if (sessionKey) {
-            const of1Results = await openF1Service.getRaceResults(sessionKey);
-            if (of1Results.length > 0) {
-              // Unclassified drivers (retired early) come back with position null;
-              // number them after the last classified finisher, in feed order.
-              let nextUnclassified = Math.max(0, ...of1Results.map(r => r.position ?? 0)) + 1;
-              normalizedResults = of1Results.map(r => ({
-                number: String(r.driver_number),
-                position: String(r.position ?? nextUnclassified++),
-                points: String(r.points),
-                status: r.dsq ? 'DSQ' : r.dnf ? 'DNF' : r.dns ? 'DNS' : 'Finished',
-              }));
-              dataSource = 'openf1';
-            }
-          }
-        } catch (err) {
-          console.log(`[ADMIN] OpenF1 unavailable for ${race.race_name}, trying Jolpi`);
-        }
-
-        // ── Fall back to Jolpi if OpenF1 had no data yet ─────────────────────
-        if (normalizedResults.length === 0) {
-          const jolpiResults = isSprint
-            ? await jolpiService.getSprintResults(race.season, race.round)
-            : await jolpiService.getRaceResults(race.season, race.round);
-
-          if (jolpiResults.length > 0) {
-            normalizedResults = (jolpiResults as any[]).map(r => ({
-              number: r.number,
-              position: r.position,
-              points: r.points ?? '0',
-              status: r.status ?? 'Finished',
-            }));
-            dataSource = 'jolpi';
-          }
-        }
-
-        if (normalizedResults.length === 0) {
-          console.log(`[ADMIN] No results available yet for ${race.race_name} (Round ${race.round})`);
-          raceLog.push(`⚠ ${race.race_name}: no API data yet (tried OpenF1 + Jolpi)`);
+        if (decision.action !== 'apply') {
+          const label = `${race.race_name}${isSprint ? ' (Sprint)' : ''}`;
+          console.log(`[ADMIN] ${label}: ${decision.reason}`);
+          raceLog.push(
+            decision.action === 'hold'
+              ? `⚠ ${label}: sources disagree — nothing changed. Compare them below, then Force Re-sync this race.`
+              : `⚠ ${label}: ${decision.reason}`
+          );
           racesSkipped++;
           continue;
         }
 
-        // Look up our drivers, build every row, then swap the stored results in one
-        // transaction — nothing is deleted unless the full new set is valid.
-        const driverNumbers = normalizedResults.map(r => parseInt(r.number)).filter(n => Number.isInteger(n));
-        const driversResult = await query(
-          'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
-          [driverNumbers, race.season]
-        );
-        const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
-
-        const rows: ResultRow[] = [];
-        for (const result of normalizedResults) {
-          const driverId = driverMap.get(parseInt(result.number));
-          if (driverId) {
-            rows.push({
-              driverId,
-              position: parseInt(result.position),
-              points: parseFloat(result.points || '0'),
-              status: result.status,
-            });
-          }
-        }
-        const insertedCount = await replaceRaceResults(resultsTable, race.id, rows);
+        const dataSource = decision.rowsFrom as string;
+        const applied = await applyDecision(race, decision);
+        const insertedCount = applied.inserted;
         totalInserted += insertedCount;
+        if (decision.warning) raceLog.push(`⚠ ${race.race_name}: ${decision.warning}`);
 
         // Update race status
         await query(
@@ -618,7 +563,7 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         await calculateRacePoints(race.id);
         racesProcessed++;
 
-        const topThree = normalizedResults.slice(0, 3).map(r => `P${r.position}:#${r.number}`).join(', ');
+        const topThree = applied.podium.slice(0, 3).map(r => `P${r.position}:${r.driverName}`).join(', ');
         raceLog.push(`✓ ${race.race_name} (${isSprint ? 'Sprint' : 'Main'}) [${dataSource}]: ${insertedCount} results — ${topThree}`);
         console.log(`[ADMIN] Synced ${race.race_name}: ${insertedCount} results`);
 
@@ -1043,5 +988,48 @@ export const triggerQualifyingSync = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Qualifying sync error:', error);
     res.status(500).json({ error: 'Failed to sync qualifying results', details: String(error) });
+  }
+};
+
+
+// Past races with how many results are stored and the latest cross-check verdict —
+// the picker for the Pitlane's source comparison.
+export const listResultCheckRaces = async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT r.id, r.round, r.race_name, r.race_type, r.status, r.race_date,
+              CASE WHEN r.race_type = 'sprint'
+                   THEN (SELECT COUNT(*) FROM sprint_results WHERE race_id = r.id)
+                   ELSE (SELECT COUNT(*) FROM race_results WHERE race_id = r.id) END AS stored_results,
+              rc.verdict AS last_verdict
+       FROM races r
+       LEFT JOIN result_checks rc ON rc.race_id = r.id
+       WHERE r.season = 2026 AND r.race_date < NOW()
+       ORDER BY r.race_date DESC`
+    );
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('[ADMIN] List result check races error:', error);
+    res.status(500).json({ error: 'Failed to load races' });
+  }
+};
+
+// Fetches every source for one race and compares them. Read-only.
+export const getResultCheck = async (req: Request, res: Response) => {
+  try {
+    const raceId = parseInt(req.params.raceId, 10);
+    if (!Number.isInteger(raceId) || raceId <= 0) {
+      return res.status(400).json({ error: 'raceId must be a positive integer' });
+    }
+    const race = await query(
+      `SELECT id, season, round, race_name, race_date, race_type, status FROM races WHERE id = $1 AND race_date < NOW()`,
+      [raceId]
+    );
+    if (race.rows.length === 0) return res.status(404).json({ error: 'Race not found, or it has not happened yet' });
+
+    res.json(await compareRace(race.rows[0]));
+  } catch (error: any) {
+    console.error('[ADMIN] Result check error:', error);
+    res.status(500).json({ error: 'Failed to compare sources' });
   }
 };

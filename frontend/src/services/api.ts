@@ -198,6 +198,44 @@ export const triggerDriverStandingsSync = () =>
 export const triggerRaceResultsSync = () =>
   api.post('/api/admin/cronjobs/sync-race-results');
 
+export interface ResultCheckRace {
+  id: number;
+  round: number;
+  race_name: string;
+  race_type: 'main' | 'sprint';
+  status: string;
+  stored_results: string;
+  last_verdict: string | null;
+}
+
+export interface ResultCheckDriver {
+  number: number;
+  name: string;
+}
+
+export interface ResultCheckComparison {
+  race: { id: number; round: number; name: string; type: 'main' | 'sprint'; status: string };
+  scored: number;
+  verdict: 'confirmed' | 'single' | 'conflict' | 'none';
+  wouldDo: { action: 'apply' | 'wait' | 'hold'; reason: string; warning: string | null; rowsFrom: string | null };
+  sources: Array<{
+    source: string;
+    label: string;
+    available: boolean;
+    note?: string;
+    top: ResultCheckDriver[];
+    firstOut: ResultCheckDriver | null;
+  }>;
+  stored: { top: ResultCheckDriver[]; firstOut: ResultCheckDriver | null } | null;
+  differences: Array<{ label: string; what: string }>;
+}
+
+export const getResultCheckRaces = () =>
+  api.get<ResultCheckRace[]>('/api/admin/results-check');
+
+export const getResultCheck = (raceId: number) =>
+  api.get<ResultCheckComparison>(`/api/admin/results-check/${raceId}`);
+
 export const sendBroadcastEmail = (subject: string, message: string) =>
   api.post('/api/admin/broadcast', { subject, message });
 

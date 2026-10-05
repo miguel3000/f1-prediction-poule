@@ -8,6 +8,8 @@ import {
   triggerQualifyingSync,
   getSyncStatus,
   getSyncDiagnosis,
+  listResultCheckRaces,
+  getResultCheck,
   sendBroadcastToAllUsers,
   sendLastRaceResults,
   getRacePredictionStatus,
@@ -46,6 +48,10 @@ router.post('/cronjobs/sync-calendar', authenticateAdmin, syncRaces);
 // Sync status polling + diagnostics
 router.get('/sync-status', authenticateAdmin, getSyncStatus);
 router.get('/sync-diagnosis', authenticateAdmin, getSyncDiagnosis);
+
+// Results cross-check: compare the sources for a race (read-only)
+router.get('/results-check', authenticateAdmin, listResultCheckRaces);
+router.get('/results-check/:raceId', authenticateAdmin, getResultCheck);
 
 // Broadcast email
 router.post('/broadcast', authenticateAdmin, sendBroadcastToAllUsers);

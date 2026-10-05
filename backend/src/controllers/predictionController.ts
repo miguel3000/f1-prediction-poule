@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
+import { isDnfStatus } from '../utils/resultStatus';
 import { sendPredictionConfirmation } from '../services/emailService';
 
 export const submitPrediction = async (req: Request, res: Response) => {
@@ -179,7 +180,7 @@ export const getUserPredictions = async (req: Request, res: Response) => {
         }
 
         // Same "worst-classified DNF = retired earliest" heuristic used to award the bonus
-        const dnfResults = resultsResult.rows.filter((r: any) => r.status === 'dnf');
+        const dnfResults = resultsResult.rows.filter((r: any) => isDnfStatus(r.status));
         if (dnfResults.length > 0) {
           const firstOut = dnfResults.reduce((worst: any, r: any) => (r.position > worst.position ? r : worst), dnfResults[0]);
           const firstOutDriver = await query('SELECT name FROM drivers WHERE id = $1', [firstOut.driver_id]);

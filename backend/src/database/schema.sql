@@ -182,3 +182,30 @@ CREATE TRIGGER update_predictions_updated_at BEFORE UPDATE ON predictions
 DROP TRIGGER IF EXISTS update_sprint_predictions_updated_at ON sprint_predictions;
 CREATE TRIGGER update_sprint_predictions_updated_at BEFORE UPDATE ON sprint_predictions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- Final classification of a race/sprint as captured from F1's live timing feed,
+-- used as one of the sources the results cross-check compares.
+CREATE TABLE IF NOT EXISTS race_classifications (
+  id SERIAL PRIMARY KEY,
+  season INTEGER NOT NULL,
+  round INTEGER NOT NULL,
+  kind VARCHAR(10) NOT NULL CHECK (kind IN ('main', 'sprint')),
+  source VARCHAR(20) NOT NULL DEFAULT 'live',
+  driver_number INTEGER NOT NULL,
+  position INTEGER NOT NULL,
+  status VARCHAR(10) NOT NULL,
+  laps INTEGER DEFAULT 0,
+  final BOOLEAN NOT NULL DEFAULT FALSE,
+  captured_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(season, round, kind, driver_number)
+);
+
+-- Outcome of the latest cross-check per race, and which outcome the admin was last told about.
+CREATE TABLE IF NOT EXISTS result_checks (
+  race_id INTEGER PRIMARY KEY REFERENCES races(id) ON DELETE CASCADE,
+  verdict VARCHAR(20) NOT NULL,
+  detail JSONB,
+  notified_signature TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);

@@ -911,6 +911,110 @@ export const sendMemberNotice = async (member: MemberNoticeDetails): Promise<boo
   }
 };
 
+// Sent to the admin when the results cross-check needs a human: sources
+// disagree (results held back), or results were applied on thin evidence.
+// Only driver names, race names and our own wording go in — all escaped anyway.
+export interface ResultsCheckAlertDetails {
+  raceName: string;
+  isSprint: boolean;
+  season: number;
+  mode: 'provisional' | 'final' | 'manual';
+  action: 'apply' | 'wait' | 'hold';
+  reason: string;
+  warning: string | null;
+  scored: number;
+  driverNames: Record<number, string>;
+  sources: Array<{ label: string; available: boolean; note?: string; top: number[]; firstOut: number | null }>;
+  differences: Array<{ label: string; what: string }>;
+}
+
+export const sendResultsCheckAlert = async (d: ResultsCheckAlertDetails): Promise<boolean> => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.error('ADMIN_EMAIL not configured — cannot send results check alert');
+    return false;
+  }
+
+  const held = d.action === 'hold';
+  const nameOf = (n: number | undefined) => (n == null ? '–' : escapeHtml((d.driverNames[n] || `#${n}`).split(' ').slice(-1)[0]));
+  const used = d.sources.filter((s) => s.available);
+
+  const header = `<tr>${['Pos', ...d.sources.map((s) => s.label)]
+    .map((h) => `<td style="padding: 8px 10px; background-color: ${BRAND_YELLOW}; color: #000000; font-weight: 800; font-size: 12px; text-transform: uppercase;">${escapeHtml(h)}</td>`)
+    .join('')}</tr>`;
+
+  const bodyRows: string[] = [];
+  for (let i = 0; i < d.scored; i++) {
+    const values = used.map((s) => s.top[i]);
+    const counts = new Map<number | undefined, number>();
+    values.forEach((v) => counts.set(v, (counts.get(v) ?? 0) + 1));
+    const common = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const bg = i % 2 === 0 ? BRAND_BLUE : BRAND_NAVY;
+    const cells = d.sources.map((s) => {
+      const value = s.available ? s.top[i] : undefined;
+      const differs = s.available && used.length > 1 && value !== common;
+      const style = differs ? `background-color: ${BRAND_YELLOW}; color: #000000; font-weight: 800;` : `background-color: ${bg}; color: #ffffff;`;
+      return `<td style="padding: 8px 10px; ${style}">${s.available ? nameOf(value) : '–'}</td>`;
+    });
+    bodyRows.push(`<tr><td style="padding: 8px 10px; background-color: ${bg}; color: #ffffff; font-weight: 700;">${i + 1}</td>${cells.join('')}</tr>`);
+  }
+
+  if (!d.isSprint) {
+    const bg = d.scored % 2 === 0 ? BRAND_BLUE : BRAND_NAVY;
+    const outs = used.map((s) => s.firstOut);
+    const counts = new Map<number | null, number>();
+    outs.forEach((v) => counts.set(v, (counts.get(v) ?? 0) + 1));
+    const common = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const cells = d.sources.map((s) => {
+      const differs = s.available && used.length > 1 && s.firstOut !== common;
+      const style = differs ? `background-color: ${BRAND_YELLOW}; color: #000000; font-weight: 800;` : `background-color: ${bg}; color: #ffffff;`;
+      return `<td style="padding: 8px 10px; ${style}">${s.available ? (s.firstOut ? nameOf(s.firstOut) : 'none') : '–'}</td>`;
+    });
+    bodyRows.push(`<tr><td style="padding: 8px 10px; background-color: ${bg}; color: #ffffff; font-weight: 700;">1st out</td>${cells.join('')}</tr>`);
+  }
+
+  const notes = d.sources.filter((s) => !s.available && s.note).map((s) => `<li>${escapeHtml(s.label)}: ${escapeHtml(s.note!)}</li>`).join('');
+  const diffs = d.differences.map((x) => `<li><strong>${escapeHtml(x.label)}</strong>: ${escapeHtml(x.what)}</li>`).join('');
+  const pitlaneUrl = `${process.env.FRONTEND_URL}/pitlane`;
+
+  const headline = held ? 'Results On Hold' : 'Results Applied — Please Check';
+  const intro = held
+    ? 'The sources disagree about this result, so nothing was changed and no points were calculated or emailed. Check the table below, then decide in the Pitlane (Force Re-sync applies the first source in priority order: Jolpi, OpenF1, then the F1 live feed).'
+    : escapeHtml(d.warning || d.reason);
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: adminEmail,
+    subject: `[Poule Position] ${held ? 'Results on hold' : 'Check results'} — ${d.raceName.replace(/[\r\n]+/g, ' ')}${d.isSprint ? ' (sprint)' : ''}`.slice(0, 200),
+    html: emailDocument(
+      `
+      ${emailHeader}
+      ${emailBanner(headline, { url: pitlaneUrl, bg: held ? BRAND_YELLOW : BRAND_NAVY, color: held ? '#000000' : '#ffffff' })}
+      <h2 style="color: ${BRAND_NAVY}; margin-bottom: 4px;">${escapeHtml(d.raceName)}${d.isSprint ? ' (Sprint)' : ''}</h2>
+      <p style="margin-top: 0;">${intro}</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px; margin: 16px 0;">
+        ${header}
+        ${bodyRows.join('')}
+      </table>
+      ${diffs ? `<p style="margin-bottom: 4px;"><strong>Where they differ</strong></p><ul style="margin-top: 0;">${diffs}</ul>` : ''}
+      ${notes ? `<p style="margin-bottom: 4px;"><strong>Sources without data</strong></p><ul style="margin-top: 0;">${notes}</ul>` : ''}
+      <p style="color: #666; font-size: 12px;">Yellow cells differ from what the other sources show. Context: ${escapeHtml(d.mode)} check — ${escapeHtml(d.reason)}.</p>
+    `,
+      'en',
+      { signature: false }
+    ),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Results check alert sent:', d.raceName);
+    return true;
+  } catch (error) {
+    console.error('Error sending results check alert:', error);
+    return false;
+  }
+};
+
 // Internal ops alert — e.g. results still unavailable from the API after the retry window
 export const sendAdminAlert = async (subject: string, message: string): Promise<boolean> => {
   const adminEmail = process.env.ADMIN_EMAIL;

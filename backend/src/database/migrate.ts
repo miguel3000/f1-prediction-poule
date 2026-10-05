@@ -122,6 +122,36 @@ const runMigration = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_practice_results_lookup ON practice_results(season, round, session)`);
     console.log('practice_results table ensured.');
 
+    // Results cross-check: the live feed's race classification, and the latest
+    // verdict per race (so the admin is only emailed when it changes).
+    console.log('Checking for race_classifications and result_checks tables...');
+    await query(`
+      CREATE TABLE IF NOT EXISTS race_classifications (
+        id SERIAL PRIMARY KEY,
+        season INTEGER NOT NULL,
+        round INTEGER NOT NULL,
+        kind VARCHAR(10) NOT NULL CHECK (kind IN ('main', 'sprint')),
+        source VARCHAR(20) NOT NULL DEFAULT 'live',
+        driver_number INTEGER NOT NULL,
+        position INTEGER NOT NULL,
+        status VARCHAR(10) NOT NULL,
+        laps INTEGER DEFAULT 0,
+        final BOOLEAN NOT NULL DEFAULT FALSE,
+        captured_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(season, round, kind, driver_number)
+      )
+    `);
+    await query(`
+      CREATE TABLE IF NOT EXISTS result_checks (
+        race_id INTEGER PRIMARY KEY REFERENCES races(id) ON DELETE CASCADE,
+        verdict VARCHAR(20) NOT NULL,
+        detail JSONB,
+        notified_signature TEXT,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('race_classifications and result_checks tables ensured.');
+
     // Preferred site language per player ('en' | 'nl'); NULL = not chosen yet,
     // in which case the browser's language decides.
     console.log('Checking for language column on users...');

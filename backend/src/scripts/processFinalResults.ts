@@ -1,6 +1,5 @@
-import { replaceRaceResults, ResultRow } from '../utils/replaceResults';
 import { query } from '../config/database';
-import * as jolpiService from '../services/jolpiService';
+import { decideRace, applyDecision, notifyAdminOfDecision } from '../services/resultCheckService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
 import { sendFinalResults, sendResultsAreInEmail, UserPredictionResult } from '../services/emailService';
 
@@ -53,40 +52,20 @@ async function processFinalResults() {
           }])
         );
 
-        // Fetch fresh results from API (may include disqualifications)
-        const jolpiResults = isSprint
-          ? await jolpiService.getSprintResults(race.season, race.round)
-          : await jolpiService.getRaceResults(race.season, race.round);
+        // Fresh results a day later (may include disqualifications), cross-checked across
+        // sources. Anything the sources agree on is applied; if they cannot agree the
+        // stored results are left exactly as they are and the admin is told.
+        const decision = await decideRace(race, 'final');
+        await notifyAdminOfDecision(race, 'final', decision);
 
-        if (jolpiResults.length === 0) {
-          console.log(`[CRON] ⚠ No results available for ${race.race_name}`);
+        if (decision.action !== 'apply') {
+          console.log(`[CRON] ${decision.action === 'hold' ? '⚠ Holding' : '…'} final results for ${race.race_name}: ${decision.reason}`);
           continue;
         }
+        console.log(`[CRON] ${race.race_name}: ${decision.reason}${decision.warning ? ` (${decision.warning})` : ''}`);
 
-        // Build driver lookup map
-        const driverNumbers = jolpiResults.map((r: any) => parseInt(r.number));
-        const driversResult = await query(
-          'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
-          [driverNumbers, race.season]
-        );
-        const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
-
-        // Swap in the final results (with any DQs applied) in one transaction,
-        // so a failure part-way never leaves the race without results.
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
-        const rows: ResultRow[] = [];
-        for (const result of jolpiResults as any[]) {
-          const driverId = driverMap.get(parseInt(result.number));
-          if (driverId) {
-            rows.push({
-              driverId,
-              position: parseInt(result.position),
-              points: parseFloat(result.points),
-              status: result.status,
-            });
-          }
-        }
-        await replaceRaceResults(resultsTable, race.id, rows);
+        await applyDecision(race, decision);
 
         // Recalculate all points with final results. calculateRacePoints() overwrites
         // points_earned and recomputes total_points from source of truth, so this is

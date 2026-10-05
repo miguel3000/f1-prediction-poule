@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
+import { isDnfStatus } from '../utils/resultStatus';
 
 export const getLeaderboard = async (req: Request, res: Response) => {
   try {
@@ -376,7 +377,7 @@ export const calculateRacePoints = async (raceId: number) => {
     // no lap-of-retirement column to go on, so this is the best signal available.
     let firstOutDriverId: number | null = null;
     if (!isSprint) {
-      const dnfResults = results.filter((r: any) => r.status === 'dnf');
+      const dnfResults = results.filter((r: any) => isDnfStatus(r.status));
       if (dnfResults.length > 0) {
         firstOutDriverId = dnfResults.reduce((worst: any, r: any) =>
           r.position > worst.position ? r : worst, dnfResults[0]).driver_id;

@@ -1,6 +1,5 @@
-import { replaceRaceResults, ResultRow } from '../utils/replaceResults';
 import { query } from '../config/database';
-import * as jolpiService from '../services/jolpiService';
+import { decideRace, applyDecision, notifyAdminOfDecision } from '../services/resultCheckService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
 
 async function syncRaceResults() {
@@ -36,44 +35,21 @@ async function syncRaceResults() {
         const isSprint = race.race_type === 'sprint';
         console.log(`[CRON] Syncing results for ${race.race_name} (Round ${race.round}, ${isSprint ? 'Sprint' : 'Main'})...`);
 
-        // Fetch results from Jolpi API - use sprint or main race endpoint
-        const jolpiResults = isSprint
-          ? await jolpiService.getSprintResults(race.season, race.round)
-          : await jolpiService.getRaceResults(race.season, race.round);
+        // Cross-check the sources before storing anything; one that disagrees is reported,
+        // and results are held back if the sources cannot agree.
+        const decision = await decideRace(race, 'provisional');
+        await notifyAdminOfDecision(race, 'provisional', decision);
 
-        if (jolpiResults.length === 0) {
-          console.log(`[CRON] ⚠ No results found for ${race.race_name}, skipping...`);
+        if (decision.action !== 'apply') {
+          console.log(`[CRON] ⚠ Not storing results for ${race.race_name}: ${decision.reason}`);
           continue;
         }
 
-        const resultsTable = isSprint ? 'sprint_results' : 'race_results';
-
-        // Match each result to our driver by number, then swap the stored results
-        // in one transaction so a failure part-way never leaves the race empty.
-        const driversResult = await query(
-          'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
-          [jolpiResults.map((r: any) => parseInt(r.number)).filter((n: number) => Number.isInteger(n)), race.season]
-        );
-        const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
-
-        const rows: ResultRow[] = [];
-        let notFound = 0;
-        for (const result of jolpiResults as any[]) {
-          const driverId = driverMap.get(parseInt(result.number));
-          if (driverId) {
-            rows.push({
-              driverId,
-              position: parseInt(result.position),
-              points: parseFloat(result.points),
-              status: result.status,
-            });
-            console.log(`[CRON]   P${result.position}: driver #${result.number} (${result.points} pts)`);
-          } else {
-            notFound++;
-            console.log(`[CRON]   ⚠ Driver #${result.number} not found in database`);
-          }
-        }
-        const inserted = await replaceRaceResults(resultsTable, race.id, rows);
+        // Validated, then swapped in one transaction so a failure never leaves the race empty.
+        const applied = await applyDecision(race, decision);
+        const inserted = applied.inserted;
+        const notFound = applied.unknownNumbers.length;
+        console.log(`[CRON] ${race.race_name}: ${decision.reason}${decision.warning ? ` (${decision.warning})` : ''}`);
 
         // Update race status to completed
         await query(
