@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useLang, Lang } from '../i18n/LanguageContext';
-import { saveLanguage, changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, deleteAccount as deleteAccountRequest } from '../services/api';
+import { saveLanguage, changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, getNicknameSuggestion, deleteAccount as deleteAccountRequest } from '../services/api';
 
 const Profile = () => {
   const { user, token, logout } = useContext(AuthContext);
@@ -19,6 +19,7 @@ const Profile = () => {
   const [showNicknameForm, setShowNicknameForm] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [nicknameSaving, setNicknameSaving] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -120,6 +121,19 @@ const Profile = () => {
       setLanguageStatus('saved');
     } catch {
       setLanguageStatus('error');
+    }
+  };
+
+  const suggestNickname = async () => {
+    setSuggesting(true);
+    setError('');
+    try {
+      const response = await getNicknameSuggestion();
+      setNewNickname(response.data.nickname);
+    } catch {
+      setError(t('auth.suggestFailed'));
+    } finally {
+      setSuggesting(false);
     }
   };
 
@@ -277,6 +291,14 @@ const Profile = () => {
                       onChange={(e) => setNewNickname(e.target.value)}
                       className="w-full bg-f1-neutral-900 border border-f1-neutral-700 px-3 py-2 text-white focus:outline-none focus:border-f1-yellow-500"
                     />
+                    <button
+                      type="button"
+                      onClick={suggestNickname}
+                      disabled={suggesting}
+                      className="mt-2 text-sm font-semibold text-f1-yellow-500 hover:underline disabled:opacity-60"
+                    >
+                      {t('auth.suggestNickname')}
+                    </button>
                     <p className="text-xs text-white/60 mt-1">{t('profile.usernameHint')}</p>
                   </div>
                   <div className="flex gap-3">
