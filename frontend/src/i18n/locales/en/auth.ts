@@ -5,6 +5,8 @@ export const auth = {
   'auth.resetIntro': 'Enter your email and we\'ll send you a link to choose a new password.',
   'auth.nickname': 'Nickname',
   'auth.nicknamePlaceholder': 'Your racing nickname',
+  'auth.suggestNickname': 'Suggest an F1 nickname',
+  'auth.suggestFailed': 'Could not fetch a suggestion, please try again.',
   'auth.email': 'Email',
   'auth.emailPlaceholder': 'your.email@example.com',
   'auth.password': 'Password',

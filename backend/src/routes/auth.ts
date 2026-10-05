@@ -11,6 +11,7 @@ import {
   resetPassword,
   deleteAccount,
   unsubscribe,
+  suggestNickname,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 
@@ -31,6 +32,7 @@ const resetLimiter = rateLimit({
 });
 
 // Password authentication
+router.get('/nickname-suggestion', suggestNickname);
 router.post('/register-password', registerWithPassword);
 router.post('/login-password', loginWithPassword);
 router.post('/forgot-password', forgotLimiter, forgotPassword);

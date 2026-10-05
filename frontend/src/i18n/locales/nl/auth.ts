@@ -7,6 +7,8 @@ export const auth: Record<keyof typeof enAuth, string> = {
   'auth.resetIntro': 'Vul je e-mailadres in en we sturen je een link om een nieuw wachtwoord te kiezen.',
   'auth.nickname': 'Gebruikersnaam',
   'auth.nicknamePlaceholder': 'Je racenaam',
+  'auth.suggestNickname': 'Verzin een F1-bijnaam',
+  'auth.suggestFailed': 'Geen suggestie kunnen ophalen, probeer het opnieuw.',
   'auth.email': 'E-mailadres',
   'auth.emailPlaceholder': 'jouw.email@voorbeeld.nl',
   'auth.password': 'Wachtwoord',

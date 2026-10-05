@@ -39,6 +39,9 @@ export const changeNickname = (newNickname: string) =>
 export const saveLanguage = (language: 'en' | 'nl') =>
   api.put('/api/auth/language', { language });
 
+export const getNicknameSuggestion = () =>
+  api.get<{ nickname: string }>('/api/auth/nickname-suggestion');
+
 export const forgotPassword = (email: string) =>
   api.post('/api/auth/forgot-password', { email });
 

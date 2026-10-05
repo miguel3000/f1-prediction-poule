@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registerWithPassword, loginWithPassword, forgotPassword } from '../services/api';
+import { registerWithPassword, loginWithPassword, forgotPassword, getNicknameSuggestion } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import LogoMark from '../components/LogoMark';
 import { useLang } from '../i18n/LanguageContext';
@@ -13,12 +13,27 @@ const Auth = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [isForgot, setIsForgot] = useState(false);
   const [nickname, setNickname] = useState('');
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [messageOk, setMessageOk] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const suggestNickname = async () => {
+    setSuggesting(true);
+    setSuggestError(false);
+    try {
+      const response = await getNicknameSuggestion();
+      setNickname(response.data.nickname);
+    } catch {
+      setSuggestError(true);
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +100,17 @@ const Auth = () => {
                 required
                 className="input-f1 w-full"
                 placeholder={t('auth.nicknamePlaceholder')}
+                maxLength={30}
               />
+              <button
+                type="button"
+                onClick={suggestNickname}
+                disabled={suggesting}
+                className="mt-2 text-sm font-semibold text-f1-yellow-500 hover:underline disabled:opacity-60"
+              >
+                {t('auth.suggestNickname')}
+              </button>
+              {suggestError && <p className="mt-1 text-sm text-white">{t('auth.suggestFailed')}</p>}
             </div>
           )}
 

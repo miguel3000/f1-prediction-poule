@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { query } from '../config/database';
 import { sendPasswordReset, sendMemberNotice } from '../services/emailService';
 import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
+import { randomNickname, numberedNickname } from '../utils/nicknameGenerator';
 
 const SALT_ROUNDS = 10;
 
@@ -144,6 +145,29 @@ export const registerWithPassword = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Password registration error:', error);
     res.status(500).json({ error: 'Failed to register user' });
+  }
+};
+
+// Public: hands a signing-up player an F1-themed nickname that nobody has taken
+// yet. Tries plain names first, then adds a real race number to a name.
+export const suggestNickname = async (_req: Request, res: Response) => {
+  try {
+    const isFree = async (candidate: string) => {
+      const taken = await query('SELECT 1 FROM users WHERE LOWER(nickname) = LOWER($1) LIMIT 1', [candidate]);
+      return taken.rows.length === 0;
+    };
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const base = randomNickname();
+      const candidate = attempt < 6 ? base : numberedNickname(base);
+      if (await isFree(candidate)) {
+        return res.json({ nickname: candidate });
+      }
+    }
+    res.status(503).json({ error: 'Could not find a free nickname, please try again' });
+  } catch (error) {
+    console.error('Suggest nickname error:', error);
+    res.status(500).json({ error: 'Failed to suggest a nickname' });
   }
 };
 
