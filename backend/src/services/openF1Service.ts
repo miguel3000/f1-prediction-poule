@@ -170,7 +170,7 @@ export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1Qu
     const raw: any[] = response.data;
     return raw
       .filter(r => !r.dnf && !r.dns)
-      .sort((a, b) => a.position - b.position)
+      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
       .map(r => ({
         position:      r.position,
         driver_number: r.driver_number,
@@ -187,6 +187,7 @@ export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1Qu
   }
 };
 
+// position is null for drivers who were not classified (retired early)
 export interface OpenF1RaceResult {
   session_key: number;
   driver_number: number;
@@ -211,7 +212,7 @@ export const getRaceResults = async (sessionKey: number): Promise<OpenF1RaceResu
     if (!raw || raw.length === 0) return [];
 
     const results = raw
-      .sort((a, b) => a.position - b.position)
+      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
       .map(r => ({
         session_key: r.session_key,
         driver_number: r.driver_number,

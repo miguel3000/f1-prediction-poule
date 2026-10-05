@@ -1,3 +1,4 @@
+import { replaceRaceResults, ResultRow } from '../utils/replaceResults';
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
@@ -45,43 +46,34 @@ async function syncRaceResults() {
           continue;
         }
 
-        // Clear existing results for this race (correct table per race type)
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
-        await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
 
-        let inserted = 0;
+        // Match each result to our driver by number, then swap the stored results
+        // in one transaction so a failure part-way never leaves the race empty.
+        const driversResult = await query(
+          'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
+          [jolpiResults.map((r: any) => parseInt(r.number)).filter((n: number) => Number.isInteger(n)), race.season]
+        );
+        const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
+
+        const rows: ResultRow[] = [];
         let notFound = 0;
-
-        // Insert new results
-        for (const result of jolpiResults) {
-          // Find driver in our database by driver number
-          const driverResult = await query(
-            'SELECT id, name FROM drivers WHERE driver_number = $1 AND season = $2',
-            [parseInt(result.number), race.season]
-          );
-
-          if (driverResult.rows.length > 0) {
-            const driver = driverResult.rows[0];
-
-            await query(
-              `INSERT INTO ${resultsTable} (race_id, driver_id, position, points, status)
-               VALUES ($1, $2, $3, $4, $5)`,
-              [
-                race.id,
-                driver.id,
-                parseInt(result.position),
-                parseFloat(result.points),
-                result.status
-              ]
-            );
-
-            inserted++;
-            console.log(`[CRON]   P${result.position}: ${driver.name} (${result.points} pts)`);
+        for (const result of jolpiResults as any[]) {
+          const driverId = driverMap.get(parseInt(result.number));
+          if (driverId) {
+            rows.push({
+              driverId,
+              position: parseInt(result.position),
+              points: parseFloat(result.points),
+              status: result.status,
+            });
+            console.log(`[CRON]   P${result.position}: driver #${result.number} (${result.points} pts)`);
           } else {
             notFound++;
             console.log(`[CRON]   ⚠ Driver #${result.number} not found in database`);
           }
         }
+        const inserted = await replaceRaceResults(resultsTable, race.id, rows);
 
         // Update race status to completed
         await query(

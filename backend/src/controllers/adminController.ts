@@ -1,3 +1,4 @@
+import { replaceRaceResults, ResultRow } from '../utils/replaceResults';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -543,9 +544,12 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
           if (sessionKey) {
             const of1Results = await openF1Service.getRaceResults(sessionKey);
             if (of1Results.length > 0) {
+              // Unclassified drivers (retired early) come back with position null;
+              // number them after the last classified finisher, in feed order.
+              let nextUnclassified = Math.max(0, ...of1Results.map(r => r.position ?? 0)) + 1;
               normalizedResults = of1Results.map(r => ({
                 number: String(r.driver_number),
-                position: String(r.position),
+                position: String(r.position ?? nextUnclassified++),
                 points: String(r.points),
                 status: r.dsq ? 'DSQ' : r.dnf ? 'DNF' : r.dns ? 'DNS' : 'Finished',
               }));
@@ -580,39 +584,29 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
           continue;
         }
 
-        // Clear and re-insert results
-        await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
-
-        // Batch fetch drivers by number
-        const driverNumbers = normalizedResults.map(r => parseInt(r.number));
+        // Look up our drivers, build every row, then swap the stored results in one
+        // transaction — nothing is deleted unless the full new set is valid.
+        const driverNumbers = normalizedResults.map(r => parseInt(r.number)).filter(n => Number.isInteger(n));
         const driversResult = await query(
           'SELECT id, driver_number FROM drivers WHERE driver_number = ANY($1) AND season = $2',
           [driverNumbers, race.season]
         );
         const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
 
-        // Batch insert results
-        const insertValues: string[] = [];
-        const insertParams: any[] = [];
-        let paramIndex = 1;
-
+        const rows: ResultRow[] = [];
         for (const result of normalizedResults) {
           const driverId = driverMap.get(parseInt(result.number));
           if (driverId) {
-            insertValues.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`);
-            insertParams.push(race.id, driverId, parseInt(result.position), parseFloat(result.points || '0'), result.status);
-            paramIndex += 5;
+            rows.push({
+              driverId,
+              position: parseInt(result.position),
+              points: parseFloat(result.points || '0'),
+              status: result.status,
+            });
           }
         }
-
-        if (insertValues.length > 0) {
-          await query(
-            `INSERT INTO ${resultsTable} (race_id, driver_id, position, points, status)
-             VALUES ${insertValues.join(', ')}`,
-            insertParams
-          );
-          totalInserted += insertValues.length;
-        }
+        const insertedCount = await replaceRaceResults(resultsTable, race.id, rows);
+        totalInserted += insertedCount;
 
         // Update race status
         await query(
@@ -625,8 +619,8 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         racesProcessed++;
 
         const topThree = normalizedResults.slice(0, 3).map(r => `P${r.position}:#${r.number}`).join(', ');
-        raceLog.push(`✓ ${race.race_name} (${isSprint ? 'Sprint' : 'Main'}) [${dataSource}]: ${insertValues.length} results — ${topThree}`);
-        console.log(`[ADMIN] Synced ${race.race_name}: ${insertValues.length} results`);
+        raceLog.push(`✓ ${race.race_name} (${isSprint ? 'Sprint' : 'Main'}) [${dataSource}]: ${insertedCount} results — ${topThree}`);
+        console.log(`[ADMIN] Synced ${race.race_name}: ${insertedCount} results`);
 
       } catch (error: any) {
         raceLog.push(`✗ ${race.race_name}: ${error.message}`);

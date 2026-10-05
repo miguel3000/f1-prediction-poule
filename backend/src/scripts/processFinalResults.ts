@@ -1,3 +1,4 @@
+import { replaceRaceResults, ResultRow } from '../utils/replaceResults';
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
 import { calculateRacePoints } from '../controllers/leaderboardController';
@@ -70,23 +71,22 @@ async function processFinalResults() {
         );
         const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d.id]));
 
-        // Clear existing results
+        // Swap in the final results (with any DQs applied) in one transaction,
+        // so a failure part-way never leaves the race without results.
         const resultsTable = isSprint ? 'sprint_results' : 'race_results';
-        await query(`DELETE FROM ${resultsTable} WHERE race_id = $1`, [race.id]);
-
-        // Insert fresh results (with any DQs applied)
-        for (const result of jolpiResults) {
-          const driverNumber = parseInt(result.number);
-          const driverId = driverMap.get(driverNumber);
-
+        const rows: ResultRow[] = [];
+        for (const result of jolpiResults as any[]) {
+          const driverId = driverMap.get(parseInt(result.number));
           if (driverId) {
-            await query(
-              `INSERT INTO ${resultsTable} (race_id, driver_id, position, points, status)
-               VALUES ($1, $2, $3, $4, $5)`,
-              [race.id, driverId, parseInt(result.position), parseFloat(result.points), result.status]
-            );
+            rows.push({
+              driverId,
+              position: parseInt(result.position),
+              points: parseFloat(result.points),
+              status: result.status,
+            });
           }
         }
+        await replaceRaceResults(resultsTable, race.id, rows);
 
         // Recalculate all points with final results. calculateRacePoints() overwrites
         // points_earned and recomputes total_points from source of truth, so this is
