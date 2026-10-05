@@ -117,15 +117,38 @@ const emailBanner = (label: string, opts?: { url?: string; bg?: string; color?: 
   `;
 };
 
-// Shared footer, with an optional one-click unsubscribe link for non-essential
-// (announcement/broadcast) mail — transactional emails like prediction
-// confirmations don't get this, since opting out of those would break the game.
-const emailFooter = (unsubscribeUrl?: string, lang: EmailLang = 'en') => `
-  <p style="color: #666; font-size: 12px; margin-top: 30px;">
-    Poule Position &middot; pouleposition.nl
-    ${unsubscribeUrl ? `<br /><a href="${unsubscribeUrl}" style="color: #999;">${et(lang, 'common.unsubscribe')}</a>` : ''}
-  </p>
+// Default sign-off for every email that goes to a player: two empty lines
+// under the message, "Kimi", one more empty line, then the small logo with
+// the site address. Empty lines are non-breaking-space paragraphs because mail
+// clients collapse truly empty elements. The logo is the hosted PNG (see
+// emailHeader) at signature size, and links to the site along with the address.
+const SIGNATURE_URL = 'https://www.pouleposition.nl';
+const emailSignature = () => `
+  <div style="margin-top: 8px; font-size: 14px; color: #222222;">
+    <p style="margin: 0; line-height: 1.5;">&nbsp;</p>
+    <p style="margin: 0; line-height: 1.5;">&nbsp;</p>
+    <p style="margin: 0; line-height: 1.5;">Kimi</p>
+    <p style="margin: 0; line-height: 1.5;">&nbsp;</p>
+    <a href="${SIGNATURE_URL}" style="text-decoration: none;">
+      <img src="${process.env.FRONTEND_URL}/logo-email.png?v=2" alt="Poule Position" width="56" style="display: block; width: 56px; max-width: 56px; height: auto; border: 0;" />
+    </a>
+    <p style="margin: 4px 0 0; line-height: 1.5;">
+      <a href="${SIGNATURE_URL}" style="color: ${BRAND_NAVY}; text-decoration: none;">www.pouleposition.nl</a>
+    </p>
+  </div>
 `;
+
+// Footer line below the signature. Only announcement/broadcast mail gets one:
+// a one-click unsubscribe link. Transactional emails (prediction confirmations,
+// password reset) have none, since opting out of those would break the game.
+const emailFooter = (unsubscribeUrl?: string, lang: EmailLang = 'en') =>
+  unsubscribeUrl
+    ? `
+  <p style="color: #666; font-size: 12px; margin-top: 30px;">
+    <a href="${unsubscribeUrl}" style="color: #999;">${et(lang, 'common.unsubscribe')}</a>
+  </p>
+`
+    : '';
 
 // Full HTML document wrapper — the templates previously shipped as a bare
 // <div>, with no <head> at all, so there was nowhere to declare color-scheme.
@@ -133,7 +156,13 @@ const emailFooter = (unsubscribeUrl?: string, lang: EmailLang = 'en') => `
 // needs dark-mode treatment when the email doesn't say otherwise; declaring
 // "light" here tells it this email is already themed and shouldn't be
 // reinterpreted.
-const emailDocument = (bodyHtml: string, lang: EmailLang = 'en') => `
+// Pass signature: false for mails that go to the admin rather than a player,
+// and footer for anything that belongs below the signature.
+const emailDocument = (
+  bodyHtml: string,
+  lang: EmailLang = 'en',
+  opts: { signature?: boolean; footer?: string } = {}
+) => `
   <!DOCTYPE html>
   <html lang="${lang}" style="margin: 0; padding: 0;">
     <head>
@@ -147,6 +176,8 @@ const emailDocument = (bodyHtml: string, lang: EmailLang = 'en') => `
     <body style="margin: 0; padding: 0; background-color: #ffffff;">
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${bodyHtml}
+        ${opts.signature === false ? '' : emailSignature()}
+        ${opts.footer ?? ''}
       </div>
     </body>
   </html>
@@ -408,6 +439,7 @@ export const sendRaceReminder = async (
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
           ${et(lang, 'common.goodLuck')}
         </p>
+        ${emailSignature()}
       </div>
     `,
   };
@@ -481,7 +513,6 @@ export const sendPasswordReset = async (email: string, nickname: string, resetUr
         <a href="${escapeHtml(resetUrl)}" style="color: #666;">${escapeHtml(resetUrl)}</a>
       </p>
       <p>${et(lang, 'reset.ignore')}</p>
-      ${emailFooter(undefined, lang)}
     `, lang),
   };
 
@@ -573,6 +604,7 @@ export const sendResultsAreInEmail = async (
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
           ${et(lang, 'common.seeYou')}
         </p>
+        ${emailSignature()}
       </div>
     `,
   };
@@ -692,8 +724,7 @@ export const sendBroadcastEmail = async (
         ${htmlMessage}
       </div>
       ${emailBanner(et(lang, 'common.visit'), { url: process.env.FRONTEND_URL! })}
-      ${emailFooter(unsubscribeUrl, lang)}
-    `, lang),
+    `, lang, { footer: emailFooter(unsubscribeUrl, lang) }),
   };
 
   try {
@@ -737,8 +768,7 @@ export const sendPitwallApproved = async (idea: {
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
         It is marked approved in the Pitlane. Add it to the definitive Pit Wall when you are ready.
       </p>
-      ${emailFooter()}
-    `),
+    `, 'en', { signature: false }),
   };
 
   try {
@@ -781,8 +811,7 @@ export const sendPitwallSubmitted = async (idea: {
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
         It is waiting for your decision in the Pitlane (Pit Wall Ideas).
       </p>
-      ${emailFooter()}
-    `),
+    `, 'en', { signature: false }),
   };
 
   try {
