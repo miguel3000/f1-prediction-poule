@@ -824,6 +824,93 @@ export const sendPitwallSubmitted = async (idea: {
   }
 };
 
+// Sent to the admin when someone signs up or deletes their own account.
+// Nickname and email are player-written, so everything is escaped and kept out
+// of the subject's control characters.
+export interface MemberNoticeDetails {
+  kind: 'joined' | 'left';
+  nickname: string;
+  email: string;
+  language?: string | null;
+  totalMembers: number;
+  // Only known for someone who is leaving
+  memberSince?: Date | string | null;
+  totalPoints?: number | null;
+  predictionCount?: number | null;
+}
+
+export const sendMemberNotice = async (member: MemberNoticeDetails): Promise<boolean> => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.error('ADMIN_EMAIL not configured — cannot send member notice');
+    return false;
+  }
+
+  const joined = member.kind === 'joined';
+  const oneLine = (text: string) => text.replace(/[\r\n]+/g, ' ').trim();
+  const formatNL = (value: Date | string) =>
+    new Date(value).toLocaleString('nl-NL', {
+      timeZone: 'Europe/Amsterdam',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  const rows: Array<[string, string]> = [
+    ['Nickname', escapeHtml(member.nickname)],
+    ['Email', escapeHtml(member.email)],
+    ['Language', member.language === 'nl' ? 'Dutch' : member.language === 'en' ? 'English' : 'Not set'],
+  ];
+  if (!joined) {
+    if (member.memberSince) rows.push(['Member since', formatNL(member.memberSince)]);
+    if (member.predictionCount != null) rows.push(['Predictions made', String(member.predictionCount)]);
+    if (member.totalPoints != null) rows.push(['Points', String(member.totalPoints)]);
+  }
+  rows.push([joined ? 'Signed up' : 'Left', formatNL(new Date())]);
+  rows.push(['Members now', String(member.totalMembers)]);
+
+  const tableRows = rows
+    .map(
+      ([label, value], i) => `
+        <tr>
+          <td style="padding: 10px 14px; background-color: ${i % 2 === 0 ? BRAND_BLUE : BRAND_NAVY}; color: #ffffff; font-weight: 700; width: 38%;">${label}</td>
+          <td style="padding: 10px 14px; background-color: ${i % 2 === 0 ? BRAND_BLUE : BRAND_NAVY}; color: #ffffff;">${value}</td>
+        </tr>`
+    )
+    .join('');
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: adminEmail,
+    subject: `Poule Position: ${joined ? 'new member' : 'member left'} — ${oneLine(member.nickname)}`.slice(0, 200),
+    html: emailDocument(
+      `
+      ${emailHeader}
+      ${emailBanner(joined ? 'New Member' : 'Member Left', { bg: joined ? BRAND_YELLOW : BRAND_NAVY, color: joined ? '#000000' : '#ffffff' })}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px; margin-bottom: 24px;">
+        ${tableRows}
+      </table>
+      <p style="color: #666; font-size: 12px;">
+        ${joined ? 'They have received no email from the site yet.' : 'Their account, predictions and points have been deleted.'}
+      </p>
+    `,
+      'en',
+      { signature: false }
+    ),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Member notice sent (${member.kind})`);
+    return true;
+  } catch (error) {
+    console.error('Error sending member notice:', error);
+    return false;
+  }
+};
+
 // Internal ops alert — e.g. results still unavailable from the API after the retry window
 export const sendAdminAlert = async (subject: string, message: string): Promise<boolean> => {
   const adminEmail = process.env.ADMIN_EMAIL;

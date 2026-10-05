@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { query } from '../config/database';
-import { sendPasswordReset } from '../services/emailService';
+import { sendPasswordReset, sendMemberNotice } from '../services/emailService';
 import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
 
 const SALT_ROUNDS = 10;
@@ -47,6 +47,42 @@ export const getProfile = async (req: Request, res: Response) => {
 };
 
 // Password-based registration
+// Tells the admin about a new or departed member. Runs after the response is
+// decided and never throws: a mail problem must not affect the player's request.
+// A burst of sign-ups (a bot hammering the form) is capped so it cannot flood the inbox.
+const MAX_SIGNUP_NOTICES_PER_HOUR = 10;
+
+const notifyAdminOfSignup = (user: any) => {
+  (async () => {
+    const recent = await query("SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '1 hour'");
+    if (Number(recent.rows[0].count) > MAX_SIGNUP_NOTICES_PER_HOUR) return;
+    const total = await query('SELECT COUNT(*) FROM users');
+    await sendMemberNotice({
+      kind: 'joined',
+      nickname: user.nickname,
+      email: user.email,
+      language: user.language,
+      totalMembers: Number(total.rows[0].count),
+    });
+  })().catch((error) => console.error('Sign-up notice failed:', error));
+};
+
+const notifyAdminOfDeparture = (user: any, predictionCount: number) => {
+  (async () => {
+    const total = await query('SELECT COUNT(*) FROM users');
+    await sendMemberNotice({
+      kind: 'left',
+      nickname: user.nickname,
+      email: user.email,
+      language: user.language,
+      totalMembers: Number(total.rows[0].count),
+      memberSince: user.created_at,
+      totalPoints: user.total_points,
+      predictionCount,
+    });
+  })().catch((error) => console.error('Departure notice failed:', error));
+};
+
 export const registerWithPassword = async (req: Request, res: Response) => {
   try {
     const { nickname, email, password } = req.body;
@@ -88,6 +124,8 @@ export const registerWithPassword = async (req: Request, res: Response) => {
       process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     );
+
+    notifyAdminOfSignup(user);
 
     res.status(201).json({
       message: 'Account created successfully!',
@@ -330,8 +368,17 @@ export const deleteAccount = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Incorrect password' });
     }
 
+    // Collected before the delete, since the cascade removes the predictions with it.
+    const stats = await query(
+      `SELECT (SELECT COUNT(*) FROM predictions WHERE user_id = $1)
+            + (SELECT COUNT(*) FROM sprint_predictions WHERE user_id = $1) AS prediction_count`,
+      [userId]
+    );
+
     // Cascade deletes the user's predictions and sprint_predictions too.
     await query('DELETE FROM users WHERE id = $1', [userId]);
+
+    notifyAdminOfDeparture(user, Number(stats.rows[0]?.prediction_count ?? 0));
 
     res.json({ message: 'Account deleted' });
   } catch (error) {
