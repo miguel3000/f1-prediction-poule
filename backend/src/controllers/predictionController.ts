@@ -12,9 +12,13 @@ export const submitPrediction = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Race ID and 10 positions are required' });
     }
 
-    // Optional bonus pick — any driver in the field, not just the predicted top 10
-    const dnfPickId: number | null = dnfPick == null ? null : Number(dnfPick);
-    if (dnfPickId != null && Number.isNaN(dnfPickId)) {
+    // Every main-race prediction needs a first-retirement pick — any driver in the
+    // field, not just the predicted top 10 (sprints have no such pick)
+    if (dnfPick == null || dnfPick === '') {
+      return res.status(400).json({ error: 'First retirement pick is required' });
+    }
+    const dnfPickId = Number(dnfPick);
+    if (!Number.isInteger(dnfPickId) || dnfPickId <= 0) {
       return res.status(400).json({ error: 'Invalid DNF pick' });
     }
 

@@ -25,7 +25,7 @@ export const rules: Record<keyof typeof en_rules, string> = {
   'rules.miss.example': 'Voorspel VER P1, finisht P5 → **0 ptn**',
   'rules.note': '**Let op:** de punten hangen af van de positie die je voorspelde, niet van waar de coureur uiteindelijk finisht. P1 goed voorspellen is meer waard dan P10 goed voorspellen.',
   'rules.dnf.title': '⚠ Bonus: eerste uitvaller (+25 ptn)',
-  'rules.dnf.text': 'Op het voorspelscherm kies je ook welke coureur volgens jou als **eerste uitvalt** in de race. Zit je goed, dan krijg je een vaste **25 bonuspunten** bovenop je positiescore. Deze keuze is optioneel en geldt alleen voor de hoofdrace — sprints tellen niet mee.',
+  'rules.dnf.text': 'Bij elke voorspelling voor de hoofdrace kies je ook welke coureur volgens jou als **eerste uitvalt** in de race. Zit je goed, dan krijg je een vaste **25 bonuspunten** bovenop je positiescore. Deze keuze is **verplicht** om een hoofdrace-voorspelling in te dienen; voor sprints is er geen keuze.',
   'rules.deadlines.title': 'Deadlines voor voorspellingen',
   'rules.deadlines.1': 'Voorspellingen **moeten** minstens 1 minuut voor de start van de race **zijn verstuurd**',
   'rules.deadlines.2': 'Je kunt je voorspelling zo vaak aanpassen als je wilt vóór de deadline',

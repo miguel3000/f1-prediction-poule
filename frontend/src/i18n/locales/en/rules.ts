@@ -23,7 +23,7 @@ export const rules = {
   'rules.miss.example': 'Predict VER P1, finishes P5 → **0 pts**',
   'rules.note': '**Note:** Points are based on the position you predicted, not where the driver actually finishes. Predicting P1 correctly is worth more than predicting P10 correctly.',
   'rules.dnf.title': '⚠ Bonus: First Retirement (+25 pts)',
-  'rules.dnf.text': 'On the prediction screen you can also pick which driver you think will be the **first to retire** from the race. Get it right and you earn a flat **25 bonus points**, on top of your position score. This pick is optional and main-race only — sprints don\'t count.',
+  'rules.dnf.text': 'Every main-race prediction also needs a pick for which driver you think will be the **first to retire** from the race. Get it right and you earn a flat **25 bonus points**, on top of your position score. The pick is **required** to submit a main-race prediction; sprints have no such pick.',
   'rules.deadlines.title': 'Prediction Deadlines',
   'rules.deadlines.1': 'Predictions **must be submitted** at least 1 minute before the race starts',
   'rules.deadlines.2': 'You can modify your predictions as many times as you want before the deadline',

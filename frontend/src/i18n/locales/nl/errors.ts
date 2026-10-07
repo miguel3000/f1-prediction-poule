@@ -44,6 +44,7 @@ export const errors: Record<keyof typeof enErrors, string> = {
   'err.Race not found': 'Race niet gevonden',
   'err.This is not a sprint race': 'Dit is geen sprintrace',
   'err.Invalid DNF pick': 'Ongeldige uitvaller-keuze',
+  'err.First retirement pick is required': 'Kies de coureur waarvan je verwacht dat die als eerste uitvalt.',
   'err.Failed to submit prediction': 'Voorspelling opslaan mislukt',
   'err.Failed to submit sprint prediction': 'Sprintvoorspelling opslaan mislukt',
   'err.Failed to get prediction': 'Voorspelling ophalen mislukt',

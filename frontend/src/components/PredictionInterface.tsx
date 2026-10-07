@@ -335,10 +335,11 @@ const PredictionInterface = ({ raceId, raceDate, round }: PredictionInterfacePro
 
   const handleSubmit = async () => {
     if (predictions.some(d => d === null)) { setMessage(t('predict.fillAll10')); return; }
+    if (dnfPick === '') { setMessage(t('predict.retirementRequired')); return; }
     setSubmitting(true);
     setMessage('');
     try {
-      await submitPrediction(raceId, predictions.map(d => d!.id), dnfPick === '' ? null : dnfPick);
+      await submitPrediction(raceId, predictions.map(d => d!.id), dnfPick);
       setShowConfirmModal(true);
     } catch (error: any) {
       setMessage(tError(error.response?.data?.error || 'Failed to submit prediction'));
@@ -539,11 +540,12 @@ const PredictionInterface = ({ raceId, raceDate, round }: PredictionInterfacePro
           </label>
           <select
             id="dnf-pick"
+            required
             value={dnfPick}
             onChange={(e) => setDnfPick(e.target.value === '' ? '' : Number(e.target.value))}
             className="w-full bg-f1-neutral-950 border border-f1-neutral-700 text-white text-sm px-3 py-2 focus:outline-none focus:border-f1-yellow-500"
           >
-            <option value="">{t('predict.noPick')}</option>
+            <option value="" disabled>{t('predict.noPick')}</option>
             {qualifyingDrivers.map((driver) => (
               <option key={driver.id} value={driver.id}>{driver.name}</option>
             ))}
@@ -553,14 +555,14 @@ const PredictionInterface = ({ raceId, raceDate, round }: PredictionInterfacePro
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={submitting || filledCount < 10}
+          disabled={submitting || filledCount < 10 || dnfPick === ''}
           className={`w-full py-3.5 font-black text-sm tracking-widest uppercase transition-all ${
-            filledCount < 10
+            filledCount < 10 || dnfPick === ''
               ? 'bg-f1-neutral-800 text-white cursor-not-allowed'
               : 'bg-f1-yellow-500 hover:brightness-110 text-black active:scale-95'
           }`}
         >
-          {submitting ? t('predict.submitting') : filledCount < 10 ? t('predict.slotsRemaining', { n: 10 - filledCount }) : t('predict.confirm')}
+          {submitting ? t('predict.submitting') : filledCount < 10 ? t('predict.slotsRemaining', { n: 10 - filledCount }) : dnfPick === '' ? t('predict.chooseRetirement') : t('predict.confirm')}
         </button>
 
         <button

@@ -109,7 +109,7 @@ const en = {
   'welcome.scoring.exact': 'Right position: the full Formula 1 points for that position, from 25 for P1 down to 1 for P10.',
   'welcome.scoring.near': 'One position off: half the points.',
   'welcome.scoring.miss': 'Further off, or outside the top 10: no points.',
-  'welcome.scoring.dnf': 'Bonus: pick which driver will retire first in a main race and earn +25 points if you are right. This pick is optional.',
+  'welcome.scoring.dnf': 'Bonus: every main-race prediction includes a pick for which driver will retire first, and it earns +25 points if you are right. You need to make this pick to submit.',
   'welcome.scoring.sprint': 'On sprint weekends there is a separate sprint prediction for the top 8, worth 8 points for P1 down to 1.',
   'welcome.forgot':
     "Forgot to predict? We copy in your most recent prediction when the race locks and tell you what was entered. You also get a reminder 1 hour before lights out if you haven't predicted yet.",
@@ -224,7 +224,7 @@ const nl: Record<EmailKey, string> = {
   'welcome.scoring.exact': 'Juiste positie: de volledige Formule 1-punten voor die positie, van 25 voor P1 tot 1 voor P10.',
   'welcome.scoring.near': 'Eén positie ernaast: de helft van de punten.',
   'welcome.scoring.miss': 'Verder ernaast, of buiten de top 10: geen punten.',
-  'welcome.scoring.dnf': 'Bonus: kies welke coureur als eerste uitvalt in een hoofdrace en verdien +25 punten als je gelijk hebt. Deze keuze is optioneel.',
+  'welcome.scoring.dnf': 'Bonus: bij elke voorspelling voor de hoofdrace kies je welke coureur als eerste uitvalt, goed voor +25 punten als je gelijk hebt. Deze keuze is nodig om in te dienen.',
   'welcome.scoring.sprint': 'In sprintweekenden is er een aparte sprintvoorspelling voor de top 8, goed voor 8 punten voor P1 tot 1.',
   'welcome.forgot':
     'Vergeten te voorspellen? Wij nemen je meest recente voorspelling over zodra de race sluit en laten je weten wat er is ingevuld. Je krijgt ook een herinnering 1 uur voor de start als je nog niet hebt voorspeld.',

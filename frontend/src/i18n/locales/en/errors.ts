@@ -44,6 +44,7 @@ export const errors = {
   'err.Race not found': 'Race not found',
   'err.This is not a sprint race': 'This is not a sprint race',
   'err.Invalid DNF pick': 'Invalid DNF pick',
+  'err.First retirement pick is required': 'Pick the driver you expect to retire first.',
   'err.Failed to submit prediction': 'Failed to submit prediction',
   'err.Failed to submit sprint prediction': 'Failed to submit sprint prediction',
   'err.Failed to get prediction': 'Failed to get prediction',
