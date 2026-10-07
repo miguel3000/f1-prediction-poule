@@ -19,6 +19,15 @@ const escapeHtml = (text: string): string => {
 // Bold, HTML-safe snippet to drop into a translated sentence's {placeholder}.
 const bold = (text: string): string => `<strong>${escapeHtml(text)}</strong>`;
 
+// "To" with the player's nickname as display name, so their mail app shows
+// "Roelonso" rather than the bare address. Nickname is player-written: line breaks
+// and control characters are stripped (header injection), and nodemailer quotes or
+// encodes the rest. Falls back to the plain address if nothing usable is left.
+const recipient = (nickname: string, email: string): string | { name: string; address: string } => {
+  const name = (nickname ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 60);
+  return name ? { name, address: email } : email;
+};
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 587,
@@ -208,7 +217,7 @@ export const sendPredictionConfirmation = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'predConfirm.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
@@ -304,7 +313,7 @@ export const sendProvisionalResults = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'provisional.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
@@ -379,7 +388,7 @@ export const sendFinalResults = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'final.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
@@ -421,7 +430,7 @@ export const sendRaceReminder = async (
   const lang = normalizeLang(language);
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'raceReminder.subject', { race: raceName }),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -465,7 +474,7 @@ export const sendMissedPredictionReminder = async (
   const lang = normalizeLang(language);
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'missed.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
@@ -499,7 +508,7 @@ export const sendPasswordReset = async (email: string, nickname: string, resetUr
   const lang = normalizeLang(language);
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'reset.subject'),
     html: emailDocument(`
       ${emailHeader}
@@ -546,7 +555,7 @@ export const sendAutoFillNotice = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'autofill.subject', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
@@ -586,7 +595,7 @@ export const sendResultsAreInEmail = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'resultsIn.subject', { race: raceName }),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -663,7 +672,7 @@ export const sendPersonalRaceResults = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, isSprint ? 'personal.subjectSprint' : 'personal.subjectRace', { race: raceName }),
     html: emailDocument(`
       ${emailHeader}
@@ -714,7 +723,7 @@ export const sendBroadcastEmail = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'broadcast.subject', { subject }),
     html: emailDocument(`
       ${emailHeader}
@@ -1033,7 +1042,7 @@ export const sendWelcomeEmail = async (
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
-    to: email,
+    to: recipient(nickname, email),
     subject: et(lang, 'welcome.subject', { name: nickname.replace(/[\r\n]+/g, ' ').trim() }).slice(0, 200),
     html: emailDocument(
       `
