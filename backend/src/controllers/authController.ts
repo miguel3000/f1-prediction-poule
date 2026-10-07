@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { query } from '../config/database';
-import { sendPasswordReset, sendMemberNotice } from '../services/emailService';
+import { sendPasswordReset, sendMemberNotice, sendWelcomeEmail } from '../services/emailService';
 import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
 import { randomNickname, numberedNickname } from '../utils/nicknameGenerator';
 
@@ -48,15 +48,19 @@ export const getProfile = async (req: Request, res: Response) => {
 };
 
 // Password-based registration
-// Tells the admin about a new or departed member. Runs after the response is
+// Emails around sign-up (welcome to the player, notice to the admin) and the admin's
+// notice when someone leaves. Runs after the response is
 // decided and never throws: a mail problem must not affect the player's request.
 // A burst of sign-ups (a bot hammering the form) is capped so it cannot flood the inbox.
 const MAX_SIGNUP_NOTICES_PER_HOUR = 10;
 
-const notifyAdminOfSignup = (user: any) => {
+const sendSignupEmails = (user: any) => {
   (async () => {
     const recent = await query("SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '1 hour'");
+    // The same cap covers the welcome email: sign-up needs no email verification, so
+    // without it the form could be used to mail arbitrary addresses in bulk.
     if (Number(recent.rows[0].count) > MAX_SIGNUP_NOTICES_PER_HOUR) return;
+    await sendWelcomeEmail(user.email, user.nickname, user.language);
     const total = await query('SELECT COUNT(*) FROM users');
     await sendMemberNotice({
       kind: 'joined',
@@ -126,7 +130,7 @@ export const registerWithPassword = async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
-    notifyAdminOfSignup(user);
+    sendSignupEmails(user);
 
     res.status(201).json({
       message: 'Account created successfully!',

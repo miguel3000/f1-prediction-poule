@@ -96,6 +96,28 @@ const en = {
   'unsub.done':
     "You've been unsubscribed from Poule Position announcement emails. You'll still get emails about your own predictions and results.",
   'unsub.error': 'Something went wrong. Please try again later.',
+
+  'welcome.subject': 'Welcome to Poule Position, {name}!',
+  'welcome.banner': 'Welcome On The Grid',
+  'welcome.intro':
+    'Your account is ready. Poule Position is a Formula 1 prediction game: before every race you predict the finishing order and score points for every driver you get right. Then see how you stack up against your friends on the season leaderboard.',
+  'welcome.how.title': 'How it works',
+  'welcome.how.1': 'Open a race and drag the drivers into the order you expect them to finish: the top 10 for a race, the top 8 for a sprint.',
+  'welcome.how.2': 'Submit before the deadline. Predictions lock 1 minute before lights out, and until then you can change them as often as you like.',
+  'welcome.how.3': 'After the race you get an email with the results and your points. The final points follow 24 hours later, once any penalties are settled.',
+  'welcome.scoring.title': 'Scoring in short',
+  'welcome.scoring.exact': 'Right position: the full Formula 1 points for that position, from 25 for P1 down to 1 for P10.',
+  'welcome.scoring.near': 'One position off: half the points.',
+  'welcome.scoring.miss': 'Further off, or outside the top 10: no points.',
+  'welcome.scoring.dnf': 'Bonus: pick which driver will retire first in a main race and earn +25 points if you are right. This pick is optional.',
+  'welcome.scoring.sprint': 'On sprint weekends there is a separate sprint prediction for the top 8, worth 8 points for P1 down to 1.',
+  'welcome.forgot':
+    "Forgot to predict? We copy in your most recent prediction when the race locks and tell you what was entered. You also get a reminder 1 hour before lights out if you haven't predicted yet.",
+  'welcome.profile': 'You can change your nickname, email and language any time on your profile page.',
+  'welcome.cta': 'Make Your First Prediction',
+  'welcome.rules': 'The full rules are on the website:',
+  'welcome.rulesLink': 'Read the rules',
+  'welcome.questions': 'Questions? Just reply to this email.',
 };
 
 export type EmailKey = keyof typeof en;
@@ -187,6 +209,28 @@ const nl: Record<EmailKey, string> = {
   'unsub.done':
     'Je bent afgemeld voor de aankondigingsmails van Poule Position. Je krijgt nog wel e-mails over je eigen voorspellingen en uitslagen.',
   'unsub.error': 'Er ging iets mis. Probeer het later nog eens.',
+
+  'welcome.subject': 'Welkom bij Poule Position, {name}!',
+  'welcome.banner': 'Welkom op de grid',
+  'welcome.intro':
+    'Je account staat klaar. Poule Position is een Formule 1-voorspelspel: voor elke race voorspel je de uitslag en verdien je punten voor elke coureur die je goed hebt. Kijk daarna hoe je het doet tegenover je vrienden in het seizoensklassement.',
+  'welcome.how.title': 'Zo werkt het',
+  'welcome.how.1': 'Open een race en sleep de coureurs in de volgorde waarin je verwacht dat ze finishen: de top 10 voor een race, de top 8 voor een sprint.',
+  'welcome.how.2': 'Dien je voorspelling in voor de deadline. Voorspellingen sluiten 1 minuut voor de start, en tot die tijd kun je ze zo vaak aanpassen als je wilt.',
+  'welcome.how.3': 'Na de race krijg je een e-mail met de uitslag en je punten. De definitieve punten volgen 24 uur later, zodra eventuele straffen zijn verwerkt.',
+  'welcome.scoring.title': 'Puntentelling in het kort',
+  'welcome.scoring.exact': 'Juiste positie: de volledige Formule 1-punten voor die positie, van 25 voor P1 tot 1 voor P10.',
+  'welcome.scoring.near': 'Eén positie ernaast: de helft van de punten.',
+  'welcome.scoring.miss': 'Verder ernaast, of buiten de top 10: geen punten.',
+  'welcome.scoring.dnf': 'Bonus: kies welke coureur als eerste uitvalt in een hoofdrace en verdien +25 punten als je gelijk hebt. Deze keuze is optioneel.',
+  'welcome.scoring.sprint': 'In sprintweekenden is er een aparte sprintvoorspelling voor de top 8, goed voor 8 punten voor P1 tot 1.',
+  'welcome.forgot':
+    'Vergeten te voorspellen? Wij nemen je meest recente voorspelling over zodra de race sluit en laten je weten wat er is ingevuld. Je krijgt ook een herinnering 1 uur voor de start als je nog niet hebt voorspeld.',
+  'welcome.profile': 'Je kunt je bijnaam, e-mailadres en taal op elk moment wijzigen op je profielpagina.',
+  'welcome.cta': 'Doe je eerste voorspelling',
+  'welcome.rules': 'De volledige regels staan op de website:',
+  'welcome.rulesLink': 'Lees de regels',
+  'welcome.questions': 'Vragen? Beantwoord gewoon deze e-mail.',
 };
 
 const dictionaries: Record<EmailLang, Record<EmailKey, string>> = { en, nl };

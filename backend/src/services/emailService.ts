@@ -1015,6 +1015,63 @@ export const sendResultsCheckAlert = async (d: ResultsCheckAlertDetails): Promis
   }
 };
 
+// Sent right after someone registers: what the game is, how a weekend works and
+// the scoring in a few lines (kept in step with the Rules page). Transactional,
+// so no unsubscribe link. Replies go to the sender address (kimi@).
+export const sendWelcomeEmail = async (email: string, nickname: string, language?: string | null): Promise<boolean> => {
+  const lang = normalizeLang(language);
+  const appUrl = process.env.FRONTEND_URL!;
+  const heading = (text: string) =>
+    `<h3 style="color: ${BRAND_NAVY}; margin: 24px 0 8px; font-size: 18px;">${text}</h3>`;
+  const list = (items: string[]) =>
+    `<ul style="margin: 0 0 8px; padding-left: 20px; line-height: 1.5;">${items.map((i) => `<li style="margin-bottom: 6px;">${i}</li>`).join('')}</ul>`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: et(lang, 'welcome.subject', { name: nickname.replace(/[\r\n]+/g, ' ').trim() }).slice(0, 200),
+    html: emailDocument(
+      `
+      ${emailHeader}
+      ${emailBanner(et(lang, 'welcome.banner'), { bg: BRAND_YELLOW })}
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p style="line-height: 1.5;">${et(lang, 'welcome.intro')}</p>
+
+      ${heading(et(lang, 'welcome.how.title'))}
+      ${list([et(lang, 'welcome.how.1'), et(lang, 'welcome.how.2'), et(lang, 'welcome.how.3')])}
+
+      ${heading(et(lang, 'welcome.scoring.title'))}
+      ${list([
+        et(lang, 'welcome.scoring.exact'),
+        et(lang, 'welcome.scoring.near'),
+        et(lang, 'welcome.scoring.miss'),
+        et(lang, 'welcome.scoring.dnf'),
+        et(lang, 'welcome.scoring.sprint'),
+      ])}
+
+      <p style="line-height: 1.5; margin-top: 16px;">${et(lang, 'welcome.forgot')}</p>
+      <p style="line-height: 1.5;">${et(lang, 'welcome.profile')}</p>
+
+      <div style="margin-top: 24px;">
+        ${emailBanner(et(lang, 'welcome.cta'), { url: appUrl, bg: BRAND_NAVY, color: '#ffffff' })}
+      </div>
+      <p style="line-height: 1.5;">${et(lang, 'welcome.rules')} <a href="${appUrl}/rules" style="color: ${BRAND_NAVY};">${et(lang, 'welcome.rulesLink')}</a></p>
+      <p style="line-height: 1.5;">${et(lang, 'welcome.questions')}</p>
+    `,
+      lang
+    ),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Welcome email sent to:', email, `[${lang}]`);
+    return true;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    return false;
+  }
+};
+
 // Internal ops alert — e.g. results still unavailable from the API after the retry window
 export const sendAdminAlert = async (subject: string, message: string): Promise<boolean> => {
   const adminEmail = process.env.ADMIN_EMAIL;
