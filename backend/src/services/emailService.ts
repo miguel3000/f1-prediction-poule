@@ -1018,7 +1018,12 @@ export const sendResultsCheckAlert = async (d: ResultsCheckAlertDetails): Promis
 // Sent right after someone registers: what the game is, how a weekend works and
 // the scoring in a few lines (kept in step with the Rules page). Transactional,
 // so no unsubscribe link. Replies go to the sender address (kimi@).
-export const sendWelcomeEmail = async (email: string, nickname: string, language?: string | null): Promise<boolean> => {
+export const sendWelcomeEmail = async (
+  email: string,
+  nickname: string,
+  language?: string | null,
+  opts: { late?: boolean } = {}
+): Promise<boolean> => {
   const lang = normalizeLang(language);
   const appUrl = process.env.FRONTEND_URL!;
   const heading = (text: string) =>
@@ -1035,6 +1040,7 @@ export const sendWelcomeEmail = async (email: string, nickname: string, language
       ${emailHeader}
       ${emailBanner(et(lang, 'welcome.banner'), { bg: BRAND_YELLOW })}
       <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      ${opts.late ? `<p style="line-height: 1.5; font-style: italic;">${et(lang, 'welcome.late')}</p>` : ''}
       <p style="line-height: 1.5;">${et(lang, 'welcome.intro')}</p>
 
       ${heading(et(lang, 'welcome.how.title'))}
