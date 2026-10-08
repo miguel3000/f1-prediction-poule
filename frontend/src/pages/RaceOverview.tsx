@@ -119,6 +119,10 @@ const RaceOverview = () => {
   const nextRace = firstUpcoming
     ? (races.find((r) => r.status === 'upcoming' && r.round === firstUpcoming.round && r.race_type === 'main') ?? firstUpcoming)
     : null;
+  // A sprint weekend has two predictions to make, as long as the sprint is still to come
+  const nextSprintOpen = nextRace
+    ? races.some((r) => r.round === nextRace.round && r.race_type === 'sprint' && r.status === 'upcoming')
+    : false;
 
   if (loading) {
     return (
@@ -166,6 +170,19 @@ const RaceOverview = () => {
               </div>
             </div>
           )}
+          <div className="flex flex-col sm:flex-row gap-3 mt-5">
+            {nextSprintOpen && (
+              <button onClick={() => navigate('/?type=sprint')} className="btn-f1-primary flex-1">
+                {t('races.makeSprintPrediction')}
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/?type=main')}
+              className={`${nextSprintOpen ? 'btn-f1-secondary' : 'btn-f1-primary'} flex-1`}
+            >
+              {t('races.makePrediction')}
+            </button>
+          </div>
         </section>
       )}
 

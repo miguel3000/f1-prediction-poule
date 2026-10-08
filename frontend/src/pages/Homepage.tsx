@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Banner from '../components/Banner';
 import CircuitBackground from '../components/CircuitBackground';
 import LogoMark from '../components/LogoMark';
@@ -30,6 +30,7 @@ const Homepage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useLang();
 
   useEffect(() => {
@@ -45,8 +46,15 @@ const Homepage = () => {
       // Find sprint race for this round
       const sprint = races.find((r: Race) => r.race_type === 'sprint');
 
-      // Default to sprint tab only if sprint exists and is still upcoming
-      if (sprint && sprint.status === 'upcoming') {
+      // A link (the Races page's Next race buttons) can ask for a specific tab: ?type=main|sprint
+      const requested = searchParams.get('type');
+
+      if (requested === 'main') {
+        setActiveTab('main');
+      } else if (requested === 'sprint' && sprint) {
+        setActiveTab('sprint');
+      } else if (sprint && sprint.status === 'upcoming') {
+        // Default to sprint tab only if sprint exists and is still upcoming
         setActiveTab('sprint');
       } else {
         setActiveTab('main');
