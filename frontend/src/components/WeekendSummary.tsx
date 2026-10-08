@@ -25,12 +25,12 @@ const WeekendSummary = ({ sessions }: WeekendSummaryProps) => {
   return (
     <div className="space-y-1">
       {days.map((day) => (
-        <div key={day.key} className="flex items-baseline gap-2 text-xs">
-          <span className="w-[4.5rem] shrink-0 text-[10px] text-white/70 uppercase tracking-wider">{day.label}</span>
-          <span className="min-w-0 flex flex-wrap gap-x-2">
+        <div key={day.key} className="flex items-baseline gap-1.5 text-[11px]">
+          <span className="w-[3.75rem] shrink-0 text-[9px] text-white/70 uppercase tracking-wide">{day.label}</span>
+          <span className="min-w-0 flex flex-wrap gap-x-1.5">
             {day.sessions.map((session) => (
               <span key={session.key} className="whitespace-nowrap">
-                <span className="text-[10px] uppercase tracking-wider text-white/70">{t(`weekend.short.${session.key}`)}</span>{' '}
+                <span className="text-[9px] uppercase tracking-wide text-white/70">{t(`weekend.short.${session.key}`)}</span>{' '}
                 <span className={`font-f1-badge ${session.key === 'race' ? 'text-f1-yellow-400' : ''}`}>
                   {formatNLTime(session.startsAt, locale)}
                 </span>
