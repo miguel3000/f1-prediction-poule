@@ -11,11 +11,13 @@ const GAP = '#1F1A1D'; // the modal's own background, so the divider reads as pa
 
 interface WeekendBarsProps {
   sessions: WeekendSession[];
+  // The "all times in Dutch time" line; pages that already say so can hide it
+  showNote?: boolean;
 }
 
 const shear: React.CSSProperties = { transform: 'skewX(-13deg)', display: 'inline-block' };
 
-const WeekendBars = ({ sessions }: WeekendBarsProps) => {
+const WeekendBars = ({ sessions, showNote = true }: WeekendBarsProps) => {
   const { t, locale } = useLang();
   const n = sessions.length;
   const mid = (n - 1) / 2;
@@ -58,7 +60,7 @@ const WeekendBars = ({ sessions }: WeekendBarsProps) => {
           );
         })}
       </div>
-      <p className="mt-2 text-[10px] uppercase tracking-wider text-white/60">{t('weekend.timeNote')}</p>
+      {showNote && <p className="mt-2 text-[10px] uppercase tracking-wider text-white/60">{t('weekend.timeNote')}</p>}
     </div>
   );
 };

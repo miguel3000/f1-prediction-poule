@@ -113,6 +113,13 @@ const RaceOverview = () => {
 
   const isSprint = (race: Race) => race.race_type === 'sprint';
 
+  // The next race weekend: the first race still to come, shown as its main race
+  // (on a sprint weekend the sprint is the earlier card, but the weekend is one event).
+  const firstUpcoming = races.find((r) => r.status === 'upcoming');
+  const nextRace = firstUpcoming
+    ? (races.find((r) => r.status === 'upcoming' && r.round === firstUpcoming.round && r.race_type === 'main') ?? firstUpcoming)
+    : null;
+
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -128,6 +135,39 @@ const RaceOverview = () => {
         {t('races.title', { year: 2026 })}
       </h1>
       <p className="text-center text-white text-xs mb-8">{t('races.timesNote')}</p>
+
+      {nextRace && (
+        <section aria-label={t('races.nextRace')} className="max-w-3xl mx-auto mb-10 bg-f1-neutral-850 border border-f1-neutral-700 p-5 sm:p-6">
+          <p className="font-brand uppercase tracking-widest text-f1-yellow-500 text-sm">{t('races.nextRace')}</p>
+          <div className="flex items-center gap-3 flex-wrap mt-1">
+            <h2 className="font-f1 font-bold uppercase tracking-wide text-2xl sm:text-3xl text-white">{nextRace.race_name}</h2>
+            {weekends[nextRace.round]?.some((s) => s.key === 'sprint') && (
+              <span className="text-xs px-2 py-1 bg-f1-yellow-500 text-black font-bold uppercase tracking-wider">{t('races.sprint')}</span>
+            )}
+          </div>
+          <p className="text-white/70 text-sm mt-1 mb-4 uppercase tracking-wide">
+            {t('banner.round', { n: nextRace.round })} &middot; {nextRace.circuit_name} &middot; {nextRace.country}
+          </p>
+          {weekends[nextRace.round]?.length ? (
+            <WeekendBars sessions={weekends[nextRace.round]} showNote={false} />
+          ) : weekendsState === 'loading' ? (
+            <div style={{ minHeight: 120 }} />
+          ) : (
+            <div>
+              {nextRace.qualifying_date && (
+                <div className="flex items-center bg-f1-blue text-white">
+                  <span className="w-40 shrink-0 px-4 py-2 text-xs uppercase tracking-wider text-white/80">{t('races.qualifying')}</span>
+                  <span className="px-4 py-2 font-f1-badge text-sm">{formatNLDayTime(nextRace.qualifying_date, locale)}</span>
+                </div>
+              )}
+              <div className="flex items-center bg-f1-blue-dark text-white">
+                <span className="w-40 shrink-0 px-4 py-2 text-xs uppercase tracking-wider text-white/80">{t('races.raceStart')}</span>
+                <span className="px-4 py-2 font-f1-badge text-sm text-f1-yellow-400">{formatNLDayTime(nextRace.race_date, locale)}</span>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         {races.map((race, index) => (

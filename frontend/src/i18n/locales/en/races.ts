@@ -14,6 +14,7 @@ export const races = {
   'weekend.qualifying': 'Qualifying',
   'weekend.race': 'Race',
   'weekend.timeNote': 'All times in Dutch time',
+  'races.nextRace': 'Next race',
   'weekend.short.fp1': 'FP1',
   'weekend.short.fp2': 'FP2',
   'weekend.short.fp3': 'FP3',

@@ -16,6 +16,7 @@ export const races: Record<keyof typeof en_races, string> = {
   'weekend.qualifying': 'Kwalificatie',
   'weekend.race': 'Race',
   'weekend.timeNote': 'Alle tijden in Nederlandse tijd',
+  'races.nextRace': 'Volgende race',
   'weekend.short.fp1': 'VT1',
   'weekend.short.fp2': 'VT2',
   'weekend.short.fp3': 'VT3',
