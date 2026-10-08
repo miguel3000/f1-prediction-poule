@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRaces, getRaceResults, getRaceWeekend, WeekendSession } from '../services/api';
+import { getRaces, getRaceResults, getRaceWeekends, WeekendSession } from '../services/api';
 import WeekendBars from '../components/WeekendBars';
+import WeekendSummary from '../components/WeekendSummary';
 import { formatNLDay, formatNLTime, formatNLDayTime } from '../utils/dateTime';
 import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
@@ -32,8 +33,9 @@ const RaceOverview = () => {
   const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingResults, setLoadingResults] = useState(false);
-  const [weekend, setWeekend] = useState<WeekendSession[] | null>(null);
-  const [weekendState, setWeekendState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  // Every round's sessions, fetched once; the cards and the popup both read from it.
+  const [weekends, setWeekends] = useState<Record<string, WeekendSession[]>>({});
+  const [weekendsState, setWeekendsState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const navigate = useNavigate();
   const { t, locale } = useLang();
 
@@ -67,31 +69,16 @@ const RaceOverview = () => {
     }
   };
 
-  // The whole weekend's sessions for the opened race. A stale answer (the player
-  // opened another race meanwhile) is ignored; on failure the modal falls back to
-  // the qualifying and race rows it can build from the race itself.
+  // The full weekend schedule is a bonus on top of the qualifying and race times each
+  // race already has, so if it cannot be loaded the cards and popup simply show those.
   useEffect(() => {
-    if (!selectedRace) return;
-    let cancelled = false;
-    setWeekend(null);
-    setWeekendState('loading');
-    getRaceWeekend(selectedRace.round, selectedRace.season)
+    getRaceWeekends(2026)
       .then((res) => {
-        if (cancelled) return;
-        if (res.data.sessions.length > 0) {
-          setWeekend(res.data.sessions);
-          setWeekendState('ready');
-        } else {
-          setWeekendState('failed');
-        }
+        setWeekends(res.data.weekends);
+        setWeekendsState(Object.keys(res.data.weekends).length > 0 ? 'ready' : 'failed');
       })
-      .catch(() => {
-        if (!cancelled) setWeekendState('failed');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedRace?.id]);
+      .catch(() => setWeekendsState('failed'));
+  }, []);
 
   const handleRaceClick = async (race: Race) => {
     setSelectedRace(race);
@@ -174,6 +161,8 @@ const RaceOverview = () => {
                       <span className="text-[10px] px-1.5 py-0.5 bg-f1-yellow-500 text-black font-bold uppercase tracking-wider">{t('races.sprint')}</span>
                       <span className="font-f1-badge text-xs">{formatNLDayTime(race.race_date, locale)}</span>
                     </p>
+                  ) : weekends[race.round]?.length ? (
+                    <WeekendSummary sessions={weekends[race.round]} />
                   ) : (
                     <>
                       {race.qualifying_date && (
@@ -227,9 +216,9 @@ const RaceOverview = () => {
               </button>
             </div>
 
-            {weekendState !== 'failed' ? (
-              <div className="mb-6" style={{ minHeight: weekendState === 'loading' ? 120 : undefined }}>
-                {weekend && <WeekendBars sessions={weekend} />}
+            {weekendsState === 'loading' || weekends[selectedRace.round]?.length ? (
+              <div className="mb-6" style={{ minHeight: weekendsState === 'loading' ? 120 : undefined }}>
+                {weekends[selectedRace.round]?.length ? <WeekendBars sessions={weekends[selectedRace.round]} /> : null}
               </div>
             ) : (
             <div className="mb-6">

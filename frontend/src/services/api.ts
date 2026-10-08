@@ -69,8 +69,8 @@ export interface WeekendSession {
   startsAt: string;
 }
 
-export const getRaceWeekend = (round: number, season = 2026) =>
-  api.get<{ round: number; season: number; sessions: WeekendSession[] }>(`/api/races/weekend/${round}`, { params: { season } });
+export const getRaceWeekends = (season = 2026) =>
+  api.get<{ season: number; weekends: Record<string, WeekendSession[]> }>('/api/races/weekends', { params: { season } });
 
 export const getRaceResults = (id: number) =>
   api.get(`/api/races/${id}/results`);

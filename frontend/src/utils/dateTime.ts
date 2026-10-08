@@ -32,3 +32,7 @@ export const formatNLTime = (value: string | Date, locale = 'en-GB'): string => 
 // e.g. "Sun 4 Oct · 09:00"
 export const formatNLDayTime = (value: string | Date, locale = 'en-GB'): string =>
   `${formatNLDay(value, locale)} · ${formatNLTime(value, locale)}`;
+
+// Calendar day in Amsterdam time as "2026-10-09", for grouping sessions by day.
+const dayKeyFormat = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+export const dayKeyNL = (value: string | Date): string => dayKeyFormat.format(new Date(value));
