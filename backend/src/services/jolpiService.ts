@@ -36,6 +36,13 @@ export interface JolpiRace {
     date: string;
     time: string;
   };
+  // Other weekend sessions, present depending on the weekend's format
+  FirstPractice?: { date: string; time?: string };
+  SecondPractice?: { date: string; time?: string };
+  ThirdPractice?: { date: string; time?: string };
+  Sprint?: { date: string; time?: string };
+  SprintQualifying?: { date: string; time?: string };
+  SprintShootout?: { date: string; time?: string };
 }
 
 export interface JolpiDriver {

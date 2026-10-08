@@ -352,3 +352,67 @@ export const syncRaces = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to sync races' });
   }
 };
+
+
+// Every session of one race weekend with its start time (UTC ISO), oldest first.
+// Jolpi has the whole schedule (practice, sprint qualifying, sprint, qualifying,
+// race); if it cannot be reached the weekend falls back to what the races table
+// knows: qualifying and the race/sprint start.
+export const getRaceWeekend = async (req: Request, res: Response) => {
+  try {
+    const round = parseInt(req.params.round, 10);
+    const season = req.query.season ? parseInt(req.query.season as string, 10) : 2026;
+    if (!Number.isInteger(round) || round <= 0 || !Number.isInteger(season)) {
+      return res.status(400).json({ error: 'Invalid round' });
+    }
+
+    const toIso = (s?: { date: string; time?: string }) => {
+      if (!s?.date) return null;
+      const time = s.time ?? '00:00:00Z';
+      const iso = `${s.date}T${time.endsWith('Z') ? time : `${time}Z`}`;
+      return Number.isNaN(Date.parse(iso)) ? null : new Date(iso).toISOString();
+    };
+
+    let sessions: Array<{ key: string; startsAt: string }> = [];
+
+    try {
+      const calendar = await jolpiService.getRaces(season);
+      const race = calendar.find((r) => parseInt(r.round, 10) === round);
+      if (race) {
+        const entries: Array<[string, string | null]> = [
+          ['fp1', toIso(race.FirstPractice)],
+          ['fp2', toIso(race.SecondPractice)],
+          ['fp3', toIso(race.ThirdPractice)],
+          ['sprint_qualifying', toIso(race.SprintQualifying ?? race.SprintShootout)],
+          ['sprint', toIso(race.Sprint)],
+          ['qualifying', toIso(race.Qualifying)],
+          ['race', toIso({ date: race.date, time: race.time })],
+        ];
+        sessions = entries.filter((e): e is [string, string] => e[1] !== null).map(([key, startsAt]) => ({ key, startsAt }));
+      }
+    } catch (error) {
+      console.error('Weekend schedule from Jolpi failed, using the races table:', error);
+    }
+
+    if (sessions.length === 0) {
+      const rows = await query(
+        'SELECT race_type, race_date, qualifying_date FROM races WHERE season = $1 AND round = $2',
+        [season, round]
+      );
+      for (const row of rows.rows) {
+        if (row.race_type === 'main') {
+          if (row.qualifying_date) sessions.push({ key: 'qualifying', startsAt: new Date(row.qualifying_date).toISOString() });
+          sessions.push({ key: 'race', startsAt: new Date(row.race_date).toISOString() });
+        } else {
+          sessions.push({ key: 'sprint', startsAt: new Date(row.race_date).toISOString() });
+        }
+      }
+    }
+
+    sessions.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+    res.json({ round, season, sessions });
+  } catch (error) {
+    console.error('Get race weekend error:', error);
+    res.status(500).json({ error: 'Failed to load the race weekend' });
+  }
+};

@@ -64,6 +64,14 @@ export const getNextRace = () =>
 export const getUpcomingRaces = () =>
   api.get('/api/races/upcoming');
 
+export interface WeekendSession {
+  key: 'fp1' | 'fp2' | 'fp3' | 'sprint_qualifying' | 'sprint' | 'qualifying' | 'race';
+  startsAt: string;
+}
+
+export const getRaceWeekend = (round: number, season = 2026) =>
+  api.get<{ round: number; season: number; sessions: WeekendSession[] }>(`/api/races/weekend/${round}`, { params: { season } });
+
 export const getRaceResults = (id: number) =>
   api.get(`/api/races/${id}/results`);
 

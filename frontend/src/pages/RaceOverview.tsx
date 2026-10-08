@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRaces, getRaceResults } from '../services/api';
+import { getRaces, getRaceResults, getRaceWeekend, WeekendSession } from '../services/api';
+import WeekendBars from '../components/WeekendBars';
 import { formatNLDay, formatNLTime, formatNLDayTime } from '../utils/dateTime';
 import { useLang, TranslationKey } from '../i18n/LanguageContext';
 
@@ -31,6 +32,8 @@ const RaceOverview = () => {
   const [raceResults, setRaceResults] = useState<RaceResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingResults, setLoadingResults] = useState(false);
+  const [weekend, setWeekend] = useState<WeekendSession[] | null>(null);
+  const [weekendState, setWeekendState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const navigate = useNavigate();
   const { t, locale } = useLang();
 
@@ -63,6 +66,32 @@ const RaceOverview = () => {
       setLoading(false);
     }
   };
+
+  // The whole weekend's sessions for the opened race. A stale answer (the player
+  // opened another race meanwhile) is ignored; on failure the modal falls back to
+  // the qualifying and race rows it can build from the race itself.
+  useEffect(() => {
+    if (!selectedRace) return;
+    let cancelled = false;
+    setWeekend(null);
+    setWeekendState('loading');
+    getRaceWeekend(selectedRace.round, selectedRace.season)
+      .then((res) => {
+        if (cancelled) return;
+        if (res.data.sessions.length > 0) {
+          setWeekend(res.data.sessions);
+          setWeekendState('ready');
+        } else {
+          setWeekendState('failed');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWeekendState('failed');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRace?.id]);
 
   const handleRaceClick = async (race: Race) => {
     setSelectedRace(race);
@@ -198,6 +227,11 @@ const RaceOverview = () => {
               </button>
             </div>
 
+            {weekendState !== 'failed' ? (
+              <div className="mb-6" style={{ minHeight: weekendState === 'loading' ? 120 : undefined }}>
+                {weekend && <WeekendBars sessions={weekend} />}
+              </div>
+            ) : (
             <div className="mb-6">
               {!isSprint(selectedRace) && selectedRace.qualifying_date && (
                 <div className="flex items-center bg-f1-blue text-white">
@@ -216,6 +250,7 @@ const RaceOverview = () => {
                 </span>
               </div>
             </div>
+            )}
 
             {(selectedRace.status === 'completed' || selectedRace.status === 'provisional') && (
               <div className="mt-6">
