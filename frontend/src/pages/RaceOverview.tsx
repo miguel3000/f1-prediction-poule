@@ -340,7 +340,7 @@ const RaceOverview = () => {
                   {isSprint(selectedRace) ? t('races.sprintNotStarted') : t('races.raceNotStarted')}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button onClick={() => navigate('/')} className="btn-f1-primary">
+                  <button onClick={() => navigate(`/?type=${selectedRace.race_type}`)} className="btn-f1-primary">
                     {isSprint(selectedRace) ? t('races.makeSprintPrediction') : t('races.makePrediction')}
                   </button>
                   <button onClick={() => navigate(`/stats?round=${selectedRace.round}`)} className="btn-f1-secondary">
