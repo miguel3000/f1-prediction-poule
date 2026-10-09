@@ -4,6 +4,22 @@ import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
 
 // Get qualifying order for a race (with fallback to previous race results)
+// A qualifying list must never leave a driver out of the prediction picker: anyone
+// the session data lacks (no time set, data gap) is added after the classified
+// drivers, in championship order, with no grid position.
+const withAllDrivers = async (season: number, classified: any[]) => {
+  const have = new Set(classified.map((d: any) => d.id));
+  const all = await query(
+    `SELECT id, driver_number, name, name_acronym, team, image_url
+     FROM drivers WHERE season = $1 ORDER BY total_points DESC, name ASC`,
+    [season]
+  );
+  const missing = all.rows
+    .filter((d: any) => !have.has(d.id))
+    .map((d: any) => ({ ...d, position: null, q1: null, q2: null, q3: null }));
+  return [...classified, ...missing];
+};
+
 export const getQualifyingOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -19,14 +35,6 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
       [raceId]
     );
 
-    if (storedQualifying.rows.length > 0) {
-      return res.json({
-        source: 'qualifying',
-        hasQualifyingResults: true,
-        drivers: storedQualifying.rows
-      });
-    }
-
     // Get race info to fetch from API or find previous race
     const raceResult = await query('SELECT * FROM races WHERE id = $1', [raceId]);
     if (raceResult.rows.length === 0) {
@@ -35,13 +43,24 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
 
     const race = raceResult.rows[0];
 
+    if (storedQualifying.rows.length > 0) {
+      return res.json({
+        source: race.race_type === 'sprint' ? 'sprint_qualifying' : 'qualifying',
+        hasQualifyingResults: true,
+        drivers: await withAllDrivers(race.season, storedQualifying.rows)
+      });
+    }
+
     // For sprint races, try sprint qualifying (SQ) results; otherwise regular qualifying
     if (race.race_type === 'sprint') {
+      // Jolpi/Ergast has no sprint qualifying endpoint at all (it 400s for every round),
+      // so the sprint grid comes from OpenF1 and is stored for next time.
       try {
-        const sqResults = await jolpiService.getSprintQualifyingResults(race.season, race.round);
+        const sessionKey = await openF1Service.getSprintQualifyingSessionKey(race.season, race.race_date);
+        const sqResults = sessionKey ? await openF1Service.getQualifyingResults(sessionKey) : [];
 
         if (sqResults.length > 0) {
-          const driverNumbers = sqResults.map(q => parseInt(q.number));
+          const driverNumbers = sqResults.map(q => q.driver_number);
           const driversResult = await query(
             `SELECT id, driver_number, name, name_acronym, team, image_url
              FROM drivers WHERE driver_number = ANY($1) AND season = $2`,
@@ -49,9 +68,9 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
           );
           const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
 
-          const orderedDrivers = sqResults.map((q, index) => {
-            const driver = driverMap.get(parseInt(q.number));
-            return driver ? { ...driver, position: index + 1, q1: q.SQ1 || null, q2: q.SQ2 || null, q3: q.SQ3 || null } : null;
+          const orderedDrivers = sqResults.map((q) => {
+            const driver = driverMap.get(q.driver_number);
+            return driver ? { ...driver, position: q.position, q1: q.q1 || null, q2: q.q2 || null, q3: q.q3 || null } : null;
           }).filter(d => d !== null);
 
           for (const driver of orderedDrivers) {
@@ -66,7 +85,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
           return res.json({
             source: 'sprint_qualifying',
             hasQualifyingResults: true,
-            drivers: orderedDrivers
+            drivers: await withAllDrivers(race.season, orderedDrivers)
           });
         }
       } catch (error) {
@@ -103,7 +122,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
           return res.json({
             source: 'qualifying',
             hasQualifyingResults: true,
-            drivers: orderedDrivers
+            drivers: await withAllDrivers(race.season, orderedDrivers)
           });
         }
       } catch (error) {

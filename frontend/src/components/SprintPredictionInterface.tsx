@@ -67,9 +67,11 @@ interface QualifyingDriverCardProps {
   driver: Driver;
   isSelected: boolean;
   onTap: (driver: Driver) => void;
+  // Show the driver's qualifying position beside the card (only when the list really is a qualifying order)
+  showPosition?: boolean;
 }
 
-const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCardProps) => {
+const QualifyingDriverCard = ({ driver, isSelected, onTap, showPosition = false }: QualifyingDriverCardProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: () => { haptics.light(); return { driver, source: 'qualifying' as const }; },
@@ -80,11 +82,17 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCar
   const teamColor = getTeamColor(driver.team);
 
   return (
+    <div className="flex items-center gap-1">
+    {showPosition && (
+      <span className={`w-5 flex-shrink-0 text-center text-[11px] font-black tabular-nums ${driver.position === 1 ? 'text-f1-yellow-500' : 'text-white/70'}`}>
+        {driver.position ?? '–'}
+      </span>
+    )}
     <div
       ref={drag}
       onClick={() => !isSelected && onTap(driver)}
       className={`
-        flex items-stretch h-10 border-l-4 transition-all select-none
+        flex-1 min-w-0 flex items-stretch h-10 border-l-4 transition-all select-none
         ${teamColor.border}
         ${isSelected
           ? 'opacity-30 cursor-default'
@@ -101,6 +109,7 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCar
           : <span className="text-white text-lg font-light">+</span>
         }
       </div>
+    </div>
     </div>
   );
 };
@@ -461,7 +470,7 @@ const SprintPredictionInterface = ({ raceId, raceDate, round }: SprintPrediction
             <div className="grid grid-cols-[20px_1fr_auto] gap-x-2 gap-y-1">
               {qualifyingDrivers.map((d) => (
                 <div key={d.id} className="contents">
-                  <span className="text-white font-mono">P{d.position}</span>
+                  <span className="text-white font-mono">{d.position ? `P${d.position}` : '–'}</span>
                   <span className="font-f1 font-bold text-white">{acronym(d)}</span>
                   <span className="text-green-400 font-mono">{d.q3 || d.q2 || d.q1 || '—'}</span>
                 </div>
@@ -487,6 +496,7 @@ const SprintPredictionInterface = ({ raceId, raceDate, round }: SprintPrediction
                   driver={driver}
                   isSelected={selectedIds.has(driver.id)}
                   onTap={handleTapDriver}
+                  showPosition={hasQualifyingResults}
                 />
               ))}
             </div>

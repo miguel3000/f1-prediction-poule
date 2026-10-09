@@ -168,11 +168,14 @@ export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1Qu
       params: { session_key: sessionKey }
     });
     const raw: any[] = response.data;
-    return raw
-      .filter(r => !r.dnf && !r.dns)
-      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+    // A driver flagged dnf in qualifying (no time in the last segment) still has a
+    // classified position, so nobody is dropped; one with no position at all is
+    // numbered after the last classified driver.
+    const sorted = [...raw].sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+    let next = Math.max(0, ...sorted.map(r => r.position ?? 0)) + 1;
+    return sorted
       .map(r => ({
-        position:      r.position,
+        position:      r.position ?? next++,
         driver_number: r.driver_number,
         q1:            secondsToTimeStr(r.duration?.[0]),
         q2:            secondsToTimeStr(r.duration?.[1]),
