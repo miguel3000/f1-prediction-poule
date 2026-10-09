@@ -46,7 +46,9 @@ const lastName = (driver: Driver) => driver.name.split(' ').pop() || driver.name
 // ── Driver number badge + name bar — the era's core motif: a flat yellow
 // square with the car number, immediately followed by a blue bar carrying
 // the surname as large as the row allows. Replaces driver photos entirely.
-const DriverChip = ({ driver, big = false, trailing }: { driver: Driver; big?: boolean; trailing?: React.ReactNode }) => (
+// shortOnMobile: the driver's 3-letter code below the sm breakpoint, where a half-width
+// column has no room for a full surname.
+const DriverChip = ({ driver, big = false, trailing, shortOnMobile = false }: { driver: Driver; big?: boolean; trailing?: React.ReactNode; shortOnMobile?: boolean }) => (
   <>
     <div className={`${big ? 'w-11' : 'w-9'} h-full flex-shrink-0 bg-f1-yellow-500 flex items-center justify-center`}>
       <span className={`font-f1-badge font-bold text-black tabular-nums ${big ? 'text-sm' : 'text-xs'}`}>
@@ -55,7 +57,12 @@ const DriverChip = ({ driver, big = false, trailing }: { driver: Driver; big?: b
     </div>
     <div className="flex-1 min-w-0 h-full bg-f1-blue flex items-center px-2 gap-1">
       <span className={`flex-1 min-w-0 font-f1 font-black text-white uppercase tracking-wide truncate leading-none ${big ? 'text-lg' : 'text-sm'}`}>
-        {lastName(driver)}
+        {shortOnMobile ? (
+          <>
+            <span className="sm:hidden">{acronym(driver)}</span>
+            <span className="hidden sm:inline">{lastName(driver)}</span>
+          </>
+        ) : lastName(driver)}
       </span>
       {trailing}
     </div>
@@ -101,7 +108,7 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap, showPosition = false 
           : 'active:scale-[0.98] cursor-grab'}
       `}
     >
-      <DriverChip driver={driver} big />
+      <DriverChip driver={driver} big shortOnMobile />
 
       <div className="w-7 flex-shrink-0 bg-f1-neutral-850 flex items-center justify-center">
         {isSelected
