@@ -46,9 +46,7 @@ const lastName = (driver: Driver) => driver.name.split(' ').pop() || driver.name
 // ── Driver number badge + name bar — the era's core motif: a flat yellow
 // square with the car number, immediately followed by a blue bar carrying
 // the surname as large as the row allows. Replaces driver photos entirely.
-// shortOnMobile: the driver's 3-letter code below the sm breakpoint, where a half-width
-// column has no room for a full surname.
-const DriverChip = ({ driver, big = false, trailing, shortOnMobile = false }: { driver: Driver; big?: boolean; trailing?: React.ReactNode; shortOnMobile?: boolean }) => (
+const DriverChip = ({ driver, big = false, trailing }: { driver: Driver; big?: boolean; trailing?: React.ReactNode }) => (
   <>
     <div className={`${big ? 'w-11' : 'w-9'} h-full flex-shrink-0 bg-f1-yellow-500 flex items-center justify-center`}>
       <span className={`font-f1-badge font-bold text-black tabular-nums ${big ? 'text-sm' : 'text-xs'}`}>
@@ -57,12 +55,7 @@ const DriverChip = ({ driver, big = false, trailing, shortOnMobile = false }: { 
     </div>
     <div className="flex-1 min-w-0 h-full bg-f1-blue flex items-center px-2 gap-1">
       <span className={`flex-1 min-w-0 font-f1 font-black text-white uppercase tracking-wide truncate leading-none ${big ? 'text-lg' : 'text-sm'}`}>
-        {shortOnMobile ? (
-          <>
-            <span className="sm:hidden">{acronym(driver)}</span>
-            <span className="hidden sm:inline">{lastName(driver)}</span>
-          </>
-        ) : lastName(driver)}
+        {lastName(driver)}
       </span>
       {trailing}
     </div>
@@ -74,11 +67,9 @@ interface QualifyingDriverCardProps {
   driver: Driver;
   isSelected: boolean;
   onTap: (driver: Driver) => void;
-  // Show the driver's qualifying position beside the card (only when the list really is a qualifying order)
-  showPosition?: boolean;
 }
 
-const QualifyingDriverCard = ({ driver, isSelected, onTap, showPosition = false }: QualifyingDriverCardProps) => {
+const QualifyingDriverCard = ({ driver, isSelected, onTap }: QualifyingDriverCardProps) => {
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: () => { haptics.light(); return { driver, source: 'qualifying' as const }; },
@@ -89,17 +80,11 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap, showPosition = false 
   const teamColor = getTeamColor(driver.team);
 
   return (
-    <div className="flex items-center gap-1">
-    {showPosition && (
-      <span className={`w-5 flex-shrink-0 text-center text-[11px] font-black tabular-nums ${driver.position === 1 ? 'text-f1-yellow-500' : 'text-white/70'}`}>
-        {driver.position ?? '–'}
-      </span>
-    )}
     <div
       ref={drag}
       onClick={() => !isSelected && onTap(driver)}
       className={`
-        flex-1 min-w-0 flex items-stretch h-10 border-l-4 transition-all select-none
+        flex items-stretch h-10 border-l-4 transition-all select-none
         ${teamColor.border}
         ${isSelected
           ? 'opacity-30 cursor-default'
@@ -108,7 +93,7 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap, showPosition = false 
           : 'active:scale-[0.98] cursor-grab'}
       `}
     >
-      <DriverChip driver={driver} big shortOnMobile />
+      <DriverChip driver={driver} big />
 
       <div className="w-7 flex-shrink-0 bg-f1-neutral-850 flex items-center justify-center">
         {isSelected
@@ -116,7 +101,6 @@ const QualifyingDriverCard = ({ driver, isSelected, onTap, showPosition = false 
           : <span className="text-white text-lg font-light">+</span>
         }
       </div>
-    </div>
     </div>
   );
 };
@@ -503,7 +487,6 @@ const SprintPredictionInterface = ({ raceId, raceDate, round }: SprintPrediction
                   driver={driver}
                   isSelected={selectedIds.has(driver.id)}
                   onTap={handleTapDriver}
-                  showPosition={hasQualifyingResults}
                 />
               ))}
             </div>
