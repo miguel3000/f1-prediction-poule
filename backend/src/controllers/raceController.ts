@@ -287,8 +287,6 @@ export const getRaceResults = async (req: Request, res: Response) => {
   }
 };
 
-// F1 2026 sprint race rounds: China, Miami, Canada, Great Britain, Netherlands, Singapore
-const SPRINT_ROUNDS_2026 = [2, 6, 7, 11, 14, 18];
 
 export const syncRaces = async (req: Request, res: Response) => {
   try {
@@ -299,7 +297,10 @@ export const syncRaces = async (req: Request, res: Response) => {
     for (const race of jolpiRaces) {
       const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`);
       const roundNum = parseInt(race.round);
-      const hasSprint = SPRINT_ROUNDS_2026.includes(roundNum);
+      // A weekend has a sprint exactly when the official schedule lists a Sprint session —
+      // never from a hand-kept list of round numbers (the 2026 calendar's numbering differs
+      // from the one such a list was written for).
+      const hasSprint = !!race.Sprint?.date;
 
       // Build qualifying date if available
       const qualifyingDate = race.Qualifying
@@ -334,11 +335,9 @@ export const syncRaces = async (req: Request, res: Response) => {
 
       // Insert sprint race if this round has one
       if (hasSprint) {
-        // Sprint is typically Saturday, main race Sunday - subtract 1 day
-        const sprintDate = new Date(raceDate);
-        sprintDate.setDate(sprintDate.getDate() - 1);
-        // Sprint usually at different time (around 11:00 or 12:00 local)
-        sprintDate.setHours(11, 0, 0, 0);
+        // The sprint's real start from the schedule (UTC), which is also when its predictions lock
+        const sprintTime = race.Sprint!.time ?? '00:00:00Z';
+        const sprintDate = new Date(`${race.Sprint!.date}T${sprintTime.endsWith('Z') ? sprintTime : `${sprintTime}Z`}`);
 
         await query(
           `INSERT INTO races (season, round, race_name, circuit_name, country, race_date, race_time, race_type, status)
@@ -356,13 +355,27 @@ export const syncRaces = async (req: Request, res: Response) => {
             race.Circuit.circuitName,
             race.Circuit.Location.country,
             sprintDate,
-            '11:00:00Z',
+            race.Sprint!.time ?? '00:00:00Z',
             'sprint',
             new Date() > sprintDate ? 'completed' : 'upcoming'
           ]
         );
         totalCount++;
       }
+    }
+
+    // Remove sprint rows the official schedule does not list (e.g. left by an older, wrong
+    // sprint list). Only rows nobody has used: with predictions or results they are kept.
+    const sprintRounds = jolpiRaces.filter((r) => r.Sprint?.date).map((r) => parseInt(r.round));
+    if (jolpiRaces.length > 0) {
+      const removed = await query(
+        `DELETE FROM races r
+         WHERE r.season = $1 AND r.race_type = 'sprint' AND r.round <> ALL($2::int[])
+           AND NOT EXISTS (SELECT 1 FROM sprint_predictions WHERE race_id = r.id)
+           AND NOT EXISTS (SELECT 1 FROM sprint_results WHERE race_id = r.id)`,
+        [2026, sprintRounds]
+      );
+      if (removed.rowCount) console.log(`Removed ${removed.rowCount} sprint row(s) not in the official schedule`);
     }
 
     res.json({ message: 'Races synchronized successfully', mainRaces: jolpiRaces.length, totalWithSprints: totalCount });
