@@ -330,25 +330,26 @@ const Tutorial = () => {
 
           <h3 className="font-brand uppercase tracking-wide text-white text-2xl leading-none mt-6 mb-2">{t('tutorial.example.title')}</h3>
           <p className="text-white mb-3">{t('tutorial.example.intro')}</p>
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: 460 }}>
-              <div className="grid grid-cols-[1.3fr_0.8fr_1.8fr_0.7fr] bg-f1-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider">
-                <span className="px-3 py-2">{t('tutorial.example.colPredicted')}</span>
-                <span className="px-3 py-2">{t('tutorial.example.colFinished')}</span>
-                <span className="px-3 py-2">{t('tutorial.example.colResult')}</span>
-                <span className="px-3 py-2 text-right">{t('tutorial.example.colPoints')}</span>
-              </div>
-              {exampleRows.map((row, i) => (
-                <div key={row.name} className={`grid grid-cols-[1.3fr_0.8fr_1.8fr_0.7fr] items-center text-white text-sm ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
-                  <span className="px-3 py-2.5 font-f1 font-bold uppercase">
-                    {row.name} <span className="text-white/70">{row.predicted}</span>
-                  </span>
-                  <span className="px-3 py-2.5 font-f1-badge text-xs">{row.finished}</span>
-                  <span className="px-3 py-2.5">{row.result}</span>
-                  <span className={`px-3 py-2.5 text-right font-f1-badge font-bold ${row.points > 0 ? 'text-f1-yellow-400' : 'text-white/70'}`}>{row.points}</span>
-                </div>
-              ))}
+          <div>
+            <div className="grid grid-cols-[1.2fr_1.8fr_0.6fr] bg-f1-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-3 py-2">{t('tutorial.example.colPredicted')}</span>
+              <span className="px-3 py-2">
+                {t('tutorial.example.colFinished')} / {t('tutorial.example.colResult')}
+              </span>
+              <span className="px-3 py-2 text-right">{t('tutorial.example.colPoints')}</span>
             </div>
+            {exampleRows.map((row, i) => (
+              <div key={row.name} className={`grid grid-cols-[1.2fr_1.8fr_0.6fr] items-center text-white text-sm ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+                <span className="px-3 py-2.5 font-f1 font-bold uppercase">
+                  {row.name} <span className="text-white/70">{row.predicted}</span>
+                </span>
+                <span className="px-3 py-2.5">
+                  <span className="font-f1-badge text-xs">{row.finished}</span>
+                  <span className="block">{row.result}</span>
+                </span>
+                <span className={`px-3 py-2.5 text-right font-f1-badge font-bold ${row.points > 0 ? 'text-f1-yellow-400' : 'text-white/70'}`}>{row.points}</span>
+              </div>
+            ))}
           </div>
           <p className="mt-3 text-white">
             <Rich text={t('tutorial.example.total')} />
