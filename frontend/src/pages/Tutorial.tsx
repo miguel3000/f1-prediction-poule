@@ -138,11 +138,16 @@ const PointsCalculator = () => {
   }
   const bonusPoints = kind === 'main' && bonus ? 25 : 0;
 
+  const ptsText = (n: number) => t(n === 1 ? 'tutorial.try.pt' : 'tutorial.try.pts', { n });
+  const half = base / 2;
+
   const message =
     outcome === 'exact'
-      ? t('tutorial.try.exact', { base, p: predicted })
+      ? t('tutorial.try.exact', { pts: ptsText(points), p: predicted })
       : outcome === 'near'
-        ? t('tutorial.try.near', { base, pts: points })
+        ? Number.isInteger(half)
+          ? t('tutorial.try.nearWhole', { base, pts: ptsText(points) })
+          : t('tutorial.try.nearRounded', { base, half, pts: ptsText(points) })
         : t('tutorial.try.miss');
 
   return (
@@ -203,7 +208,7 @@ const PointsCalculator = () => {
         </div>
         <div className="flex-1 min-w-0 bg-f1-blue flex items-center px-4 py-2 text-white text-sm">{message}</div>
       </div>
-      <p className="mt-2 font-brand uppercase tracking-wide text-xl text-f1-yellow-500">{t('tutorial.try.total', { n: points + bonusPoints })}</p>
+      <p className="mt-2 font-brand uppercase tracking-wide text-xl text-f1-yellow-500">{t('tutorial.try.total', { pts: ptsText(points + bonusPoints) })}</p>
     </div>
   );
 };
