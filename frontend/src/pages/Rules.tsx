@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext';
 import { ordinal } from '../i18n/format';
 import Rich from '../components/Rich';
@@ -69,7 +70,12 @@ const Rules = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-center text-f1-yellow-500">{t('rules.title')}</h1>
+      <h1 className="text-4xl font-bold mb-3 text-center text-f1-yellow-500">{t('rules.title')}</h1>
+      <p className="text-center mb-8">
+        <Link to="/tutorial" className="text-f1-yellow-500 text-sm font-bold uppercase tracking-wider hover:underline">
+          {t('tutorial.link')}
+        </Link>
+      </p>
 
       <div className="space-y-8 text-lg leading-relaxed">
         <section className="bg-gray-800 p-6">

@@ -27,6 +27,8 @@ export const common: Record<keyof typeof enCommon, string> = {
   'nav.live': 'Live tijden',
   'nav.pitwall': 'Pit Wall',
   'nav.rules': 'Regels',
+  'nav.tutorial': 'Zo speel je',
+  'tutorial.link': 'Nieuw hier? Zo werkt het',
   'nav.about': 'Over',
   'nav.privacy': 'Privacybeleid',
   'nav.privacyShort': 'Privacy',

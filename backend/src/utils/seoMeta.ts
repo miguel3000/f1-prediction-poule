@@ -32,6 +32,13 @@ const PUBLIC_PAGES: Record<string, PageMeta> = {
       nl: 'Zo werkt Poule Position: maak een account, voorspel de uitslag van elke Formule 1-race en sprint en strijd met vrienden om de seizoenstitel.',
     },
   },
+  '/tutorial': {
+    title: { en: 'How to play – Poule Position tutorial', nl: 'Zo speel je – Poule Position handleiding' },
+    desc: {
+      en: 'A step-by-step tutorial for Poule Position with examples: build your F1 prediction grid, pick the first retirement, beat the deadline and see how points are scored.',
+      nl: 'Een stap-voor-stap handleiding voor Poule Position met voorbeelden: bouw je F1-voorspellingsgrid, kies de eerste uitvaller, haal de deadline en zie hoe punten worden berekend.',
+    },
+  },
   '/rules': {
     title: { en: 'Rules and scoring – Poule Position', nl: 'Regels en puntentelling – Poule Position' },
     desc: {

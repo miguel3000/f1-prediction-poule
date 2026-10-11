@@ -7,6 +7,9 @@ export const meta: Record<keyof typeof en_meta, string> = {
   'meta.about.title': 'Over Poule Position – de F1-poule',
   'meta.about.desc':
     'Zo werkt Poule Position: maak een account, voorspel de uitslag van elke Formule 1-race en sprint en strijd met vrienden om de seizoenstitel.',
+  'meta.tutorial.title': 'Zo speel je – Poule Position handleiding',
+  'meta.tutorial.desc':
+    'Een stap-voor-stap handleiding voor Poule Position met voorbeelden: bouw je F1-voorspellingsgrid, kies de eerste uitvaller, haal de deadline en zie hoe punten worden berekend.',
   'meta.rules.title': 'Regels en puntentelling – Poule Position',
   'meta.rules.desc':
     'Zo worden punten verdiend in Poule Position: exacte posities, bijna goed, eerste uitvaller en sprintraces uitgelegd.',

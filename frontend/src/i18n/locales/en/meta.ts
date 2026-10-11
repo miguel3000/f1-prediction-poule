@@ -6,6 +6,9 @@ export const meta = {
   'meta.about.title': 'About Poule Position – the F1 prediction poule',
   'meta.about.desc':
     'How Poule Position works: create an account, predict the finishing order of every Formula 1 race and sprint, and compete with friends for the season title.',
+  'meta.tutorial.title': 'How to play – Poule Position tutorial',
+  'meta.tutorial.desc':
+    'A step-by-step tutorial for Poule Position with examples: build your F1 prediction grid, pick the first retirement, beat the deadline and see how points are scored.',
   'meta.rules.title': 'Rules and scoring – Poule Position',
   'meta.rules.desc':
     'How points are scored in Poule Position: exact positions, near misses, first retirement and sprint races explained.',

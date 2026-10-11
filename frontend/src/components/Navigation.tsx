@@ -42,6 +42,7 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
   }
 
   const footerItems = [
+    { path: '/tutorial', label: t('nav.tutorial'),      icon: <PredictionIcon /> },
     { path: '/rules',   label: t('nav.rules'),          icon: <ClipboardIcon /> },
     { path: '/about',   label: t('nav.about'),          icon: <InfoIcon /> },
     { path: '/privacy', label: t('nav.privacy'), icon: <ShieldIcon /> },

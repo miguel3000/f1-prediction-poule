@@ -1070,6 +1070,7 @@ export const sendWelcomeEmail = async (
       <div style="margin-top: 24px;">
         ${emailBanner(et(lang, 'welcome.cta'), { url: appUrl, bg: BRAND_NAVY, color: '#ffffff' })}
       </div>
+      <p style="line-height: 1.5;">${et(lang, 'welcome.tutorial')} <a href="${appUrl}/tutorial" style="color: ${BRAND_NAVY};">${et(lang, 'welcome.tutorialLink')}</a></p>
       <p style="line-height: 1.5;">${et(lang, 'welcome.rules')} <a href="${appUrl}/rules" style="color: ${BRAND_NAVY};">${et(lang, 'welcome.rulesLink')}</a></p>
       <p style="line-height: 1.5;">${et(lang, 'welcome.questions')}</p>
     `,

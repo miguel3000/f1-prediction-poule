@@ -22,6 +22,7 @@ import News from './pages/News';
 import LiveTiming from './pages/LiveTiming';
 import ResetPassword from './pages/ResetPassword';
 import PageMeta from './components/PageMeta';
+import Tutorial from './pages/Tutorial';
 import PitWall from './pages/PitWall';
 import { AuthContext } from './context/AuthContext';
 import { useLang } from './i18n/LanguageContext';
@@ -89,6 +90,7 @@ function App() {
               <Route path="/drivers" element={<ProtectedRoute><DriverStandings /></ProtectedRoute>} />
               <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+              <Route path="/tutorial" element={<Tutorial />} />
               <Route path="/rules" element={<Rules />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />

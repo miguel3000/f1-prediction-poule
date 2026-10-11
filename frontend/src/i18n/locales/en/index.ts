@@ -15,6 +15,7 @@ import { rules } from './rules';
 import { about } from './about';
 import { privacy } from './privacy';
 import { meta } from './meta';
+import { tutorial } from './tutorial';
 
 // One flat dictionary built from per-area files (common, auth, ...), so every
 // key is "area.name" and a missing Dutch key is a compile error.
@@ -36,4 +37,5 @@ export const en = {
   ...about,
   ...privacy,
   ...meta,
+  ...tutorial,
 };

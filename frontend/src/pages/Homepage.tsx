@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Banner from '../components/Banner';
 import CircuitBackground from '../components/CircuitBackground';
 import LogoMark from '../components/LogoMark';
@@ -103,6 +103,11 @@ const Homepage = () => {
           <div className="mt-4 flex justify-center">
             <ShareButton />
           </div>
+          <p className="mt-6">
+            <Link to="/tutorial" className="text-f1-yellow-500 text-sm font-bold uppercase tracking-wider hover:underline">
+              {t('tutorial.link')}
+            </Link>
+          </p>
         </div>
       </div>
     );

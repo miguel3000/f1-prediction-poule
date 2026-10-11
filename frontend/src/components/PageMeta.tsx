@@ -10,6 +10,7 @@ const SITE = 'https://pouleposition.nl';
 const PUBLIC_PAGES: Record<string, { title: TranslationKey; desc: TranslationKey }> = {
   '/': { title: 'meta.home.title', desc: 'meta.home.desc' },
   '/about': { title: 'meta.about.title', desc: 'meta.about.desc' },
+  '/tutorial': { title: 'meta.tutorial.title', desc: 'meta.tutorial.desc' },
   '/rules': { title: 'meta.rules.title', desc: 'meta.rules.desc' },
   '/privacy': { title: 'meta.privacy.title', desc: 'meta.privacy.desc' },
 };

@@ -14,6 +14,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-f1-neutral-500">
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <span className="font-bold text-f1-neutral-400">&copy; {currentYear} Poule Position</span>
+            <Link to="/tutorial" className="hover:text-f1-yellow-500 transition-colors">{t('nav.tutorial')}</Link>
             <Link to="/rules" className="hover:text-f1-yellow-500 transition-colors">{t('nav.rules')}</Link>
             <Link to="/about" className="hover:text-f1-yellow-500 transition-colors">{t('nav.about')}</Link>
             <Link to="/privacy" className="hover:text-f1-yellow-500 transition-colors">{t('nav.privacyShort')}</Link>
