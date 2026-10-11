@@ -162,6 +162,15 @@ export const getSprintQualifyingSessionKey = async (year: number, sprintDateIso:
   return findSessionKey(year, 'Sprint Qualifying', sprintDateIso, 72);
 };
 
+// OpenF1 sends a classified position as a number, but marks others with text ("RT" for
+// retired, and similar) or null. Anything that is not a whole number counts as unclassified.
+const numericPosition = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0
+    ? value
+    : typeof value === 'string' && /^\d+$/.test(value)
+      ? parseInt(value, 10)
+      : null;
+
 export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1QualifyingResult[]> => {
   try {
     const response = await axios.get(`${OPENF1_API_URL}/session_result`, {
@@ -171,7 +180,9 @@ export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1Qu
     // A driver flagged dnf in qualifying (no time in the last segment) still has a
     // classified position, so nobody is dropped; one with no position at all is
     // numbered after the last classified driver.
-    const sorted = [...raw].sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+    const sorted = raw
+      .map(r => ({ ...r, position: numericPosition(r.position) }))
+      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
     let next = Math.max(0, ...sorted.map(r => r.position ?? 0)) + 1;
     return sorted
       .map(r => ({
@@ -215,6 +226,7 @@ export const getRaceResults = async (sessionKey: number): Promise<OpenF1RaceResu
     if (!raw || raw.length === 0) return [];
 
     const results = raw
+      .map(r => ({ ...r, position: numericPosition(r.position) }))
       .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
       .map(r => ({
         session_key: r.session_key,
