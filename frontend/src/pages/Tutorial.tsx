@@ -1,8 +1,9 @@
-import { useState, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../i18n/LanguageContext';
 import Rich from '../components/Rich';
+import { getTutorialExample, TutorialExample } from '../services/api';
 
 // The game, step by step, with examples. The illustrations are built from the same
 // pieces as the real prediction screen (yellow car-number square + blue name bar), and
@@ -45,17 +46,21 @@ const Text = ({ text }: { text: string }) => (
 );
 
 // A static picture of the prediction screen: drivers on the left, the grid on the right.
-const GridMock = () => {
+const lastName = (name: string) => name.split(' ').pop() ?? name;
+
+const FALLBACK_PICKS = [
+  { number: 3, name: 'Verstappen' },
+  { number: 16, name: 'Leclerc' },
+  { number: 44, name: 'Hamilton' },
+  { number: 12, name: 'Antonelli' },
+  { number: 1, name: 'Norris' },
+];
+
+// picks: the first five drivers of a real prediction; the first three are placed, the rest still free
+const GridMock = ({ picks = FALLBACK_PICKS }: { picks?: Array<{ number: number; name: string }> }) => {
   const { t } = useLang();
-  const placed = [
-    { number: 3, name: 'Verstappen' },
-    { number: 16, name: 'Leclerc' },
-    { number: 44, name: 'Hamilton' },
-  ];
-  const free = [
-    { number: 12, name: 'Antonelli' },
-    { number: 1, name: 'Norris' },
-  ];
+  const placed = picks.slice(0, 3);
+  const free = picks.slice(3, 5);
 
   return (
     <figure className="mt-4" aria-label={t('tutorial.s2.caption')}>
@@ -213,10 +218,77 @@ const PointsCalculator = () => {
   );
 };
 
+// ── a real prediction, with the points each pick earned ────────────────────
+const RealExample = ({ example }: { example: TutorialExample }) => {
+  const { t } = useLang();
+  const rows = example.rows ?? [];
+  const dnf = example.dnf!;
+  const race = example.race?.name ?? '';
+
+  const resultText = (r: (typeof rows)[number]) => {
+    if (r.finished === null || r.finished > 10) return t('tutorial.real.outside');
+    if (r.finished === r.position) return t('tutorial.real.exact');
+    const diff = Math.abs(r.position - r.finished);
+    return diff === 1 ? t('tutorial.real.near', { base: r.base }) : t('tutorial.real.far', { n: diff });
+  };
+
+  const dnfText = dnf.bonus > 0
+    ? t('tutorial.real.dnfHit', { pick: lastName(dnf.pickName) })
+    : dnf.firstOutName
+      ? t('tutorial.real.dnfMiss', { pick: lastName(dnf.pickName), first: lastName(dnf.firstOutName) })
+      : t('tutorial.real.dnfNone', { pick: lastName(dnf.pickName) });
+
+  const cols = 'grid grid-cols-[1.2fr_1.8fr_0.6fr]';
+  return (
+    <div>
+      <p className="text-white mb-3">{t('tutorial.real.intro', { player: example.player ?? '', race })}</p>
+      <div>
+        <div className={`${cols} bg-f1-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider`}>
+          <span className="px-3 py-2">{t('tutorial.example.colPredicted')}</span>
+          <span className="px-3 py-2">
+            {t('tutorial.example.colFinished')} / {t('tutorial.example.colResult')}
+          </span>
+          <span className="px-3 py-2 text-right">{t('tutorial.example.colPoints')}</span>
+        </div>
+        {rows.map((r, i) => (
+          <div key={r.position} className={`${cols} items-center text-white text-sm ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+            <span className="px-3 py-2 font-f1 font-bold uppercase">
+              {lastName(r.name)} <span className="text-white/70">P{r.position}</span>
+            </span>
+            <span className="px-3 py-2">
+              <span className="font-f1-badge text-xs">{r.finished !== null ? `P${r.finished}` : '–'}</span>
+              <span className="block">{resultText(r)}</span>
+            </span>
+            <span className={`px-3 py-2 text-right font-f1-badge font-bold ${r.points > 0 ? 'text-f1-yellow-400' : 'text-white/70'}`}>{r.points}</span>
+          </div>
+        ))}
+        <div className={`${cols} items-center text-white text-sm ${rows.length % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+          <span className="px-3 py-2 col-span-2">{dnfText}</span>
+          <span className={`px-3 py-2 text-right font-f1-badge font-bold ${dnf.bonus > 0 ? 'text-f1-yellow-400' : 'text-white/70'}`}>{dnf.bonus}</span>
+        </div>
+      </div>
+      <p className="mt-3 text-white">
+        <Rich text={t('tutorial.real.total', { n: example.total ?? 0 })} />
+      </p>
+    </div>
+  );
+};
+
 // ── page ───────────────────────────────────────────────────────────────────
 const Tutorial = () => {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+
+  // A real prediction by our AI player; if it cannot be loaded the page shows made-up examples instead.
+  const [example, setExample] = useState<TutorialExample | null>(null);
+  useEffect(() => {
+    getTutorialExample()
+      .then((res) => setExample(res.data))
+      .catch(() => setExample(null));
+  }, []);
+  const real = example?.available && example.rows && example.dnf ? example : null;
+  const picks = real?.rows?.map((r) => ({ number: r.number ?? 0, name: lastName(r.name) }));
+  const pickName = real?.dnf ? lastName(real.dnf.pickName) : 'Bottas';
 
   const scale = (label: string, list: number[]) => (
     <div className="mb-3">
@@ -231,6 +303,21 @@ const Tutorial = () => {
       </div>
     </div>
   );
+
+  const faq = [
+    { q: t('tutorial.faq.q1'), a: t('tutorial.faq.a1') },
+    { q: t('tutorial.faq.q2'), a: t('tutorial.faq.a2') },
+    { q: t('tutorial.faq.q3'), a: t('tutorial.faq.a3') },
+    { q: t('tutorial.faq.q4'), a: t('tutorial.faq.a4') },
+    { q: t('tutorial.faq.q5'), a: t('tutorial.faq.a5') },
+    { q: t('tutorial.faq.q6'), a: t('tutorial.faq.a6') },
+    { q: t('tutorial.faq.q7'), a: t('tutorial.faq.a7') },
+    { q: t('tutorial.faq.q8'), a: t('tutorial.faq.a8') },
+    { q: t('tutorial.faq.q9'), a: t('tutorial.faq.a9') },
+    { q: t('tutorial.faq.q10'), a: t('tutorial.faq.a10') },
+    { q: t('tutorial.faq.q11'), a: t('tutorial.faq.a11') },
+    { q: t('tutorial.faq.q12'), a: t('tutorial.faq.a12') },
+  ];
 
   const exampleRows = [
     { name: 'Verstappen', predicted: 'P1', finished: 'P1', result: t('tutorial.example.exact'), points: 25 },
@@ -252,7 +339,8 @@ const Tutorial = () => {
         <Panel>
           <StepHeader n={2} title={t('tutorial.s2.title')} />
           <Text text={t('tutorial.s2.text')} />
-          <GridMock />
+          <GridMock picks={picks} />
+          {real && <p className="mt-1 text-xs text-white/70">{t('tutorial.real.label', { player: real.player ?? '', race: real.race?.name ?? '' })}</p>}
           <p className="mt-4 text-sm text-white/80">{t('tutorial.s2.tip')}</p>
         </Panel>
 
@@ -264,7 +352,7 @@ const Tutorial = () => {
               <span>{t('tutorial.s3.fieldLabel')}</span>
               <span className="text-white normal-case font-normal tracking-normal">{t('tutorial.s3.fieldHint')}</span>
             </p>
-            <div className="w-full bg-f1-neutral-950 border border-f1-neutral-700 text-white text-sm px-3 py-2">Bottas</div>
+            <div className="w-full bg-f1-neutral-950 border border-f1-neutral-700 text-white text-sm px-3 py-2">{pickName}</div>
           </div>
         </Panel>
 
@@ -329,6 +417,10 @@ const Tutorial = () => {
           </div>
 
           <h3 className="font-brand uppercase tracking-wide text-white text-2xl leading-none mt-6 mb-2">{t('tutorial.example.title')}</h3>
+          {real ? (
+            <RealExample example={real} />
+          ) : (
+            <>
           <p className="text-white mb-3">{t('tutorial.example.intro')}</p>
           <div>
             <div className="grid grid-cols-[1.2fr_1.8fr_0.6fr] bg-f1-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider">
@@ -354,9 +446,26 @@ const Tutorial = () => {
           <p className="mt-3 text-white">
             <Rich text={t('tutorial.example.total')} />
           </p>
+            </>
+          )}
 
           <h3 className="font-brand uppercase tracking-wide text-white text-2xl leading-none mt-6 mb-2">{t('tutorial.try.title')}</h3>
           <PointsCalculator />
+        </Panel>
+
+        <Panel>
+          <h2 className="font-brand uppercase tracking-wide text-f1-yellow-500 text-3xl leading-none mb-4">{t('tutorial.faq.title')}</h2>
+          <div className="space-y-1">
+            {faq.map((item, i) => (
+              <details key={i} className="group bg-f1-neutral-850 border border-f1-neutral-800">
+                <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-4 py-3 bg-f1-blue text-white font-f1 font-bold uppercase tracking-wide text-sm group-open:bg-f1-blue-dark">
+                  <span>{item.q}</span>
+                  <span aria-hidden="true" className="shrink-0 text-f1-yellow-500 text-lg leading-none group-open:rotate-45 transition-transform">+</span>
+                </summary>
+                <p className="px-4 py-3 text-white leading-relaxed">{item.a}</p>
+              </details>
+            ))}
+          </div>
         </Panel>
 
         <Panel>

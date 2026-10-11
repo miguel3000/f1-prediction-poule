@@ -85,6 +85,53 @@ export const tutorial = {
   'tutorial.try.miss': 'Too far off, so no points.',
   'tutorial.try.total': 'Total: {pts}',
 
+
+  'tutorial.real.label': 'Real data: {player}, our AI player, for the {race}.',
+  'tutorial.real.intro':
+    'A real prediction, by our AI player {player} for the {race}. Each row shows where he put a driver, where that driver finished and what it earned:',
+  'tutorial.real.exact': 'Exact',
+  'tutorial.real.near': 'One off: half of {base}, rounded',
+  'tutorial.real.far': '{n} positions off',
+  'tutorial.real.outside': 'Outside the top 10',
+  'tutorial.real.dnfHit': 'First retirement: {pick} was the first out.',
+  'tutorial.real.dnfMiss': 'First retirement: picked {pick}, but {first} went out first.',
+  'tutorial.real.dnfNone': 'First retirement: picked {pick}, nobody retired.',
+  'tutorial.real.total': 'Total for this race: **{n} points**.',
+
+  'tutorial.faq.title': 'Frequently asked questions',
+  'tutorial.faq.q1': 'Does it cost anything?',
+  'tutorial.faq.a1': 'No. Poule Position is completely free, with no ads and no paid features.',
+  'tutorial.faq.q2': 'Can I change my prediction after submitting?',
+  'tutorial.faq.a2':
+    'Yes, as often as you like until it locks 1 minute before the race starts. You get a confirmation email every time. After the lock nothing can be changed, for anyone.',
+  'tutorial.faq.q3': 'I forgot to predict. What happens?',
+  'tutorial.faq.a3':
+    'You get a reminder email 1 hour before the start. If the race locks and you still have no prediction, your most recent one is copied in, first-retirement pick included, and we email you what was entered. A new player with no earlier prediction simply scores nothing for that race.',
+  'tutorial.faq.q4': 'Which driver counts as the first retirement?',
+  'tutorial.faq.a4':
+    'Of the drivers who did not finish, the one who completed the fewest laps (classified last among the retirements) counts as first out. If nobody retires, nobody earns the bonus. A driver who finishes a lap down, or is disqualified after finishing, is not a retirement.',
+  'tutorial.faq.q5': 'The driver list is in qualifying order, but some drivers start elsewhere. Why?',
+  'tutorial.faq.a5':
+    'The list shows the qualifying result, not the starting grid. A grid penalty can send a driver further back than he qualified. You predict where drivers finish, so a penalty never changes how your points are counted, only perhaps what you expect.',
+  'tutorial.faq.q6': 'Why did my points change after the race?',
+  'tutorial.faq.a6':
+    'The first points come minutes after the race, from the provisional results. 24 hours later they are recalculated with the final classification, once penalties and disqualifications are settled. If your points change you get an updated email.',
+  'tutorial.faq.q7': 'Do I have to predict the sprint as well?',
+  'tutorial.faq.a7': 'No. A sprint and the race are separate predictions, and you can play either or both. Points from both count towards your season total.',
+  'tutorial.faq.q8': 'What time zone are the times in?',
+  'tutorial.faq.a8': 'Dutch time (Amsterdam), wherever you are.',
+  'tutorial.faq.q9': 'How do I change my nickname, email or language, or reset my password?',
+  'tutorial.faq.a9':
+    'Open your profile page to change your nickname, email or language, or to delete your account. If you forgot your password, use "Forgot password?" on the login page.',
+  'tutorial.faq.q10': 'Which emails will I get, and can I stop them?',
+  'tutorial.faq.a10':
+    'Prediction confirmations, reminders and results are part of the game. Announcement emails have an unsubscribe link. Result emails start with SPOILER ALERT in the subject.',
+  'tutorial.faq.q11': 'Who is Gaston Mazzacane?',
+  'tutorial.faq.a11': 'Our AI player. He plays along in every race, and his real predictions are the examples on this page.',
+  'tutorial.faq.q12': 'Who runs this, and how do I reach them?',
+  'tutorial.faq.a12':
+    'Poule Position is an independent, fan-made game, not affiliated with Formula 1. Questions are welcome at kimi@pouleposition.nl, or just reply to any email from the site.',
+
   'tutorial.cta.title': 'Ready to play?',
   'tutorial.cta.register': 'Create Your Account',
   'tutorial.cta.predict': 'Make Your Prediction',

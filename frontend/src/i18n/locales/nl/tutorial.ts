@@ -87,6 +87,53 @@ export const tutorial: Record<keyof typeof en_tutorial, string> = {
   'tutorial.try.miss': 'Te ver ernaast, dus geen punten.',
   'tutorial.try.total': 'Totaal: {pts}',
 
+
+  'tutorial.real.label': 'Echte gegevens: {player}, onze AI-speler, voor de {race}.',
+  'tutorial.real.intro':
+    'Een echte voorspelling, van onze AI-speler {player} voor de {race}. Elke rij toont waar hij een coureur neerzette, waar die coureur finishte en wat dat opleverde:',
+  'tutorial.real.exact': 'Exact',
+  'tutorial.real.near': 'Eén ernaast: de helft van {base}, afgerond',
+  'tutorial.real.far': '{n} posities ernaast',
+  'tutorial.real.outside': 'Buiten de top 10',
+  'tutorial.real.dnfHit': 'Eerste uitvaller: {pick} viel als eerste uit.',
+  'tutorial.real.dnfMiss': 'Eerste uitvaller: {pick} gekozen, maar {first} viel eerder uit.',
+  'tutorial.real.dnfNone': 'Eerste uitvaller: {pick} gekozen, niemand viel uit.',
+  'tutorial.real.total': 'Totaal voor deze race: **{n} punten**.',
+
+  'tutorial.faq.title': 'Veelgestelde vragen',
+  'tutorial.faq.q1': 'Kost het iets?',
+  'tutorial.faq.a1': 'Nee. Poule Position is helemaal gratis, zonder advertenties en zonder betaalde functies.',
+  'tutorial.faq.q2': 'Kan ik mijn voorspelling aanpassen nadat ik hem heb ingediend?',
+  'tutorial.faq.a2':
+    'Ja, zo vaak als je wilt tot hij sluit, 1 minuut voor de start van de race. Je krijgt elke keer een bevestigingsmail. Na het sluiten kan niets meer worden aangepast, voor niemand.',
+  'tutorial.faq.q3': 'Ik ben vergeten te voorspellen. Wat gebeurt er?',
+  'tutorial.faq.a3':
+    'Je krijgt een herinneringsmail 1 uur voor de start. Als de race sluit en je nog geen voorspelling hebt, wordt je meest recente voorspelling overgenomen, inclusief de keuze voor de eerste uitvaller, en we mailen je wat er is ingevuld. Een nieuwe speler zonder eerdere voorspelling scoort voor die race niets.',
+  'tutorial.faq.q4': 'Welke coureur telt als eerste uitvaller?',
+  'tutorial.faq.a4':
+    'Van de coureurs die niet finishen telt degene met de minste afgelegde ronden (als laatste geklasseerd onder de uitvallers) als eerste uit. Valt niemand uit, dan krijgt niemand de bonus. Een coureur die een ronde achter finisht, of na de finish wordt gediskwalificeerd, is geen uitvaller.',
+  'tutorial.faq.q5': 'De lijst met coureurs staat in kwalificatievolgorde, maar sommige coureurs starten ergens anders. Hoe komt dat?',
+  'tutorial.faq.a5':
+    'De lijst toont de kwalificatie-uitslag, niet de startopstelling. Een gridstraf kan een coureur verder terugzetten dan waar hij kwalificeerde. Jij voorspelt waar coureurs finishen, dus een straf verandert nooit hoe je punten worden geteld, hooguit wat je verwacht.',
+  'tutorial.faq.q6': 'Waarom zijn mijn punten na de race veranderd?',
+  'tutorial.faq.a6':
+    'De eerste punten komen een paar minuten na de race, uit de voorlopige uitslag. 24 uur later worden ze opnieuw berekend met de definitieve uitslag, zodra straffen en diskwalificaties zijn verwerkt. Veranderen je punten, dan krijg je een bijgewerkte e-mail.',
+  'tutorial.faq.q7': 'Moet ik ook de sprint voorspellen?',
+  'tutorial.faq.a7': 'Nee. Een sprint en de race zijn aparte voorspellingen en je kunt er één of allebei spelen. Punten van beide tellen mee voor je seizoenstotaal.',
+  'tutorial.faq.q8': 'In welke tijdzone staan de tijden?',
+  'tutorial.faq.a8': 'In Nederlandse tijd (Amsterdam), waar je ook bent.',
+  'tutorial.faq.q9': 'Hoe wijzig ik mijn bijnaam, e-mailadres of taal, of reset ik mijn wachtwoord?',
+  'tutorial.faq.a9':
+    'Open je profielpagina om je bijnaam, e-mailadres of taal te wijzigen, of om je account te verwijderen. Ben je je wachtwoord vergeten, gebruik dan "Wachtwoord vergeten?" op de inlogpagina.',
+  'tutorial.faq.q10': 'Welke e-mails krijg ik, en kan ik ze stoppen?',
+  'tutorial.faq.a10':
+    'Bevestigingen van voorspellingen, herinneringen en uitslagen horen bij het spel. Aankondigingsmails hebben een afmeldlink. E-mails met uitslagen beginnen met SPOILER ALERT in het onderwerp.',
+  'tutorial.faq.q11': 'Wie is Gaston Mazzacane?',
+  'tutorial.faq.a11': 'Onze AI-speler. Hij doet mee aan elke race, en zijn echte voorspellingen zijn de voorbeelden op deze pagina.',
+  'tutorial.faq.q12': 'Wie zit hierachter en hoe bereik ik ze?',
+  'tutorial.faq.a12':
+    'Poule Position is een onafhankelijk spel, gemaakt door fans en niet gelieerd aan de Formule 1. Vragen zijn welkom op kimi@pouleposition.nl, of beantwoord gewoon een e-mail van de site.',
+
   'tutorial.cta.title': 'Klaar om te spelen?',
   'tutorial.cta.register': 'Maak je account aan',
   'tutorial.cta.predict': 'Doe je voorspelling',

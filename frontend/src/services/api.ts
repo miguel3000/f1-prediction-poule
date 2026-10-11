@@ -72,6 +72,18 @@ export interface WeekendSession {
 export const getRaceWeekends = (season = 2026) =>
   api.get<{ season: number; weekends: Record<string, WeekendSession[]> }>('/api/races/weekends', { params: { season } });
 
+export interface TutorialExample {
+  available: boolean;
+  player?: string;
+  race?: { name: string; round: number };
+  rows?: Array<{ position: number; number: number | null; name: string; finished: number | null; base: number; points: number }>;
+  dnf?: { pickNumber: number | null; pickName: string; firstOutName: string | null; bonus: number };
+  total?: number;
+}
+
+export const getTutorialExample = () =>
+  api.get<TutorialExample>('/api/tutorial/example');
+
 export const getRaceResults = (id: number) =>
   api.get(`/api/races/${id}/results`);
 

@@ -18,6 +18,7 @@ import statsRoutes from './routes/stats';
 import newsRoutes from './routes/news';
 import liveTimingRoutes from './routes/liveTiming';
 import pitwallRoutes from './routes/pitwall';
+import tutorialRoutes from './routes/tutorial';
 import { startLiveTimingIngest } from './services/liveTimingService';
 import { pickLang, renderIndex } from './utils/seoMeta';
 
@@ -84,6 +85,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/live-timing', liveTimingLimiter, liveTimingRoutes);
 app.use('/api/pitwall', pitwallRoutes);
+app.use('/api/tutorial', tutorialRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
