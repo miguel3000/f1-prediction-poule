@@ -42,6 +42,7 @@ export const common: Record<keyof typeof enCommon, string> = {
   'nav.login': 'Inloggen',
 
   'share.button': 'Nodig vrienden uit',
+  'share.icon': 'Delen',
   'share.title': 'Poule Position',
   'share.text': 'Doe mee met mijn F1-poule: voorspel elke race en verslaat me in het klassement!',
   'share.copied': 'Link gekopieerd',

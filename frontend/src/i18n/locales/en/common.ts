@@ -40,6 +40,7 @@ export const common = {
   'nav.login': 'Login',
 
   'share.button': 'Invite friends',
+  'share.icon': 'Share',
   'share.title': 'Poule Position',
   'share.text': 'Join my F1 prediction poule: predict every race and beat me on the leaderboard!',
   'share.copied': 'Link copied',

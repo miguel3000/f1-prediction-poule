@@ -1,35 +1,18 @@
 import { useState } from 'react';
 import { useLang } from '../i18n/LanguageContext';
+import { shareLink, shareUrlFor } from '../utils/share';
 
-const SITE = 'https://pouleposition.nl/';
-
-// Opens the phone's share sheet (WhatsApp, Messages, ...) when there is one,
-// otherwise copies the link. The link carries ?lang= so the friend's link
-// preview and first screen match the language of whoever shared it.
+// The big "Invite friends" button on a few pages: always shares the home page.
 const ShareButton = () => {
   const { t, lang } = useLang();
   const [notice, setNotice] = useState('');
 
   const share = async () => {
-    const url = `${SITE}?lang=${lang}`;
-    const text = t('share.text');
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: t('share.title'), text, url });
-        return;
-      } catch (err) {
-        // Closing the sheet is not an error; any other failure falls back to copying.
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(`${text} ${url}`);
-      setNotice(t('share.copied'));
-    } catch {
-      setNotice(t('share.copyFailed', { url }));
-    }
+    const url = shareUrlFor('/', lang);
+    const result = await shareLink({ title: t('share.title'), text: t('share.text'), url });
+    if (result === 'copied') setNotice(t('share.copied'));
+    else if (result === 'failed') setNotice(t('share.copyFailed', { url }));
+    else return;
     window.setTimeout(() => setNotice(''), 4000);
   };
 

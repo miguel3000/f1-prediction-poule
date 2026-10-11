@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import LogoMark from './LogoMark';
 import LanguageToggle from './LanguageToggle';
+import ShareIconButton from './ShareIconButton';
 import { useLang, TranslationKey } from '../i18n/LanguageContext';
 import { RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon, PredictionIcon, ChartIcon, NewsIcon, MoreIcon } from './icons';
 
@@ -33,11 +34,11 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
       style={{ backgroundColor: 'rgba(22,18,23,0.85)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-4 h-16">
+        <div className="flex items-center gap-2 sm:gap-4 h-16">
 
           {/* Logo — pinned left */}
           <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label={t('nav.homeAria')}>
-            <LogoMark className="h-10 w-auto" />
+            <LogoMark className="h-8 min-[360px]:h-10 w-auto" />
           </button>
 
           <div className="w-px h-6 bg-f1-neutral-800 hidden xl:block" />
@@ -90,8 +91,9 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
           <div className="flex-1 xl:hidden" />
 
           {/* User + More */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
             <LanguageToggle />
+            <ShareIconButton />
             {user ? (
               <>
                 <div
@@ -125,7 +127,7 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 </button>
               </>
             ) : (
-              <a href="/auth" className="btn-f1-primary px-5 py-2 text-sm">
+              <a href="/auth" className="btn-f1-primary px-2.5 sm:px-5 py-2 text-xs sm:text-sm">
                 {t('nav.login')}
               </a>
             )}

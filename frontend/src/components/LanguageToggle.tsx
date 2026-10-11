@@ -21,7 +21,7 @@ const LanguageToggle = () => {
             if (localStorage.getItem('token')) saveLanguage(option).catch(() => undefined);
           }}
           aria-pressed={lang === option}
-          className={`px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+          className={`px-1.5 min-[360px]:px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
             lang === option ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white hover:brightness-125'
           }`}
         >
