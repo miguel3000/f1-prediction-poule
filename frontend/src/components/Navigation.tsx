@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../i18n/LanguageContext';
 import {
   RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon,
-  PredictionIcon, ChartIcon, NewsIcon, LiveIcon, PitWallIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon,
+  PredictionIcon, ChartIcon, NewsIcon, LiveIcon, PitWallIcon, ClipboardIcon, InfoIcon, ShieldIcon, WrenchIcon, BookIcon, HelpIcon,
 } from './icons';
 
 interface NavigationProps {
@@ -40,9 +40,13 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
       menuItems.push({ path: '/pitwall', label: t('nav.pitwall'), icon: <PitWallIcon /> });
     }
   }
+  // Open to everyone, logged in or not: new players land here first.
+  menuItems.push(
+    { path: '/tutorial',      label: t('nav.tutorial'), icon: <BookIcon /> },
+    { path: '/tutorial#faq',  label: t('nav.faq'),      icon: <HelpIcon /> },
+  );
 
   const footerItems = [
-    { path: '/tutorial', label: t('nav.tutorial'),      icon: <PredictionIcon /> },
     { path: '/rules',   label: t('nav.rules'),          icon: <ClipboardIcon /> },
     { path: '/about',   label: t('nav.about'),          icon: <InfoIcon /> },
     { path: '/privacy', label: t('nav.privacy'), icon: <ShieldIcon /> },

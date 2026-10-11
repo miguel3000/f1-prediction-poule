@@ -1,5 +1,5 @@
-import { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useContext, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../i18n/LanguageContext';
 import Rich from '../components/Rich';
@@ -35,8 +35,8 @@ const Chip = ({ number, name }: { number: number; name: string }) => (
   </>
 );
 
-const Panel = ({ children }: { children: React.ReactNode }) => (
-  <section className="card-f1 !p-5 sm:!p-6">{children}</section>
+const Panel = ({ children, id }: { children: React.ReactNode; id?: string }) => (
+  <section id={id} className="card-f1 !p-5 sm:!p-6 scroll-mt-20">{children}</section>
 );
 
 const Text = ({ text }: { text: string }) => (
@@ -278,6 +278,7 @@ const RealExample = ({ example }: { example: TutorialExample }) => {
 const Tutorial = () => {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
+  const { hash } = useLocation();
 
   // A real prediction by our AI player; if it cannot be loaded the page shows made-up examples instead.
   const [example, setExample] = useState<TutorialExample | null>(null);
@@ -286,6 +287,22 @@ const Tutorial = () => {
       .then((res) => setExample(res.data))
       .catch(() => setExample(null));
   }, []);
+  // Menu link /tutorial#faq: jump to the section. The real example above it changes the page
+  // height once it loads, so scroll again then, but only just after arriving (not while reading).
+  const arrivedAt = useRef(0);
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return;
+    }
+    arrivedAt.current = Date.now();
+    document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+  }, [hash]);
+  useEffect(() => {
+    if (hash && Date.now() - arrivedAt.current < 3000) {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+    }
+  }, [example, hash]);
   const real = example?.available && example.rows && example.dnf ? example : null;
   const picks = real?.rows?.map((r) => ({ number: r.number ?? 0, name: lastName(r.name) }));
   const pickName = real?.dnf ? lastName(real.dnf.pickName) : 'Bottas';
@@ -453,7 +470,7 @@ const Tutorial = () => {
           <PointsCalculator />
         </Panel>
 
-        <Panel>
+        <Panel id="faq">
           <h2 className="font-brand uppercase tracking-wide text-f1-yellow-500 text-3xl leading-none mb-4">{t('tutorial.faq.title')}</h2>
           <div className="space-y-1">
             {faq.map((item, i) => (

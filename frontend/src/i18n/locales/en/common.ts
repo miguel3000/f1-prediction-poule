@@ -26,6 +26,7 @@ export const common = {
   'nav.pitwall': 'Pit Wall',
   'nav.rules': 'Rules',
   'nav.tutorial': 'How to Play',
+  'nav.faq': 'FAQ',
   'tutorial.link': 'New here? See how it works',
   'nav.about': 'About',
   'nav.privacy': 'Privacy Policy',

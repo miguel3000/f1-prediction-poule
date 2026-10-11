@@ -96,3 +96,16 @@ export const MoreIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
     <rect x="13" y="13" width="7" height="7" rx="0"/>
   </svg>
 );
+export const BookIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z"/>
+    <path d="M20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z"/>
+  </svg>
+);
+export const HelpIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+);
