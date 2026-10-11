@@ -8,9 +8,10 @@
 # Sync race results every Monday at 3:00 AM UTC
 0 3 * * 1 /app/sync-race-results.sh
 
-# SYNC QUALIFYING RESULTS: Run hourly on Fri+Sat (qualifying days)
-# Picks up qualifying data ~2 hours after session ends
-0 * * * 5,6 /app/sync-qualifying-results.sh
+# SYNC QUALIFYING RESULTS: every 10 minutes Fri-Sun (sprint qualifying Fri, qualifying Sat, with
+# Sunday as a safety net before the race). Does nothing once a session's qualifying is stored;
+# tries Jolpi and OpenF1, and emails the admin if it is still missing a few hours after the session.
+*/10 * * * 5,6,0 /app/sync-qualifying-results.sh
 
 # MISSED-PREDICTION REMINDER: Check every 5 minutes on race days (Sat sprint + Sun main, 01:00-20:00 UTC)
 # Fires ~1 hour before lights out for anyone who still hasn't predicted.
@@ -31,5 +32,6 @@
 # Recalculates points considering disqualifications/penalties; only acts on status='provisional' races
 0 2-22 * * 0,1 /app/process-final-results.sh
 
-# Log rotation to prevent log file from growing too large
-0 0 * * 0 echo "" > /var/log/cron.log
+# Log rotation to prevent log file from growing too large. Tuesday, so a race weekend's
+# job output is still readable on Monday (it used to be wiped at Sunday midnight).
+0 3 * * 2 echo "" > /var/log/cron.log

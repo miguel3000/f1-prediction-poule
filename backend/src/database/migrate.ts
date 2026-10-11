@@ -152,6 +152,11 @@ const runMigration = async () => {
     `);
     console.log('race_classifications and result_checks tables ensured.');
 
+    // So the admin is only emailed once when a session's qualifying is overdue
+    console.log('Checking for qualifying_alert_sent column...');
+    await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS qualifying_alert_sent BOOLEAN DEFAULT FALSE`);
+    console.log('qualifying_alert_sent column ensured.');
+
     // Preferred site language per player ('en' | 'nl'); NULL = not chosen yet,
     // in which case the browser's language decides.
     console.log('Checking for language column on users...');

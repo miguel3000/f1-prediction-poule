@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
+import { fetchQualifying, storeQualifying } from '../services/qualifyingService';
 
 // Get qualifying order for a race (with fallback to previous race results)
 // A qualifying list must never leave a driver out of the prediction picker: anyone
@@ -51,83 +52,30 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
       });
     }
 
-    // For sprint races, try sprint qualifying (SQ) results; otherwise regular qualifying
-    if (race.race_type === 'sprint') {
-      // Jolpi/Ergast has no sprint qualifying endpoint at all (it 400s for every round),
-      // so the sprint grid comes from OpenF1 and is stored for next time.
-      try {
-        const sessionKey = await openF1Service.getSprintQualifyingSessionKey(race.season, race.race_date);
-        const sqResults = sessionKey ? await openF1Service.getQualifyingResults(sessionKey) : [];
+    // The qualifying order for this session (main: Jolpi then OpenF1; sprint: OpenF1),
+    // stored for next time so the page and the background job agree.
+    try {
+      const loaded = await fetchQualifying({
+        id: raceId,
+        season: race.season,
+        round: race.round,
+        race_date: race.race_date,
+        race_type: race.race_type,
+      });
 
-        if (sqResults.length > 0) {
-          const driverNumbers = sqResults.map(q => q.driver_number);
-          const driversResult = await query(
-            `SELECT id, driver_number, name, name_acronym, team, image_url
-             FROM drivers WHERE driver_number = ANY($1) AND season = $2`,
-            [driverNumbers, race.season]
-          );
-          const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
-
-          const orderedDrivers = sqResults.map((q) => {
-            const driver = driverMap.get(q.driver_number);
-            return driver ? { ...driver, position: q.position, q1: q.q1 || null, q2: q.q2 || null, q3: q.q3 || null } : null;
-          }).filter(d => d !== null);
-
-          for (const driver of orderedDrivers) {
-            await query(
-              `INSERT INTO qualifying_results (race_id, driver_id, position, q1, q2, q3)
-               VALUES ($1, $2, $3, $4, $5, $6)
-               ON CONFLICT (race_id, driver_id) DO UPDATE SET position = EXCLUDED.position, q1 = EXCLUDED.q1, q2 = EXCLUDED.q2, q3 = EXCLUDED.q3`,
-              [raceId, driver.id, driver.position, driver.q1, driver.q2, driver.q3]
-            );
-          }
-
-          return res.json({
-            source: 'sprint_qualifying',
-            hasQualifyingResults: true,
-            drivers: await withAllDrivers(race.season, orderedDrivers)
-          });
-        }
-      } catch (error) {
-        console.log('Sprint qualifying not available, falling back to previous race results');
+      if (loaded) {
+        const { stored } = await storeQualifying(
+          { id: raceId, season: race.season, round: race.round, race_date: race.race_date, race_type: race.race_type },
+          loaded.rows
+        );
+        return res.json({
+          source: race.race_type === 'sprint' ? 'sprint_qualifying' : 'qualifying',
+          hasQualifyingResults: true,
+          drivers: await withAllDrivers(race.season, stored)
+        });
       }
-    } else {
-      // Try to fetch qualifying from Jolpi API
-      try {
-        const qualifyingResults = await jolpiService.getQualifyingResults(race.season, race.round);
-
-        if (qualifyingResults.length > 0) {
-          const driverNumbers = qualifyingResults.map(q => parseInt(q.number));
-          const driversResult = await query(
-            `SELECT id, driver_number, name, name_acronym, team, image_url
-             FROM drivers WHERE driver_number = ANY($1) AND season = $2`,
-            [driverNumbers, race.season]
-          );
-          const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
-
-          const orderedDrivers = qualifyingResults.map((q, index) => {
-            const driver = driverMap.get(parseInt(q.number));
-            return driver ? { ...driver, position: index + 1, q1: q.Q1 || null, q2: q.Q2 || null, q3: q.Q3 || null } : null;
-          }).filter(d => d !== null);
-
-          for (const driver of orderedDrivers) {
-            await query(
-              `INSERT INTO qualifying_results (race_id, driver_id, position, q1, q2, q3)
-               VALUES ($1, $2, $3, $4, $5, $6)
-               ON CONFLICT (race_id, driver_id) DO UPDATE SET position = EXCLUDED.position, q1 = EXCLUDED.q1, q2 = EXCLUDED.q2, q3 = EXCLUDED.q3`,
-              [raceId, driver.id, driver.position, driver.q1, driver.q2, driver.q3]
-            );
-          }
-
-          return res.json({
-            source: 'qualifying',
-            hasQualifyingResults: true,
-            drivers: await withAllDrivers(race.season, orderedDrivers)
-          });
-        }
-      } catch (error) {
-        console.log('Qualifying not available, falling back to previous race results');
-      }
+    } catch (error) {
+      console.log('Qualifying not available, falling back to previous race results');
     }
 
     // Fallback: Get previous race results

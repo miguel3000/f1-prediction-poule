@@ -209,3 +209,6 @@ CREATE TABLE IF NOT EXISTS result_checks (
   notified_signature TEXT,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Set once the admin has been told a session's qualifying results are overdue
+ALTER TABLE races ADD COLUMN IF NOT EXISTS qualifying_alert_sent BOOLEAN DEFAULT FALSE;

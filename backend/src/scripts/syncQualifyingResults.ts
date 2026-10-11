@@ -1,98 +1,80 @@
 import { query } from '../config/database';
-import * as jolpiService from '../services/jolpiService';
+import { fetchQualifying, storeQualifying } from '../services/qualifyingService';
+import { sendAdminAlert } from '../services/emailService';
 
+/**
+ * Stores the qualifying order of the current race weekend (sprint qualifying and main
+ * qualifying) as soon as a data source has it, so the prediction page shows it.
+ *
+ * Runs every 10 minutes from Friday to Sunday. It only does real work for a session
+ * that should have started and has nothing stored yet, and tries Jolpi and OpenF1.
+ * If the data is still missing a few hours after the session, the admin is told once.
+ */
 async function syncQualifyingResults() {
   try {
-    console.log('[CRON] Starting qualifying results sync...');
     const season = 2026;
 
-    // Find main races where qualifying has ended (qualifying_date + 2 hours < NOW)
-    // and no qualifying_results exist yet
     const racesResult = await query(
-      `SELECT r.id, r.season, r.round, r.race_name, r.race_date
+      `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type, r.qualifying_alert_sent,
+              -- when the qualifying session should long be over and published
+              CASE WHEN r.race_type = 'main'
+                   THEN COALESCE(r.qualifying_date, r.race_date - INTERVAL '1 day') + INTERVAL '3 hours'
+                   ELSE r.race_date - INTERVAL '17 hours'
+              END AS expected_by
        FROM races r
        WHERE r.season = $1
-         AND r.race_type = 'main'
          AND r.race_date - INTERVAL '1 day' < NOW()
-         AND NOT EXISTS (
-           SELECT 1 FROM qualifying_results WHERE race_id = r.id
-         )
+         AND r.race_date > NOW() - INTERVAL '2 days'
+         AND NOT EXISTS (SELECT 1 FROM qualifying_results WHERE race_id = r.id)
        ORDER BY r.race_date DESC`,
       [season]
     );
 
-    const races = racesResult.rows;
-
-    if (races.length === 0) {
-      console.log('[CRON] No races need qualifying results sync');
+    if (racesResult.rows.length === 0) {
       process.exit(0);
       return;
     }
 
-    console.log(`[CRON] Found ${races.length} race(s) needing qualifying results sync`);
-
-    for (const race of races) {
+    for (const race of racesResult.rows) {
+      const label = `${race.race_name} (Round ${race.round}, ${race.race_type})`;
       try {
-        console.log(`[CRON] Syncing qualifying results for ${race.race_name} (Round ${race.round})...`);
+        const loaded = await fetchQualifying({
+          id: race.id,
+          season: race.season,
+          round: race.round,
+          race_date: race.race_date,
+          race_type: race.race_type,
+        });
 
-        const qualifyingResults = await jolpiService.getQualifyingResults(race.season, race.round);
-
-        if (qualifyingResults.length === 0) {
-          console.log(`[CRON] No qualifying results found for ${race.race_name}, skipping...`);
+        if (loaded) {
+          const { stored, unknown } = await storeQualifying(
+            { id: race.id, season: race.season, round: race.round, race_date: race.race_date, race_type: race.race_type },
+            loaded.rows
+          );
+          console.log(`[CRON] Stored ${stored.length} qualifying results for ${label} from ${loaded.source} (${unknown} unknown drivers)`);
           continue;
         }
 
-        // Batch fetch all drivers by their numbers
-        const driverNumbers = qualifyingResults.map(q => parseInt(q.number));
-        const driversResult = await query(
-          'SELECT id, driver_number, name FROM drivers WHERE driver_number = ANY($1) AND season = $2',
-          [driverNumbers, race.season]
-        );
-        const driverMap = new Map(driversResult.rows.map((d: any) => [d.driver_number, d]));
+        const overdue = new Date(race.expected_by).getTime() < Date.now();
+        console.log(`[CRON] No qualifying results yet for ${label}${overdue ? ' (overdue)' : ''}`);
 
-        let inserted = 0;
-        let notFound = 0;
-
-        for (const result of qualifyingResults) {
-          const driverNumber = parseInt(result.number);
-          const driver = driverMap.get(driverNumber);
-
-          if (driver) {
-            await query(
-              `INSERT INTO qualifying_results (race_id, driver_id, position, q1, q2, q3)
-               VALUES ($1, $2, $3, $4, $5, $6)
-               ON CONFLICT (race_id, driver_id) DO UPDATE SET
-                 position = EXCLUDED.position,
-                 q1 = EXCLUDED.q1,
-                 q2 = EXCLUDED.q2,
-                 q3 = EXCLUDED.q3`,
-              [
-                race.id,
-                driver.id,
-                parseInt(result.position),
-                result.Q1 || null,
-                result.Q2 || null,
-                result.Q3 || null
-              ]
-            );
-
-            inserted++;
-            const bestTime = result.Q3 || result.Q2 || result.Q1 || 'no time';
-            console.log(`[CRON]   P${result.position}: ${driver.name} (${bestTime})`);
-          } else {
-            notFound++;
-            console.log(`[CRON]   Driver #${result.number} not found in database`);
+        if (overdue && !race.qualifying_alert_sent) {
+          const sent = await sendAdminAlert(
+            `Qualifying results missing — ${race.race_name}`,
+            `The ${race.race_type === 'sprint' ? 'sprint qualifying' : 'qualifying'} of ${label} should have been ` +
+              `over for a few hours, but neither Jolpi nor OpenF1 has results for it yet. The prediction page keeps ` +
+              `showing the previous race's order until they appear. The job keeps retrying every 10 minutes. ` +
+              `If this stays, check both sources and the Pitlane sync.`
+          );
+          if (sent) {
+            await query('UPDATE races SET qualifying_alert_sent = TRUE WHERE id = $1', [race.id]);
           }
         }
-
-        console.log(`[CRON] Inserted ${inserted} qualifying results for ${race.race_name} (${notFound} not found)`);
-
       } catch (error) {
-        console.error(`[CRON] Error syncing qualifying for ${race.race_name}:`, error);
+        console.error(`[CRON] Error syncing qualifying for ${label}:`, error);
       }
     }
 
-    console.log('[CRON] Qualifying results sync completed');
     process.exit(0);
   } catch (error) {
     console.error('[CRON] Error in qualifying results sync:', error);

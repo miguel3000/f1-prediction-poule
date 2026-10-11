@@ -144,7 +144,8 @@ export const getRaceResults = async (season: number, round: number): Promise<Jol
     const response = await axios.get(`${JOLPI_API_URL}/${season}/${round}/results.json`);
     const results = response.data.MRData.RaceTable.Races[0]?.Results || [];
     // Cache race results for 24 hours (completed race data rarely changes)
-    f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
+    // An empty answer means "not published yet"; caching it would hide the results for a day
+    if (results.length > 0) f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
     return results;
   } catch (error) {
     console.error('Error fetching race results from Jolpi:', error);
@@ -189,7 +190,8 @@ export const getQualifyingResults = async (season: number, round: number): Promi
   try {
     const response = await axios.get(`${JOLPI_API_URL}/${season}/${round}/qualifying.json`);
     const results = response.data.MRData.RaceTable.Races[0]?.QualifyingResults || [];
-    f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
+    // An empty answer means "not published yet"; caching it would hide the results for a day
+    if (results.length > 0) f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
     return results;
   } catch (error) {
     console.error('Error fetching qualifying results from Jolpi:', error);
@@ -218,7 +220,8 @@ export const getSprintQualifyingResults = async (season: number, round: number):
   try {
     const response = await axios.get(`${JOLPI_API_URL}/${season}/${round}/sprintQualifying.json`);
     const results = response.data.MRData.RaceTable.Races[0]?.SprintQualifyingResults || [];
-    f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
+    // An empty answer means "not published yet"; caching it would hide the results for a day
+    if (results.length > 0) f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
     return results;
   } catch (error) {
     console.error('Error fetching sprint qualifying results from Jolpi:', error);
@@ -235,7 +238,8 @@ export const getSprintResults = async (season: number, round: number): Promise<J
   try {
     const response = await axios.get(`${JOLPI_API_URL}/${season}/${round}/sprint.json`);
     const results = response.data.MRData.RaceTable.Races[0]?.SprintResults || [];
-    f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
+    // An empty answer means "not published yet"; caching it would hide the results for a day
+    if (results.length > 0) f1Cache.set(key, results, CACHE_TTL.COMPLETED_SESSION);
     return results;
   } catch (error) {
     console.error('Error fetching sprint results from Jolpi:', error);
