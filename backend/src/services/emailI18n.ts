@@ -26,7 +26,7 @@ const en = {
   'predConfirm.dnf': 'First retirement pick: {name} (+25 pts if correct)',
   'predConfirm.update': 'You can update your prediction until 1 minute before the race starts.',
 
-  'provisional.subject': 'Race Results - {race} (Provisional)',
+  'provisional.subject': 'SPOILER ALERT - Race Results - {race} (Provisional)',
   'provisional.title': 'Provisional Race Results',
   'provisional.intro': 'The {race} has finished! Here are the provisional results:',
   'provisional.top10': 'Race Results (Top 10)',
@@ -38,7 +38,7 @@ const en = {
   'provisional.note':
     'Note: These are provisional results. Final points will be calculated 24 hours after the race to account for any disqualifications or penalties.',
 
-  'final.subject': 'Final Results - {race}',
+  'final.subject': 'SPOILER ALERT - Final Results - {race}',
   'final.title': 'Final Race Results Confirmed',
   'final.intro': 'The final results for {race} have been confirmed.',
   'final.updatedTitle': 'Results Updated!',
@@ -67,13 +67,13 @@ const en = {
     '{race} locked before you submitted a prediction, so we copied in your picks from your last race to keep you in the game:',
   'autofill.nothing': "Nothing to do now — this prediction is locked in for this race. Don't forget to submit your own next time!",
 
-  'resultsIn.subject': 'The results are in! - {race}',
+  'resultsIn.subject': 'SPOILER ALERT - The results are in! - {race}',
   'resultsIn.title': 'The results are in!',
   'resultsIn.text': 'The final results for {race} have been processed and the leaderboard has been updated.',
   'resultsIn.check': 'Check out where you stand!',
 
-  'personal.subjectRace': 'Your Race Predictions — {race}',
-  'personal.subjectSprint': 'Your Sprint Race Predictions — {race}',
+  'personal.subjectRace': 'SPOILER ALERT - Your Race Predictions — {race}',
+  'personal.subjectSprint': 'SPOILER ALERT - Your Sprint Race Predictions — {race}',
   'personal.titleRace': 'Your Race Predictions',
   'personal.titleSprint': 'Your Sprint Race Predictions',
   'personal.intro': "Here's how your prediction for {race} compared to the actual result:",
@@ -141,7 +141,7 @@ const nl: Record<EmailKey, string> = {
   'predConfirm.dnf': 'Gekozen eerste uitvaller: {name} (+25 ptn als het klopt)',
   'predConfirm.update': 'Je kunt je voorspelling aanpassen tot 1 minuut voor de start van de race.',
 
-  'provisional.subject': 'Raceuitslag - {race} (voorlopig)',
+  'provisional.subject': 'SPOILER ALERT - Raceuitslag - {race} (voorlopig)',
   'provisional.title': 'Voorlopige raceuitslag',
   'provisional.intro': 'De {race} is afgelopen! Hier is de voorlopige uitslag:',
   'provisional.top10': 'Raceuitslag (top 10)',
@@ -153,7 +153,7 @@ const nl: Record<EmailKey, string> = {
   'provisional.note':
     'Let op: dit is de voorlopige uitslag. De definitieve punten worden 24 uur na de race berekend, zodat diskwalificaties en straffen worden meegenomen.',
 
-  'final.subject': 'Definitieve uitslag - {race}',
+  'final.subject': 'SPOILER ALERT - Definitieve uitslag - {race}',
   'final.title': 'Definitieve raceuitslag bevestigd',
   'final.intro': 'De definitieve uitslag van {race} is bevestigd.',
   'final.updatedTitle': 'Uitslag bijgewerkt!',
@@ -182,13 +182,13 @@ const nl: Record<EmailKey, string> = {
     '{race} sloot voordat je een voorspelling had gedaan, dus hebben we je keuzes van je vorige race overgenomen zodat je in het spel blijft:',
   'autofill.nothing': 'Je hoeft niets meer te doen — deze voorspelling staat vast voor deze race. Vergeet de volgende keer niet zelf te voorspellen!',
 
-  'resultsIn.subject': 'De uitslag is binnen! - {race}',
+  'resultsIn.subject': 'SPOILER ALERT - De uitslag is binnen! - {race}',
   'resultsIn.title': 'De uitslag is binnen!',
   'resultsIn.text': 'De definitieve uitslag van {race} is verwerkt en het klassement is bijgewerkt.',
   'resultsIn.check': 'Kijk waar je nu staat!',
 
-  'personal.subjectRace': 'Jouw racevoorspelling — {race}',
-  'personal.subjectSprint': 'Jouw sprintvoorspelling — {race}',
+  'personal.subjectRace': 'SPOILER ALERT - Jouw racevoorspelling — {race}',
+  'personal.subjectSprint': 'SPOILER ALERT - Jouw sprintvoorspelling — {race}',
   'personal.titleRace': 'Jouw racevoorspelling',
   'personal.titleSprint': 'Jouw sprintvoorspelling',
   'personal.intro': 'Zo deed je voorspelling voor {race} het ten opzichte van de echte uitslag:',
