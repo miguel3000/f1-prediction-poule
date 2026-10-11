@@ -848,12 +848,10 @@ export interface MemberNoticeDetails {
   predictionCount?: number | null;
 }
 
-export const sendMemberNotice = async (member: MemberNoticeDetails): Promise<boolean> => {
+// Throws on failure: the caller (services/emailLog.ts) records it and retries.
+export const sendMemberNotice = async (member: MemberNoticeDetails): Promise<void> => {
   const adminEmail = process.env.ADMIN_EMAIL;
-  if (!adminEmail) {
-    console.error('ADMIN_EMAIL not configured — cannot send member notice');
-    return false;
-  }
+  if (!adminEmail) throw new Error('ADMIN_EMAIL not configured');
 
   const joined = member.kind === 'joined';
   const oneLine = (text: string) => text.replace(/[\r\n]+/g, ' ').trim();
@@ -910,14 +908,8 @@ export const sendMemberNotice = async (member: MemberNoticeDetails): Promise<boo
     ),
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Member notice sent (${member.kind})`);
-    return true;
-  } catch (error) {
-    console.error('Error sending member notice:', error);
-    return false;
-  }
+  await transporter.sendMail(mailOptions);
+  console.log(`Member notice sent (${member.kind})`);
 };
 
 // Sent to the admin when the results cross-check needs a human: sources
@@ -1032,7 +1024,7 @@ export const sendWelcomeEmail = async (
   nickname: string,
   language?: string | null,
   opts: { late?: boolean } = {}
-): Promise<boolean> => {
+): Promise<void> => {
   const lang = normalizeLang(language);
   const appUrl = process.env.FRONTEND_URL!;
   const heading = (text: string) =>
@@ -1078,14 +1070,9 @@ export const sendWelcomeEmail = async (
     ),
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('Welcome email sent to:', email, `[${lang}]`);
-    return true;
-  } catch (error) {
-    console.error('Error sending welcome email:', error);
-    return false;
-  }
+  // Throws on failure: the caller (services/emailLog.ts) records it and retries.
+  await transporter.sendMail(mailOptions);
+  console.log('Welcome email sent to:', email, `[${lang}]`);
 };
 
 // Internal ops alert — e.g. results still unavailable from the API after the retry window

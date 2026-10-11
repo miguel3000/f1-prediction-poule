@@ -183,6 +183,25 @@ const runMigration = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_pitwall_ideas_user ON pitwall_ideas(user_id, created_at DESC)`);
     console.log('pitwall_access and pitwall_ideas ensured.');
 
+    // Sign-up / departure emails are logged so a failed send is retried and visible in the Pitlane
+    console.log('Checking for email_log table...');
+    await query(`
+      CREATE TABLE IF NOT EXISTS email_log (
+        id SERIAL PRIMARY KEY,
+        kind VARCHAR(20) NOT NULL CHECK (kind IN ('welcome', 'member_joined', 'member_left')),
+        user_id INTEGER,
+        recipient VARCHAR(255) NOT NULL,
+        status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'skipped')),
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        payload JSONB NOT NULL DEFAULT '{}',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_email_log_status ON email_log(status, updated_at)`);
+    console.log('email_log ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

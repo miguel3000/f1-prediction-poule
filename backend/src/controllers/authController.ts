@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { query } from '../config/database';
-import { sendPasswordReset, sendMemberNotice, sendWelcomeEmail } from '../services/emailService';
+import { sendPasswordReset } from '../services/emailService';
+import { sendLogged, logSkipped } from '../services/emailLog';
 import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
 import { randomNickname, numberedNickname } from '../utils/nicknameGenerator';
 
@@ -57,25 +58,32 @@ const MAX_SIGNUP_NOTICES_PER_HOUR = 10;
 const sendSignupEmails = (user: any) => {
   (async () => {
     const recent = await query("SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '1 hour'");
-    // The same cap covers the welcome email: sign-up needs no email verification, so
-    // without it the form could be used to mail arbitrary addresses in bulk.
-    if (Number(recent.rows[0].count) > MAX_SIGNUP_NOTICES_PER_HOUR) return;
-    await sendWelcomeEmail(user.email, user.nickname, user.language);
+    const welcome = { nickname: user.nickname, language: user.language };
     const total = await query('SELECT COUNT(*) FROM users');
-    await sendMemberNotice({
-      kind: 'joined',
+    const notice = {
+      kind: 'joined' as const,
       nickname: user.nickname,
       email: user.email,
       language: user.language,
       totalMembers: Number(total.rows[0].count),
-    });
-  })().catch((error) => console.error('Sign-up notice failed:', error));
+    };
+    // The same cap covers the welcome email: sign-up needs no email verification, so
+    // without it the form could be used to mail arbitrary addresses in bulk.
+    if (Number(recent.rows[0].count) > MAX_SIGNUP_NOTICES_PER_HOUR) {
+      await logSkipped('welcome', user.id, user.email, welcome, 'hourly sign-up cap');
+      await logSkipped('member_joined', user.id, user.email, notice, 'hourly sign-up cap');
+      return;
+    }
+    // Independent of each other: one failing must not stop the other (each is recorded and retried).
+    await sendLogged('welcome', user.id, user.email, welcome);
+    await sendLogged('member_joined', user.id, user.email, notice);
+  })().catch((error) => console.error('Sign-up emails failed:', error));
 };
 
 const notifyAdminOfDeparture = (user: any, predictionCount: number) => {
   (async () => {
     const total = await query('SELECT COUNT(*) FROM users');
-    await sendMemberNotice({
+    await sendLogged('member_left', user.id, user.email, {
       kind: 'left',
       nickname: user.nickname,
       email: user.email,

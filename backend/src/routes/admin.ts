@@ -16,7 +16,8 @@ import {
   setUserPassword,
   setPitwallAccess,
   listPitwallIdeas,
-  decidePitwallIdea
+  decidePitwallIdea,
+  listEmailLog
 } from '../controllers/adminController';
 import { syncDrivers } from '../controllers/driverController';
 import { syncRaces } from '../controllers/raceController';
@@ -33,6 +34,9 @@ router.post('/users/:userId/password', authenticateAdmin, setUserPassword);
 router.put('/users/:id/pitwall-access', authenticateAdmin, setPitwallAccess);
 router.get('/pitwall-ideas', authenticateAdmin, listPitwallIdeas);
 router.put('/pitwall-ideas/:id', authenticateAdmin, decidePitwallIdea);
+
+// Sign-up / departure emails: what was sent, what failed
+router.get('/email-log', authenticateAdmin, listEmailLog);
 
 // Cronjob management
 router.get('/cronjobs', authenticateAdmin, getCronJobs);

@@ -1033,3 +1033,20 @@ export const getResultCheck = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to compare sources' });
   }
 };
+
+// Latest sign-up / departure emails and whether they went out (see services/emailLog.ts)
+export const listEmailLog = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT l.id, l.kind, l.recipient, l.status, l.attempts, l.last_error, l.created_at, l.updated_at,
+              l.payload->>'nickname' AS nickname
+       FROM email_log l
+       ORDER BY l.created_at DESC, l.id DESC
+       LIMIT 40`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('List email log error:', error);
+    res.status(500).json({ error: 'Failed to load the email log' });
+  }
+};

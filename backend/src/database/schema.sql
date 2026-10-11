@@ -212,3 +212,19 @@ CREATE TABLE IF NOT EXISTS result_checks (
 
 -- Set once the admin has been told a session's qualifying results are overdue
 ALTER TABLE races ADD COLUMN IF NOT EXISTS qualifying_alert_sent BOOLEAN DEFAULT FALSE;
+
+-- Sign-up and departure emails (welcome mail, "new member" / "member left" notice to the admin):
+-- every attempt is recorded, so a failure survives a redeploy and gets retried.
+CREATE TABLE IF NOT EXISTS email_log (
+  id SERIAL PRIMARY KEY,
+  kind VARCHAR(20) NOT NULL CHECK (kind IN ('welcome', 'member_joined', 'member_left')),
+  user_id INTEGER,
+  recipient VARCHAR(255) NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'skipped')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  payload JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_email_log_status ON email_log(status, updated_at);

@@ -27,6 +27,23 @@ interface PitwallIdea {
   nickname: string;
 }
 
+interface EmailLogRow {
+  id: number;
+  kind: 'welcome' | 'member_joined' | 'member_left';
+  recipient: string;
+  status: 'pending' | 'sent' | 'failed' | 'skipped';
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+  nickname: string | null;
+}
+
+const EMAIL_KIND_LABEL: Record<EmailLogRow['kind'], string> = {
+  welcome: 'Welcome mail to player',
+  member_joined: 'New member notice to you',
+  member_left: 'Member left notice to you',
+};
+
 interface SyncJobState {
   lastRun: string | null;
   lastStatus: 'success' | 'error' | 'running' | null;
@@ -98,6 +115,8 @@ const Admin = () => {
   const [ideaNotes, setIdeaNotes] = useState<Record<number, string>>({});
   const [ideaBusyId, setIdeaBusyId] = useState<number | null>(null);
 
+  const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
+
   useEffect(() => {
     if (!user?.is_admin) return;
     getRaces(2026)
@@ -105,6 +124,7 @@ const Admin = () => {
       .catch(() => { /* race list is a nice-to-have; ignore failures */ });
     fetchUsers();
     fetchPitwallIdeas();
+    fetchEmailLog();
   }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
@@ -146,6 +166,15 @@ const Admin = () => {
       setPitwallIdeas(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch Pit Wall ideas');
+    }
+  };
+
+  const fetchEmailLog = async () => {
+    try {
+      const response = await api.get('/api/admin/email-log');
+      setEmailLog(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch the email log');
     }
   };
 
@@ -1493,6 +1522,57 @@ const Admin = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Sign-up and departure emails: what went out, what failed */}
+      <div className="card-f1 mt-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">Sign-up Emails</h2>
+            <p className="text-xs text-white/60 mt-1">
+              The welcome mail and the new/left notices. A failed send is retried automatically a few times.
+            </p>
+          </div>
+          <button onClick={fetchEmailLog} className="btn-f1-secondary text-sm py-2 px-4">
+            Refresh
+          </button>
+        </div>
+
+        {emailLog.length === 0 ? (
+          <p className="text-center text-white py-6">Nothing recorded yet</p>
+        ) : (
+          <div>
+            {emailLog.map((row, i) => (
+              <div key={row.id} className={`px-4 py-3 text-white ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <p className="font-f1 font-bold uppercase tracking-wide leading-tight break-words">
+                      {EMAIL_KIND_LABEL[row.kind]}{row.nickname ? ` \u2014 ${row.nickname}` : ''}
+                    </p>
+                    <p className="text-[10px] text-white/70 uppercase tracking-wide break-all">
+                      {row.recipient} &middot; {new Date(row.created_at).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
+                      {row.attempts > 1 ? ` \u00b7 ${row.attempts} attempts` : ''}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider flex-shrink-0 ${
+                      row.status === 'sent'
+                        ? 'bg-white text-f1-blue-dark'
+                        : row.status === 'failed'
+                        ? 'bg-f1-yellow-500 text-black'
+                        : 'bg-black/30 text-white/70'
+                    }`}
+                  >
+                    {row.status === 'pending' ? 'sending' : row.status}
+                  </span>
+                </div>
+                {row.last_error && row.status !== 'sent' && (
+                  <p className="text-xs text-white/80 mt-2 break-words">{row.last_error}</p>
+                )}
               </div>
             ))}
           </div>

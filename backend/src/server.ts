@@ -20,6 +20,7 @@ import liveTimingRoutes from './routes/liveTiming';
 import pitwallRoutes from './routes/pitwall';
 import tutorialRoutes from './routes/tutorial';
 import { startLiveTimingIngest } from './services/liveTimingService';
+import { startEmailRetries } from './services/emailLog';
 import { pickLang, renderIndex } from './utils/seoMeta';
 
 dotenv.config();
@@ -105,6 +106,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// The old address f1.miguelm.nl now just forwards page visits to pouleposition.nl
+// (same path), so links in older emails and bookmarks keep working. Only GET/HEAD page
+// loads are forwarded; /api and /uploads are left alone for tabs that are still open.
+const LEGACY_HOSTS = ['f1.miguelm.nl'];
+app.use((req, res, next) => {
+  if (
+    LEGACY_HOSTS.includes(req.hostname.toLowerCase()) &&
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    !req.path.startsWith('/api/') &&
+    !req.path.startsWith('/uploads/') &&
+    req.path !== '/health'
+  ) {
+    return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+  }
+  next();
+});
+
 // Serve static files from React build (after API routes)
 // index: false so '/' goes through the per-page <head> rendering below instead.
 app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
@@ -139,6 +157,7 @@ app.listen(PORT, () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL}`);
   startLiveTimingIngest();
+  startEmailRetries();
 });
 
 export default app;

@@ -121,7 +121,7 @@ const en = {
   'welcome.rulesLink': 'Read the rules',
   'welcome.questions': 'Questions? Just reply to this email.',
   'welcome.late':
-    'Sorry this email took a while. A normal pit stop takes about two seconds; our welcome email took a few days. The mechanic was busy tinkering with the website. Better late than never: here is your welcome after all.',
+    'Sorry this email took a while. A normal pit stop takes about two seconds; our welcome email took quite a bit longer. The mechanic was busy tinkering with the website. Better late than never: here is your welcome after all.',
 };
 
 export type EmailKey = keyof typeof en;
@@ -238,7 +238,7 @@ const nl: Record<EmailKey, string> = {
   'welcome.rulesLink': 'Lees de regels',
   'welcome.questions': 'Vragen? Beantwoord gewoon deze e-mail.',
   'welcome.late':
-    'Sorry dat dit bericht er even over deed. Een gewone pitstop duurt ongeveer twee seconden; onze welkomstmail deed er een paar dagen over. De monteur had het te druk met sleutelen aan de website. Beter laat dan nooit: hier is alsnog je welkom.',
+    'Sorry dat dit bericht er even over deed. Een gewone pitstop duurt ongeveer twee seconden; onze welkomstmail deed er flink langer over. De monteur had het te druk met sleutelen aan de website. Beter laat dan nooit: hier is alsnog je welkom.',
 };
 
 const dictionaries: Record<EmailLang, Record<EmailKey, string>> = { en, nl };
