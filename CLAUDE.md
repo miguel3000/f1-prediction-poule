@@ -4,6 +4,8 @@
 
 Poule Position is a web application where users can predict Formula 1 race results and compete on a leaderboard. It supports both main races (top 10 predictions) and sprint races (top 8 predictions).
 
+> **Read [decisions.md](decisions.md) first.** It holds the rules and templates for working on this project (scoring, data sources, email, brand, privacy, deploy, how to report back) and wins over anything below that disagrees.
+
 ## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, react-dnd (drag-and-drop)
