@@ -4,6 +4,11 @@ import { sendWelcomeEmail, sendMemberNotice, MemberNoticeDetails } from './email
 // Sign-up and departure emails go through here so that every attempt is written to the
 // database: a send that fails (SMTP down, wrong password) is retried automatically and
 // shows up in the Pitlane instead of vanishing with the container log.
+//
+// Privacy: the log never keeps a player's email address. The welcome mail looks the address up
+// from the player's account when it is sent; the admin notices carry it in `payload.email`
+// only until they are delivered (or given up on), then it is removed. Error texts from the
+// mail server often quote the address, so those are masked too.
 
 export type LoggedEmailKind = 'welcome' | 'member_joined' | 'member_left';
 
@@ -17,7 +22,8 @@ type Payload = WelcomePayload | MemberNoticeDetails;
 const MAX_ATTEMPTS = 5;
 const RETRY_EVERY_MINUTES = 10; // grows with every attempt: 10, 20, 30, 40 minutes
 const GIVE_UP_AFTER_HOURS = 24;
-const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error)).slice(0, 500);
+const maskAddresses = (text: string) => text.replace(/[^\s<>"',;:()]+@[^\s<>"',;:()]+/g, '[address]');
+const errorText = (error: unknown) => maskAddresses(error instanceof Error ? error.message : String(error)).slice(0, 500);
 
 const dispatch = async (kind: LoggedEmailKind, recipient: string, payload: Payload, late: boolean) => {
   if (kind === 'welcome') {
@@ -34,65 +40,80 @@ const attempt = async (id: number, kind: LoggedEmailKind, recipient: string, pay
   await query(`UPDATE email_log SET attempts = attempts + 1, status = 'pending', updated_at = NOW() WHERE id = $1`, [id]);
   try {
     await dispatch(kind, recipient, payload, late);
-    await query(`UPDATE email_log SET status = 'sent', last_error = NULL, updated_at = NOW() WHERE id = $1`, [id]);
+    await query(`UPDATE email_log SET status = 'sent', last_error = NULL, payload = payload - 'email', updated_at = NOW() WHERE id = $1`, [id]);
   } catch (error) {
     console.error(`Email (${kind}, log #${id}) failed:`, error);
     await query(`UPDATE email_log SET status = 'failed', last_error = $2, updated_at = NOW() WHERE id = $1`, [id, errorText(error)]);
   }
 };
 
+// `address` is what the welcome mail is sent to. It is used for this attempt only and is not
+// stored: a retry looks it up from the account again.
 export const sendLogged = async (
   kind: LoggedEmailKind,
   userId: number | null,
-  recipient: string,
+  address: string,
   payload: Payload,
   opts: { late?: boolean } = {}
 ): Promise<void> => {
   const { rows } = await query(
-    `INSERT INTO email_log (kind, user_id, recipient, payload) VALUES ($1, $2, $3, $4) RETURNING id`,
-    [kind, userId, recipient, JSON.stringify(payload)]
+    `INSERT INTO email_log (kind, user_id, payload) VALUES ($1, $2, $3) RETURNING id`,
+    [kind, userId, JSON.stringify(payload)]
   );
-  await attempt(rows[0].id, kind, recipient, payload, !!opts.late);
+  await attempt(rows[0].id, kind, address, payload, !!opts.late);
 };
 
 // Recorded but deliberately not sent (the hourly sign-up cap).
 export const logSkipped = async (
   kind: LoggedEmailKind,
   userId: number | null,
-  recipient: string,
   payload: Payload,
   reason: string
 ): Promise<void> => {
+  const { email: _email, ...withoutAddress } = payload as Payload & { email?: string };
   await query(
-    `INSERT INTO email_log (kind, user_id, recipient, payload, status, last_error) VALUES ($1, $2, $3, $4, 'skipped', $5)`,
-    [kind, userId, recipient, JSON.stringify(payload), reason]
+    `INSERT INTO email_log (kind, user_id, payload, status, last_error) VALUES ($1, $2, $3, 'skipped', $4)`,
+    [kind, userId, JSON.stringify(withoutAddress), reason]
   );
 };
 
 // Tries again for emails that failed, or whose attempt was cut off by a restart.
 // Runs every few minutes from server.ts.
 export const retryFailedEmails = async (): Promise<void> => {
+  // Whatever is no longer being retried must not keep the address it carried.
+  await query(
+    `UPDATE email_log SET payload = payload - 'email'
+     WHERE payload ? 'email' AND status IN ('failed', 'pending')
+       AND (attempts >= $1 OR created_at <= NOW() - make_interval(hours => $2))`,
+    [MAX_ATTEMPTS, GIVE_UP_AFTER_HOURS]
+  );
+
   const { rows } = await query(
-    `SELECT id, kind, user_id, recipient, payload FROM email_log
-     WHERE status IN ('failed', 'pending')
-       AND attempts < $1
-       AND created_at > NOW() - make_interval(hours => $2)
-       AND updated_at < NOW() - (attempts * make_interval(mins => $3))
-     ORDER BY id
+    `SELECT l.id, l.kind, l.user_id, l.payload, u.email AS account_email
+     FROM email_log l
+     LEFT JOIN users u ON u.id = l.user_id
+     WHERE l.status IN ('failed', 'pending')
+       AND l.attempts < $1
+       AND l.created_at > NOW() - make_interval(hours => $2)
+       AND l.updated_at < NOW() - (l.attempts * make_interval(mins => $3))
+     ORDER BY l.id
      LIMIT 20`,
     [MAX_ATTEMPTS, GIVE_UP_AFTER_HOURS, RETRY_EVERY_MINUTES]
   );
 
   for (const row of rows) {
-    // No point welcoming someone who has deleted their account in the meantime.
-    if (row.kind === 'welcome') {
-      const user = await query('SELECT 1 FROM users WHERE id = $1', [row.user_id]);
-      if (user.rows.length === 0) {
-        await query(`UPDATE email_log SET status = 'skipped', last_error = 'account deleted', updated_at = NOW() WHERE id = $1`, [row.id]);
-        continue;
-      }
+    // The welcome mail goes to the address on the account as it is now. No point welcoming
+    // someone who has deleted their account in the meantime.
+    if (row.kind === 'welcome' && !row.account_email) {
+      await query(`UPDATE email_log SET status = 'skipped', last_error = 'account deleted', updated_at = NOW() WHERE id = $1`, [row.id]);
+      continue;
     }
-    await attempt(row.id, row.kind, row.recipient, row.payload);
+    // A notice whose details were already removed cannot be rebuilt.
+    if (row.kind !== 'welcome' && !row.payload?.email) {
+      await query(`UPDATE email_log SET status = 'skipped', last_error = 'details no longer kept', updated_at = NOW() WHERE id = $1`, [row.id]);
+      continue;
+    }
+    await attempt(row.id, row.kind, row.account_email ?? '', row.payload);
   }
 };
 

@@ -30,7 +30,6 @@ interface PitwallIdea {
 interface EmailLogRow {
   id: number;
   kind: 'welcome' | 'member_joined' | 'member_left';
-  recipient: string;
   status: 'pending' | 'sent' | 'failed' | 'skipped';
   attempts: number;
   last_error: string | null;
@@ -1534,7 +1533,7 @@ const Admin = () => {
           <div>
             <h2 className="text-2xl font-bold">Sign-up Emails</h2>
             <p className="text-xs text-white/60 mt-1">
-              The welcome mail and the new/left notices. A failed send is retried automatically a few times.
+              The welcome mail and the new/left notices. A failed send is retried automatically a few times. Email addresses are not kept here.
             </p>
           </div>
           <button onClick={fetchEmailLog} className="btn-f1-secondary text-sm py-2 px-4">
@@ -1553,8 +1552,8 @@ const Admin = () => {
                     <p className="font-f1 font-bold uppercase tracking-wide leading-tight break-words">
                       {EMAIL_KIND_LABEL[row.kind]}{row.nickname ? ` \u2014 ${row.nickname}` : ''}
                     </p>
-                    <p className="text-[10px] text-white/70 uppercase tracking-wide break-all">
-                      {row.recipient} &middot; {new Date(row.created_at).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
+                    <p className="text-[10px] text-white/70 uppercase tracking-wide">
+                      {new Date(row.created_at).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
                       {row.attempts > 1 ? ` \u00b7 ${row.attempts} attempts` : ''}
                     </p>
                   </div>

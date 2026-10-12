@@ -215,8 +215,11 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - Players' email addresses are never public: not on a public page, not in a newsletter, not in a
   shared link, not in a chat reply unless the user needs it.
 - A new player can be mentioned by **nickname**. Their address stays out.
-- The Pitlane is admin-only but should still not show addresses where it does not need to
-  (open Pit Wall item: blur them in the Sign-up Emails card and stop storing them there).
+- The Pitlane is admin-only but still shows addresses only where it needs them (the user list).
+  The Sign-up Emails log and card keep **no** addresses: the welcome mail looks the address up
+  from the account when it is sent, the admin notices carry it only until delivered, and mail
+  server errors have addresses masked (`services/emailLog.ts`). New logs, alerts and admin cards
+  follow the same rule: nickname yes, address no.
 - No account enumeration in login, reset or sign-up responses.
 - The privacy page already promises deletion of an account and its data; account deletion must
   keep doing that.
@@ -358,8 +361,6 @@ Why: <two or three lines, sources named>
 
 ## 9. Open items and known gaps
 
-- Hide players' email addresses in the Pitlane Sign-up Emails card and stop storing them there
-  (Pit Wall, `hide-player-emails`).
 - Grid penalties: the prediction list follows the qualifying classification, not the starting
   grid (Pit Wall, `grid-penalties`).
 - Dutch texts written by Claude (privacy policy, tutorial, FAQ, emails) have not been read by a
@@ -385,3 +386,4 @@ Why: <two or three lines, sources named>
 | 2026-10-11 | Sign-up and departure mails are logged in the database and retried | A missing notice could not be traced after a redeploy |
 | 2026-10-12 | Weekly sync looks in `sprint_results` for sprints; no scheduled alerts for races older than 3 days | It re-synced every sprint each Monday and emailed about Miami |
 | 2026-10-12 | `decisions.md` is the rulebook; Claude reads it first | The user wants the rules written down, not remembered |
+| 2026-10-12 | The Sign-up Emails log keeps no player email addresses | A new player can be mentioned by nickname, the address must not be exposed |

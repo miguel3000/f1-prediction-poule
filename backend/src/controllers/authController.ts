@@ -70,8 +70,8 @@ const sendSignupEmails = (user: any) => {
     // The same cap covers the welcome email: sign-up needs no email verification, so
     // without it the form could be used to mail arbitrary addresses in bulk.
     if (Number(recent.rows[0].count) > MAX_SIGNUP_NOTICES_PER_HOUR) {
-      await logSkipped('welcome', user.id, user.email, welcome, 'hourly sign-up cap');
-      await logSkipped('member_joined', user.id, user.email, notice, 'hourly sign-up cap');
+      await logSkipped('welcome', user.id, welcome, 'hourly sign-up cap');
+      await logSkipped('member_joined', user.id, notice, 'hourly sign-up cap');
       return;
     }
     // Independent of each other: one failing must not stop the other (each is recorded and retried).

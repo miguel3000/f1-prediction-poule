@@ -190,7 +190,6 @@ const runMigration = async () => {
         id SERIAL PRIMARY KEY,
         kind VARCHAR(20) NOT NULL CHECK (kind IN ('welcome', 'member_joined', 'member_left')),
         user_id INTEGER,
-        recipient VARCHAR(255) NOT NULL,
         status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'skipped')),
         attempts INTEGER NOT NULL DEFAULT 0,
         last_error TEXT,
@@ -200,6 +199,10 @@ const runMigration = async () => {
       )
     `);
     await query(`CREATE INDEX IF NOT EXISTS idx_email_log_status ON email_log(status, updated_at)`);
+    // Privacy: the log keeps no email addresses. Older rows had a recipient column, and delivered
+    // notices keep nothing in payload (see services/emailLog.ts).
+    await query(`ALTER TABLE email_log DROP COLUMN IF EXISTS recipient`);
+    await query(`UPDATE email_log SET payload = payload - 'email' WHERE status IN ('sent', 'skipped')`);
     console.log('email_log ensured.');
 
     // Drop magic_links table (no longer needed - password auth only)

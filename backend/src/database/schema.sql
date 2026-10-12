@@ -219,7 +219,6 @@ CREATE TABLE IF NOT EXISTS email_log (
   id SERIAL PRIMARY KEY,
   kind VARCHAR(20) NOT NULL CHECK (kind IN ('welcome', 'member_joined', 'member_left')),
   user_id INTEGER,
-  recipient VARCHAR(255) NOT NULL,
   status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed', 'skipped')),
   attempts INTEGER NOT NULL DEFAULT 0,
   last_error TEXT,
@@ -228,3 +227,7 @@ CREATE TABLE IF NOT EXISTS email_log (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_email_log_status ON email_log(status, updated_at);
+
+-- The log keeps no email addresses: older rows had a recipient column, and notices keep the address in payload only until delivered
+ALTER TABLE email_log DROP COLUMN IF EXISTS recipient;
+UPDATE email_log SET payload = payload - 'email' WHERE status IN ('sent', 'skipped');

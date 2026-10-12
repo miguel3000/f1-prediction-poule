@@ -1038,7 +1038,7 @@ export const getResultCheck = async (req: Request, res: Response) => {
 export const listEmailLog = async (req: Request, res: Response) => {
   try {
     const result = await query(
-      `SELECT l.id, l.kind, l.recipient, l.status, l.attempts, l.last_error, l.created_at, l.updated_at,
+      `SELECT l.id, l.kind, l.status, l.attempts, l.last_error, l.created_at, l.updated_at,
               l.payload->>'nickname' AS nickname
        FROM email_log l
        ORDER BY l.created_at DESC, l.id DESC
