@@ -480,6 +480,10 @@ export const notifyAdminOfDecision = async (race: RaceRef, mode: CheckMode, deci
 
     if (!needsAttention || lastNotified === signature) return;
 
+    // Nothing to act on for an old race, so the scheduled jobs stay quiet about it
+    // (an admin-triggered check from the Pitlane still reports).
+    if (mode !== 'manual' && Date.now() - new Date(race.race_date).getTime() > 3 * 24 * 3600 * 1000) return;
+
     const names = await query('SELECT driver_number, name FROM drivers WHERE season = $1', [race.season]);
     const driverNames: Record<number, string> = {};
     for (const d of names.rows) driverNames[d.driver_number] = d.name;
