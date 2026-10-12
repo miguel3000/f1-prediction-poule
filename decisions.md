@@ -166,6 +166,16 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - **Look**: yellow banner via `emailBanner`, alternating `BRAND_BLUE` / `BRAND_NAVY` rows, light
   colour scheme declared (Gmail Android force-dark). Announcement mails carry an unsubscribe link;
   transactional mails (reset, welcome, confirmations, results) do not.
+- **Spoilers in result emails** (provisional, final, personal): the results, points and totals are
+  hidden by default in every email app. Do not use blur: it only works in Apple Mail, Samsung
+  Email and Thunderbird, and would show everything in Gmail, Outlook and Yahoo (Can I email data).
+  Wrap spoiler content in `spoilerSection()` and pass `{ spoiler: true }` to `emailDocument()`:
+  the real content is hidden with an inline `display: none` (survives apps that strip `<style>`),
+  readers see a grey-bar placeholder instead, apps that support `:checked` get a tap-to-reveal
+  button, and everyone gets a button to the site. The real content goes last in the HTML after a
+  hidden preheader, because inbox previews can read `display: none` text. Check a new result mail
+  with the three-case test: full, no reveal rules (Gmail-like), no `<style>` at all; none may show
+  a result by default.
 - **Caps**: at most 10 sign-ups an hour trigger mail (the form needs no verification, so it could
   otherwise mail strangers in bulk).
 - **Sign-up and departure mails are logged** in `email_log` (`services/emailLog.ts`): welcome mail
@@ -267,7 +277,7 @@ export const sendThing = async (email: string, nickname: string, language?: stri
 };
 ```
 3. If it follows sign-up or leaving, send it through `sendLogged` (add a kind to `email_log`).
-4. Results mails: subject starts `SPOILER ALERT - `. Admin-only mails: `{ signature: false }`, to `ADMIN_EMAIL`.
+4. Results mails: subject starts `SPOILER ALERT - ` and the results go in `spoilerSection()` (section 4). Admin-only mails: `{ signature: false }`, to `ADMIN_EMAIL`.
 5. Test by sending to a throwaway address the user owns, in both languages, and look at it in a
    mail client. Never send a test to a real player.
 
@@ -387,4 +397,5 @@ Why: <two or three lines, sources named>
 | 2026-10-12 | Weekly sync looks in `sprint_results` for sprints; no scheduled alerts for races older than 3 days | It re-synced every sprint each Monday and emailed about Miami |
 | 2026-10-12 | `decisions.md` is the rulebook; Claude reads it first | The user wants the rules written down, not remembered |
 | 2026-10-12 | Season progression is shown as a season replay (slider through the races, yellow number square + blue bars), not a line chart | Twelve lines are unreadable on a phone; the owner picked it from three prototypes |
+| 2026-10-12 | Result emails hide the results by default in every app, with tap-to-reveal where the app supports it and a button to the site everywhere | Blur only works in 3 of the common apps and half the players use Gmail; the owner chose "hidden everywhere, tap to reveal where possible" |
 | 2026-10-12 | The Sign-up Emails log keeps no player email addresses | A new player can be mentioned by nickname, the address must not be exposed |

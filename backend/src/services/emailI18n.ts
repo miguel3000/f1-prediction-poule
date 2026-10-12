@@ -122,6 +122,12 @@ const en = {
   'welcome.questions': 'Questions? Just reply to this email.',
   'welcome.late':
     'Sorry this email took a while. A normal pit stop takes about two seconds; our welcome email took quite a bit longer. The mechanic was busy tinkering with the website. Better late than never: here is your welcome after all.',
+  'spoiler.preheader': 'Spoiler-free: the results stay hidden until you reveal them.',
+  'spoiler.banner': 'Spoiler: results hidden',
+  'spoiler.note': 'So nothing gets spoiled, the results are hidden until you choose to see them.',
+  'spoiler.reveal': 'Tap to reveal the results',
+  'spoiler.hide': 'Hide the results again',
+  'spoiler.open': 'Show my results on the site',
 };
 
 export type EmailKey = keyof typeof en;
@@ -239,6 +245,12 @@ const nl: Record<EmailKey, string> = {
   'welcome.questions': 'Vragen? Beantwoord gewoon deze e-mail.',
   'welcome.late':
     'Sorry dat dit bericht er even over deed. Een gewone pitstop duurt ongeveer twee seconden; onze welkomstmail deed er flink langer over. De monteur had het te druk met sleutelen aan de website. Beter laat dan nooit: hier is alsnog je welkom.',
+  'spoiler.preheader': 'Spoilervrij: de uitslag blijft verborgen tot jij hem laat zien.',
+  'spoiler.banner': 'Spoiler: uitslag verborgen',
+  'spoiler.note': 'Zodat er niets verklapt wordt, blijft de uitslag verborgen tot jij hem wilt zien.',
+  'spoiler.reveal': 'Tik om de uitslag te tonen',
+  'spoiler.hide': 'Verberg de uitslag weer',
+  'spoiler.open': 'Bekijk mijn uitslag op de site',
 };
 
 const dictionaries: Record<EmailLang, Record<EmailKey, string>> = { en, nl };

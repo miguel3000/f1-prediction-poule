@@ -159,6 +159,73 @@ const emailFooter = (unsubscribeUrl?: string, lang: EmailLang = 'en') =>
 `
     : '';
 
+// ---- Spoiler protection for the result emails ------------------------------------------------
+// Email apps cannot run scripts, and what they can do differs a lot (Can I email, 2019-2024):
+// blur (CSS filter) works in Apple Mail, Samsung Email and Thunderbird but not in Gmail, Outlook or
+// Yahoo, and the tap-to-reveal checkbox trick (:checked) in Apple Mail, Samsung Email, Yahoo and
+// Thunderbird but not in Gmail or most Outlooks. So nothing here depends on blur:
+//  - the results are in a block that is hidden with an INLINE display:none, so an app that ignores
+//    or strips the <style> still shows nothing;
+//  - what the reader sees by default is a placeholder of grey bars, never the real data, so it
+//    looks blurred in every app;
+//  - apps that support :checked get a "tap to reveal" button that shows the real block;
+//  - everyone also gets a button to the site, which is the only way in apps without :checked.
+// The real block comes last in the HTML, after a hidden preheader, because inbox previews can
+// read text that is hidden with display:none.
+const spoilerCss = `
+  <style>
+    .sp-toggle:not(:checked) ~ .sp-show { display: block !important; }
+    .sp-toggle:checked ~ .sp-hide { display: block !important; }
+    .sp-toggle:checked ~ .sp-content { display: block !important; }
+    .sp-toggle:checked ~ .sp-decoy { display: none !important; }
+  </style>
+`;
+
+// Hidden line at the very top that becomes the inbox preview text, followed by padding that
+// pushes anything after it out of the preview.
+const spoilerPreheader = (lang: EmailLang) => `
+  <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0; max-width: 0; opacity: 0; overflow: hidden; mso-hide: all;">
+    ${et(lang, 'spoiler.preheader')}${'&zwnj;&nbsp;'.repeat(80)}
+  </div>
+`;
+
+const spoilerButtonStyle = (bg: string, color: string) =>
+  `display: none; background-color: ${bg}; color: ${color}; padding: 14px 16px; text-align: center; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; margin: 0 0 8px;`;
+
+// Grey bars standing in for the table, so the email looks "blurred" without containing any result.
+const spoilerDecoy = () => {
+  const widths = [62, 48, 70, 40, 56];
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 12px;">
+      ${widths
+        .map(
+          (w, i) => `
+        <tr>
+          <td bgcolor="${i % 2 === 0 ? '#ececf0' : '#f4f4f7'}" style="background-color: ${i % 2 === 0 ? '#ececf0' : '#f4f4f7'}; padding: 12px 14px;">
+            <table role="presentation" width="${w}%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#d2d2d9" style="background-color: #d2d2d9; height: 12px; line-height: 12px; font-size: 12px;">&nbsp;</td></tr></table>
+          </td>
+        </tr>`
+        )
+        .join('')}
+    </table>
+  `;
+};
+
+const spoilerSection = (innerHtml: string, lang: EmailLang) => `
+  <div style="margin: 20px 0;">
+    <input type="checkbox" id="sp" class="sp-toggle" style="display: none;" />
+    <div class="sp-decoy">
+      ${emailBanner(et(lang, 'spoiler.banner'), { bg: BRAND_NAVY, color: '#ffffff' })}
+      <p style="line-height: 1.5; color: #444;">${et(lang, 'spoiler.note')}</p>
+      ${spoilerDecoy()}
+    </div>
+    <label for="sp" class="sp-show" style="${spoilerButtonStyle(BRAND_YELLOW, '#000000')}">${et(lang, 'spoiler.reveal')}</label>
+    <label for="sp" class="sp-hide" style="${spoilerButtonStyle(BRAND_NAVY, '#ffffff')}">${et(lang, 'spoiler.hide')}</label>
+    <div class="sp-content" style="display: none;">${innerHtml}</div>
+    ${emailBanner(et(lang, 'spoiler.open'), { url: `${process.env.FRONTEND_URL}/predictions`, bg: BRAND_NAVY, color: '#ffffff' })}
+  </div>
+`;
+
 // Full HTML document wrapper — the templates previously shipped as a bare
 // <div>, with no <head> at all, so there was nowhere to declare color-scheme.
 // Gmail (particularly the Android app) will auto-recolor an email it decides
@@ -170,7 +237,7 @@ const emailFooter = (unsubscribeUrl?: string, lang: EmailLang = 'en') =>
 const emailDocument = (
   bodyHtml: string,
   lang: EmailLang = 'en',
-  opts: { signature?: boolean; footer?: string } = {}
+  opts: { signature?: boolean; footer?: string; spoiler?: boolean } = {}
 ) => `
   <!DOCTYPE html>
   <html lang="${lang}" style="margin: 0; padding: 0;">
@@ -181,8 +248,10 @@ const emailDocument = (
       <meta name="supported-color-schemes" content="light" />
       <title>Poule Position</title>
       ${emailDarkModeOverrides}
+      ${opts.spoiler ? spoilerCss : ''}
     </head>
     <body style="margin: 0; padding: 0; background-color: #ffffff;">
+      ${opts.spoiler ? spoilerPreheader(lang) : ''}
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         ${bodyHtml}
         ${opts.signature === false ? '' : emailSignature()}
@@ -321,6 +390,7 @@ export const sendProvisionalResults = async (
       <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p>${et(lang, 'provisional.intro', { race: bold(raceName) })}</p>
 
+      ${spoilerSection(`
       <h3 style="color: #333; margin-top: 20px;">${et(lang, 'provisional.top10')}</h3>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr style="background-color: ${BRAND_NAVY}; color: white;">
@@ -343,11 +413,12 @@ export const sendProvisionalResults = async (
       <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; text-align: center;">
         <strong>${et(lang, 'provisional.total', { points: totalPoints })}</strong>
       </div>
+      `, lang)}
 
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
         ${et(lang, 'provisional.note')}
       </p>
-    `, lang),
+    `, lang, { spoiler: true }),
   };
 
   try {
@@ -396,6 +467,7 @@ export const sendFinalResults = async (
       <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p>${et(lang, 'final.intro', { race: bold(raceName) })}</p>
 
+      ${spoilerSection(`
       ${changesSection}
 
       ${predictionTable}
@@ -403,13 +475,14 @@ export const sendFinalResults = async (
       <div style="background-color: ${BRAND_BLUE}; color: white; padding: 15px; text-align: center;">
         <strong>${et(lang, 'final.total', { points: totalPoints })}</strong>
       </div>
+      `, lang)}
 
       ${emailBanner(et(lang, 'common.viewLeaderboard'), { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
 
       <p style="color: #666; font-size: 12px; margin-top: 30px;">
         ${et(lang, 'common.seeYou')}
       </p>
-    `, lang),
+    `, lang, { spoiler: true }),
   };
 
   try {
@@ -680,6 +753,7 @@ export const sendPersonalRaceResults = async (
       <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p>${et(lang, 'personal.intro', { race: bold(raceName) })}</p>
 
+      ${spoilerSection(`
       ${emailPredictionRows(predictionRows, lang)}
 
       <p style="font-size:12px;color:#555;margin-bottom:20px;">${et(lang, 'personal.legend')}</p>
@@ -691,11 +765,12 @@ export const sendPersonalRaceResults = async (
       <div style="background-color:#333;color:white;padding:12px;text-align:center;margin-bottom:24px;">
         ${et(lang, 'personal.season', { points: `<strong>${totalSeasonPoints}</strong>` })}
       </div>
+      `, lang)}
 
       ${emailBanner(et(lang, 'common.viewLeaderboard'), { url: `${process.env.FRONTEND_URL}/leaderboard`, bg: BRAND_NAVY, color: '#ffffff' })}
 
       <p style="color:#666;font-size:12px;margin-top:30px;">${et(lang, 'common.seeYou')}</p>
-    `, lang),
+    `, lang, { spoiler: true }),
   };
 
   try {
