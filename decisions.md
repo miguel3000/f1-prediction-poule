@@ -386,4 +386,5 @@ Why: <two or three lines, sources named>
 | 2026-10-11 | Sign-up and departure mails are logged in the database and retried | A missing notice could not be traced after a redeploy |
 | 2026-10-12 | Weekly sync looks in `sprint_results` for sprints; no scheduled alerts for races older than 3 days | It re-synced every sprint each Monday and emailed about Miami |
 | 2026-10-12 | `decisions.md` is the rulebook; Claude reads it first | The user wants the rules written down, not remembered |
+| 2026-10-12 | Season progression is shown as a season replay (slider through the races, yellow number square + blue bars), not a line chart | Twelve lines are unreadable on a phone; the owner picked it from three prototypes |
 | 2026-10-12 | The Sign-up Emails log keeps no player email addresses | A new player can be mentioned by nickname, the address must not be exposed |

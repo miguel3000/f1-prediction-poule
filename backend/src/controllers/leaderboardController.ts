@@ -141,6 +141,7 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
         sr.country,
         sr.race_date,
         sr.race_type,
+        sr.round,
         COALESCE(ap.points_earned, 0) AS points_earned
       FROM users u
       CROSS JOIN season_races sr
@@ -149,7 +150,7 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
     );
 
     // Pivot rows into { races[], users[] } structure
-    const racesMap = new Map<number, { id: number; name: string; country: string; date: string; race_type: string }>();
+    const racesMap = new Map<number, { id: number; name: string; country: string; date: string; race_type: string; round: number }>();
     const usersMap = new Map<number, { id: number; nickname: string; avatar_url: string | null; points_per_race: number[] }>();
 
     for (const row of result.rows) {
@@ -159,7 +160,8 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
           name: row.race_name,
           country: row.country,
           date: row.race_date,
-          race_type: row.race_type
+          race_type: row.race_type,
+          round: row.round
         });
       }
       if (!usersMap.has(row.user_id)) {
