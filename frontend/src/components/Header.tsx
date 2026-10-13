@@ -41,16 +41,14 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
               only; phones keep the icon so the header stays narrow. */}
           <button
             onClick={onMoreToggle}
-            className={`flex-shrink-0 flex items-center gap-2 p-2 xl:px-3 transition-colors border ${
-              moreActive
-                ? 'text-f1-yellow-500 border-f1-yellow-500'
-                : 'text-f1-neutral-400 border-f1-neutral-800 hover:text-white hover:border-f1-neutral-600'
+            className={`flex-shrink-0 flex items-center gap-2 p-2 xl:px-3 transition-colors text-f1-yellow-500 ${
+              moreActive ? 'bg-f1-blue-dark' : 'bg-f1-blue hover:bg-f1-blue-dark'
             }`}
             aria-label={t('nav.menu')}
             aria-expanded={moreActive}
           >
-            <MenuIcon className="w-4 h-4" />
-            <span className="hidden xl:inline text-xs font-bold uppercase tracking-wider">{t('nav.menu')}</span>
+            <MenuIcon className="w-5 h-5" />
+            <span className="hidden xl:inline text-xs font-bold uppercase tracking-wider text-white">{t('nav.menu')}</span>
           </button>
 
           {/* Logo */}
