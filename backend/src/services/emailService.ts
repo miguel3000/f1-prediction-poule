@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { NewsletterContent } from '../newsletters/types';
 import { EmailLang, normalizeLang, et } from './emailI18n';
 
 dotenv.config();
@@ -817,6 +818,73 @@ export const sendBroadcastEmail = async (
     return true;
   } catch (error) {
     console.error('Error sending broadcast email to', email, ':', error);
+    return false;
+  }
+};
+
+// A newsletter in the player's language: banner, short sections of "title + one sentence" items,
+// and one call-out (with a button that opens an email to Kimi). Content: src/newsletters/.
+export const renderNewsletter = (
+  content: NewsletterContent,
+  nickname: string,
+  language?: string | null,
+  unsubscribeUrl?: string
+) => {
+  const lang = normalizeLang(language);
+  const mailto = `mailto:kimi@pouleposition.nl?subject=${encodeURIComponent(content.callout.mailSubject)}`;
+
+  const item = (i: { title: string; text: string }) => `
+    <div style="border-left: 4px solid ${BRAND_YELLOW}; padding: 2px 0 2px 12px; margin: 0 0 14px;">
+      <p style="margin: 0; line-height: 1.5;"><strong style="color: ${BRAND_NAVY};">${escapeHtml(i.title)}</strong><br>${escapeHtml(i.text)}</p>
+    </div>`;
+
+  const section = (sec: { title: string; items: Array<{ title: string; text: string }> }) => `
+    <h3 style="color: ${BRAND_NAVY}; margin: 28px 0 12px; font-size: 18px; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(sec.title)}</h3>
+    ${sec.items.map(item).join('')}`;
+
+  return {
+    from: process.env.EMAIL_FROM,
+    subject: et(lang, 'broadcast.subject', { subject: content.subject }).replace(/[\r\n]+/g, ' ').slice(0, 200),
+    html: emailDocument(
+      `
+      ${emailHeader}
+      ${emailBanner(content.banner, { bg: BRAND_YELLOW })}
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p style="line-height: 1.5;">${escapeHtml(content.intro)}</p>
+      ${content.sections.map(section).join('')}
+
+      <div style="margin-top: 32px;">
+        ${emailBanner(content.callout.title, { bg: BRAND_NAVY, color: '#ffffff' })}
+        <div style="background-color: #f5f5f5; padding: 16px 20px; margin: -8px 0 20px;">
+          ${content.callout.paragraphs.map((p) => `<p style="margin: 0 0 10px; line-height: 1.5;">${escapeHtml(p)}</p>`).join('')}
+        </div>
+        ${emailBanner(content.callout.button, { url: mailto, bg: BRAND_YELLOW })}
+      </div>
+
+      <p style="line-height: 1.5;">${escapeHtml(content.closing)}</p>
+      ${emailBanner(et(lang, 'common.visit'), { url: process.env.FRONTEND_URL!, bg: BRAND_BLUE, color: '#ffffff' })}
+    `,
+      lang,
+      { footer: emailFooter(unsubscribeUrl, lang) }
+    ),
+  };
+};
+
+export const sendNewsletterEmail = async (
+  email: string,
+  nickname: string,
+  language: string | null | undefined,
+  newsletter: Record<EmailLang, NewsletterContent>,
+  unsubscribeUrl?: string
+): Promise<boolean> => {
+  const lang = normalizeLang(language);
+  const mail = renderNewsletter(newsletter[lang], nickname, lang, unsubscribeUrl);
+  try {
+    await transporter.sendMail({ ...mail, to: recipient(nickname, email) });
+    console.log('Newsletter sent to:', nickname, `[${lang}]`);
+    return true;
+  } catch (error) {
+    console.error('Error sending newsletter to', nickname, ':', error);
     return false;
   }
 };
