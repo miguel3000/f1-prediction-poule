@@ -208,7 +208,12 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - **Mobile first.** Check 375 px and 320 px. The header is tight (logo, language switch, share,
   login, menu); adding anything there means re-measuring it in Dutch, logged out.
 - **Menu**: How to Play and FAQ are in the main menu for everyone; Rules, About, Privacy in the
-  footer list; the Pitlane for admins only.
+  footer list; the Pitlane for admins only. The menu button is blue with yellow stripes at the far
+  left of the header (word MENU on desktop only) and the menu opens from the left.
+- **Header layout**: menu button, logo, then language / share / login or avatar. On desktop the
+  logo is exactly in the middle and the page links are on a second row; on phones the logo is
+  centred in the space between the menu button and the right-hand buttons (they are too wide for
+  an exact middle at 360 px). Check 320 px in Dutch, logged out, after any change.
 - **Share**: the header share button shares the current page if it is public (`/`, `/about`,
   `/tutorial`, `/rules`, `/privacy`), otherwise the home page, always with `?lang=`. It uses the
   path only, never the query string. A new public page is added to `SHAREABLE` in `utils/share.ts`.

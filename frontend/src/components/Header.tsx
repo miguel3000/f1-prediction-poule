@@ -34,79 +34,38 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
       style={{ backgroundColor: 'rgba(22,18,23,0.85)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-2 sm:gap-4 h-16">
+        {/* Phones: menu, logo centred in the space between, then language / share / login.
+            Desktop (xl): a three-column grid with equal side columns, so the logo is exactly in the
+            middle; the page links sit on a second row below. */}
+        <div className="flex items-center gap-2 sm:gap-4 h-16 xl:grid xl:grid-cols-[1fr_auto_1fr]">
 
           {/* Menu — far left. Opens the drawer with everything that is not in the top bar
               (How to Play, FAQ, Rules, About, Privacy, ...). The word MENU shows on desktop
               only; phones keep the icon so the header stays narrow. */}
-          <button
-            onClick={onMoreToggle}
-            className={`flex-shrink-0 flex items-center gap-2 p-2 xl:px-3 transition-colors text-f1-yellow-500 ${
-              moreActive ? 'bg-f1-blue-dark' : 'bg-f1-blue hover:bg-f1-blue-dark'
-            }`}
-            aria-label={t('nav.menu')}
-            aria-expanded={moreActive}
-          >
-            <MenuIcon className="w-5 h-5" />
-            <span className="hidden xl:inline text-xs font-bold uppercase tracking-wider text-white">{t('nav.menu')}</span>
-          </button>
+          <div className="flex items-center justify-start">
+            <button
+              onClick={onMoreToggle}
+              className={`flex-shrink-0 flex items-center gap-2 p-2 xl:px-3 transition-colors text-f1-yellow-500 ${
+                moreActive ? 'bg-f1-blue-dark' : 'bg-f1-blue hover:bg-f1-blue-dark'
+              }`}
+              aria-label={t('nav.menu')}
+              aria-expanded={moreActive}
+            >
+              <MenuIcon className="w-5 h-5" />
+              <span className="hidden xl:inline text-xs font-bold uppercase tracking-wider text-white">{t('nav.menu')}</span>
+            </button>
+          </div>
 
           {/* Logo */}
-          <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label={t('nav.homeAria')}>
-            <LogoMark className="h-7 min-[340px]:h-8 min-[360px]:h-10 w-auto" />
-          </button>
+          <div className="flex-1 min-w-0 xl:flex-none flex justify-center">
+            <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label={t('nav.homeAria')}>
+              <LogoMark className="h-7 min-[340px]:h-8 min-[360px]:h-10 w-auto" />
+            </button>
+          </div>
 
-          <div className="w-px h-6 bg-f1-neutral-800 hidden xl:block" />
-
-          {/* Desktop persistent nav — no drawer, always visible. Breakpoint is xl
-              (not md/lg) so phone/tablet landscape widths, which commonly land in
-              the 768-1279px range, keep the compact portrait-style header
-              instead of switching to this busy multi-item nav too early. */}
-          <nav className="hidden xl:flex items-center gap-1 flex-1">
-            {desktopLinks.map(({ path, label, icon: Icon, end }) => (
-              <NavLink
-                key={path}
-                to={path}
-                end={end}
-                className="relative px-2 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
-              >
-                {({ isActive }) => (
-                  <>
-                    <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
-                    <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t(label)}</span>
-                    <span
-                      className={`absolute left-2 right-2 -bottom-[1px] h-0.5 transition-all duration-200 ${
-                        isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
-                      }`}
-                    />
-                  </>
-                )}
-              </NavLink>
-            ))}
-            {user && (
-              <NavLink
-                to="/predictions"
-                className="relative px-2 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
-              >
-                {({ isActive }) => (
-                  <>
-                    <PredictionIcon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
-                    <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t('nav.predictions')}</span>
-                    <span
-                      className={`absolute left-2 right-2 -bottom-[1px] h-0.5 transition-all duration-200 ${
-                        isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
-                      }`}
-                    />
-                  </>
-                )}
-              </NavLink>
-            )}
-          </nav>
-
-          <div className="flex-1 xl:hidden" />
 
           {/* User + More */}
-          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-3 flex-shrink-0">
             <LanguageToggle />
             <ShareIconButton />
             {user ? (
@@ -149,6 +108,51 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
           </div>
 
         </div>
+
+        {/* Desktop persistent nav — no drawer, always visible. Breakpoint is xl
+            (not md/lg) so phone/tablet landscape widths, which commonly land in
+            the 768-1279px range, keep the compact portrait-style header
+            instead of switching to this busy multi-item nav too early. */}
+        <nav className="hidden xl:flex items-center justify-center gap-1 h-10 border-t border-f1-neutral-800">
+          {desktopLinks.map(({ path, label, icon: Icon, end }) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={end}
+              className="relative px-2 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
+            >
+              {({ isActive }) => (
+                <>
+                  <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
+                  <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t(label)}</span>
+                  <span
+                    className={`absolute left-2 right-2 -bottom-[1px] h-0.5 transition-all duration-200 ${
+                      isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
+                    }`}
+                  />
+                </>
+              )}
+            </NavLink>
+          ))}
+          {user && (
+            <NavLink
+              to="/predictions"
+              className="relative px-2 py-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider transition-colors group"
+            >
+              {({ isActive }) => (
+                <>
+                  <PredictionIcon className={`w-4 h-4 transition-colors ${isActive ? 'text-f1-yellow-500' : 'text-f1-neutral-500 group-hover:text-f1-neutral-300'}`} />
+                  <span className={isActive ? 'text-white' : 'text-f1-neutral-400 group-hover:text-white'}>{t('nav.predictions')}</span>
+                  <span
+                    className={`absolute left-2 right-2 -bottom-[1px] h-0.5 transition-all duration-200 ${
+                      isActive ? 'bg-f1-yellow-500' : 'bg-transparent'
+                    }`}
+                  />
+                </>
+              )}
+            </NavLink>
+          )}
+        </nav>
       </div>
     </header>
   );
