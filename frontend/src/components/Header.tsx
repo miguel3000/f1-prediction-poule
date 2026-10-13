@@ -5,7 +5,7 @@ import LogoMark from './LogoMark';
 import LanguageToggle from './LanguageToggle';
 import ShareIconButton from './ShareIconButton';
 import { useLang, TranslationKey } from '../i18n/LanguageContext';
-import { RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon, PredictionIcon, ChartIcon, NewsIcon, MoreIcon } from './icons';
+import { RacingFlagIcon, CheckeredFlagIcon, HelmetIcon, TeamIcon, TrophyIcon, PredictionIcon, ChartIcon, NewsIcon, MenuIcon } from './icons';
 
 interface HeaderProps {
   onMoreToggle: () => void;
@@ -36,9 +36,26 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-2 sm:gap-4 h-16">
 
-          {/* Logo — pinned left */}
+          {/* Menu — far left. Opens the drawer with everything that is not in the top bar
+              (How to Play, FAQ, Rules, About, Privacy, ...). The word MENU shows on desktop
+              only; phones keep the icon so the header stays narrow. */}
+          <button
+            onClick={onMoreToggle}
+            className={`flex-shrink-0 flex items-center gap-2 p-2 xl:px-3 transition-colors border ${
+              moreActive
+                ? 'text-f1-yellow-500 border-f1-yellow-500'
+                : 'text-f1-neutral-400 border-f1-neutral-800 hover:text-white hover:border-f1-neutral-600'
+            }`}
+            aria-label={t('nav.menu')}
+            aria-expanded={moreActive}
+          >
+            <MenuIcon className="w-4 h-4" />
+            <span className="hidden xl:inline text-xs font-bold uppercase tracking-wider">{t('nav.menu')}</span>
+          </button>
+
+          {/* Logo */}
           <button onClick={() => navigate('/')} className="flex-shrink-0 focus:outline-none select-none" aria-label={t('nav.homeAria')}>
-            <LogoMark className="h-8 min-[360px]:h-10 w-auto" />
+            <LogoMark className="h-7 min-[340px]:h-8 min-[360px]:h-10 w-auto" />
           </button>
 
           <div className="w-px h-6 bg-f1-neutral-800 hidden xl:block" />
@@ -131,18 +148,6 @@ const Header = ({ onMoreToggle, moreActive }: HeaderProps) => {
                 {t('nav.login')}
               </a>
             )}
-
-            <button
-              onClick={onMoreToggle}
-              className={`p-2 transition-colors border ${
-                moreActive
-                  ? 'text-f1-yellow-500 border-f1-yellow-500'
-                  : 'text-f1-neutral-400 border-f1-neutral-800 hover:text-white hover:border-f1-neutral-600'
-              }`}
-              aria-label={t('nav.more')}
-            >
-              <MoreIcon className="w-4 h-4" />
-            </button>
           </div>
 
         </div>

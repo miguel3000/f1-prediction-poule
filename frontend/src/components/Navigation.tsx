@@ -62,8 +62,8 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
         onClick={onClose}
       />
       <aside
-        className={`fixed top-0 right-0 h-full w-72 max-w-[85vw] z-50 transform transition-transform duration-300 ease-out shadow-2xl border-l border-f1-neutral-800 flex flex-col ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 transform transition-transform duration-300 ease-out shadow-2xl border-r border-f1-neutral-800 flex flex-col ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ backgroundColor: '#161217', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
