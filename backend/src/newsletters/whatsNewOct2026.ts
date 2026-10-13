@@ -4,10 +4,10 @@ import { Newsletter } from './types';
 // invitation to take part through the Pit Wall (access is granted on request).
 export const whatsNewOct2026: Newsletter = {
   en: {
-    subject: "What's new: How to Play, first retirement and the Pit Wall",
+    subject: "Join the Pit Wall, plus what's new on the site",
     banner: "What's new",
     intro:
-      'A lot has changed since you joined, so here is a quick tour of what is new and how to get the most out of Poule Position.',
+      'A lot has changed since you joined. First, an invitation to help shape the site; below that a quick tour of what is new.',
     sections: [
       {
         title: 'New pages',
@@ -82,10 +82,10 @@ export const whatsNewOct2026: Newsletter = {
     closing: 'Questions or ideas? Just reply to this email.',
   },
   nl: {
-    subject: 'Nieuw: Zo speel je, eerste uitvaller en de Pit Wall',
+    subject: 'Doe mee met de Pit Wall, plus wat er nieuw is',
     banner: 'Nieuw bij Poule Position',
     intro:
-      'Er is veel veranderd sinds je meedoet, dus hier een korte rondleiding door wat er nieuw is en hoe je er het meeste uit haalt.',
+      'Er is veel veranderd sinds je meedoet. Eerst een uitnodiging om mee te denken over de site; daaronder een korte rondleiding door wat er nieuw is.',
     sections: [
       {
         title: "Nieuwe pagina's",

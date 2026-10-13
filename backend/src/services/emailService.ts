@@ -822,8 +822,8 @@ export const sendBroadcastEmail = async (
   }
 };
 
-// A newsletter in the player's language: banner, short sections of "title + one sentence" items,
-// and one call-out (with a button that opens an email to Kimi). Content: src/newsletters/.
+// A newsletter in the player's language: banner, one call-out right under the intro so it is read
+// first (with a button that opens an email to Kimi), then short sections of "title + one sentence" items. Content: src/newsletters/.
 export const renderNewsletter = (
   content: NewsletterContent,
   nickname: string,
@@ -851,15 +851,16 @@ export const renderNewsletter = (
       ${emailBanner(content.banner, { bg: BRAND_YELLOW })}
       <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       <p style="line-height: 1.5;">${escapeHtml(content.intro)}</p>
-      ${content.sections.map(section).join('')}
 
-      <div style="margin-top: 32px;">
+      <div style="margin-top: 24px;">
         ${emailBanner(content.callout.title, { bg: BRAND_NAVY, color: '#ffffff' })}
         <div style="background-color: #f5f5f5; padding: 16px 20px; margin: -8px 0 20px;">
           ${content.callout.paragraphs.map((p) => `<p style="margin: 0 0 10px; line-height: 1.5;">${escapeHtml(p)}</p>`).join('')}
         </div>
         ${emailBanner(content.callout.button, { url: mailto, bg: BRAND_YELLOW })}
       </div>
+
+      ${content.sections.map(section).join('')}
 
       <p style="line-height: 1.5;">${escapeHtml(content.closing)}</p>
       ${emailBanner(et(lang, 'common.visit'), { url: process.env.FRONTEND_URL!, bg: BRAND_BLUE, color: '#ffffff' })}
