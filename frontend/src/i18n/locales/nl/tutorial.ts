@@ -16,7 +16,7 @@ export const tutorial: Record<keyof typeof en_tutorial, string> = {
   'tutorial.s2.empty': 'Leeg',
   'tutorial.s2.caption': 'Voorbeeld: drie coureurs staan er, de vierde plek is aan de beurt.',
   'tutorial.s2.tip':
-    'De lijst met coureurs volgt de kwalificatie-uitslag zodra die er is, zodat je ziet hoe de grid start. Daarvoor volgt hij de vorige race. Een link boven de grid toont de trainingsuitslagen.',
+    'De lijst met coureurs volgt de kwalificatie-uitslag zodra die er is. Ongeveer een uur voor de start is de echte startopstelling bekend, inclusief straffen, en schakelt de lijst daarnaar over. Daarvoor volgt hij de vorige race. Een link boven de grid toont de trainingsuitslagen.',
 
   'tutorial.s3.title': 'Kies de eerste uitvaller',
   'tutorial.s3.text':
@@ -112,9 +112,9 @@ export const tutorial: Record<keyof typeof en_tutorial, string> = {
   'tutorial.faq.q4': 'Welke coureur telt als eerste uitvaller?',
   'tutorial.faq.a4':
     'Van de coureurs die niet finishen telt degene met de minste afgelegde ronden (als laatste geklasseerd onder de uitvallers) als eerste uit. Valt niemand uit, dan krijgt niemand de bonus. Een coureur die een ronde achter finisht, of na de finish wordt gediskwalificeerd, is geen uitvaller.',
-  'tutorial.faq.q5': 'De lijst met coureurs staat in kwalificatievolgorde, maar sommige coureurs starten ergens anders. Hoe komt dat?',
+  'tutorial.faq.q5': 'Waarom verandert de volgorde van de coureurslijst?',
   'tutorial.faq.a5':
-    'De lijst toont de kwalificatie-uitslag, niet de startopstelling. Een gridstraf kan een coureur verder terugzetten dan waar hij kwalificeerde. Jij voorspelt waar coureurs finishen, dus een straf verandert nooit hoe je punten worden geteld, hooguit wat je verwacht.',
+    'De lijst volgt de kwalificatie-uitslag. Ongeveer een uur voor de start is de echte startopstelling bekend, inclusief gridstraffen, en schakelt de lijst daarnaar over; het label boven de lijst staat dan op "Startopstelling". Een pagina die al openstaat schakelt binnen een paar minuten zelf over. Jij voorspelt waar coureurs finishen, dus een straf verandert nooit hoe je punten worden geteld, hooguit wat je verwacht.',
   'tutorial.faq.q6': 'Waarom zijn mijn punten na de race veranderd?',
   'tutorial.faq.a6':
     'De eerste punten komen een paar minuten na de race, uit de voorlopige uitslag. 24 uur later worden ze opnieuw berekend met de definitieve uitslag, zodra straffen en diskwalificaties zijn verwerkt. Veranderen je punten, dan krijg je een bijgewerkte e-mail.',

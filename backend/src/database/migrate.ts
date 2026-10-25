@@ -205,6 +205,20 @@ const runMigration = async () => {
     await query(`UPDATE email_log SET payload = payload - 'email' WHERE status IN ('sent', 'skipped')`);
     console.log('email_log ensured.');
 
+    // The real starting grid (penalties applied), stored shortly before each start
+    console.log('Checking for starting_grid table...');
+    await query(`
+      CREATE TABLE IF NOT EXISTS starting_grid (
+        race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+        driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL,
+        captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (race_id, driver_id),
+        UNIQUE (race_id, position)
+      )
+    `);
+    console.log('starting_grid ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

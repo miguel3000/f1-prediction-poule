@@ -24,6 +24,7 @@ export const home: Record<keyof typeof en_home, string> = {
   'predict.fillAll10': 'Vul eerst alle 10 posities in',
   'predict.fillAll8': 'Vul eerst alle 8 posities in',
   'predict.orderQualifying': 'Kwalificatie',
+  'predict.orderGrid': 'Startopstelling',
   'predict.orderSprintQuali': 'Sprintkwalificatie',
   'predict.orderPrevRace': 'Vorige race',
   'predict.orderChampionship': 'Kampioenschap',

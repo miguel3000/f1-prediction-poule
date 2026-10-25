@@ -13,6 +13,11 @@
 # tries Jolpi and OpenF1, and emails the admin if it is still missing a few hours after the session.
 */10 * * * 5,6,0 /app/sync-qualifying-results.sh
 
+# STARTING GRID: every 5 minutes, all week. Does nothing unless a race or sprint starts within the
+# next 3 hours; then it stores the real starting grid (grid penalties applied) as soon as OpenF1's
+# position feed shows it, about 50 minutes before the start, so the prediction list can follow it.
+*/5 * * * * /app/sync-starting-grid.sh
+
 # MISSED-PREDICTION REMINDER: Check every 5 minutes on race days (Sat sprint + Sun main, 01:00-20:00 UTC)
 # Fires ~1 hour before lights out for anyone who still hasn't predicted.
 # Window starts an hour earlier than the other race-day jobs to catch early sprints (e.g. China ~03:00 UTC).

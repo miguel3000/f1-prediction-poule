@@ -246,6 +246,25 @@ const SprintPredictionInterface = ({ raceId, raceDate, round }: SprintPrediction
 
   useEffect(() => { fetchData(); }, [raceId]);
 
+  // Until the real starting grid is known (about an hour before the start) the list follows the
+  // qualifying order. In the last 3 hours, check every 2 minutes so a page that is already open
+  // switches to the grid by itself; the picks already made stay where they are.
+  useEffect(() => {
+    if (!raceDate || isLocked || orderSource === 'grid' || orderSource === 'sprint_grid') return;
+    const timer = setInterval(async () => {
+      if (new Date(raceDate).getTime() - Date.now() > 3 * 3600_000) return;
+      try {
+        const { data } = await getQualifyingOrder(raceId);
+        if (data.source === 'grid' || data.source === 'sprint_grid') {
+          setQualifyingDrivers(data.drivers);
+          setOrderSource(data.source);
+          setHasQualifyingResults(true);
+        }
+      } catch { /* try again at the next tick */ }
+    }, 120_000);
+    return () => clearInterval(timer);
+  }, [raceDate, raceId, isLocked, orderSource]);
+
   const fetchData = async () => {
     try {
       const qualifyingResponse = await getQualifyingOrder(raceId);
@@ -355,6 +374,7 @@ const SprintPredictionInterface = ({ raceId, raceDate, round }: SprintPrediction
 
   const filledCount = predictions.filter(Boolean).length;
   const orderLabel =
+    orderSource === 'grid' || orderSource === 'sprint_grid' ? t('predict.orderGrid') :
     orderSource === 'sprint_qualifying' ? t('predict.orderSprintQuali') :
     orderSource === 'qualifying' ? t('predict.orderQualifying') :
     orderSource === 'previous_race' ? t('predict.orderPrevRace') : t('predict.orderChampionship');

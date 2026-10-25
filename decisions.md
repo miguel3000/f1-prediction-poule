@@ -110,8 +110,13 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   24 hours later (penalties). The final run never changes stored results on unconfirmed data.
 - The prediction list is in **qualifying order**, labelled Sprint Quali or Qualifying; no
   position numbers or three-letter codes (tried, removed). Any driver missing from the data is
-  appended so every driver is always pickable. Grid penalties are not applied (open item on the
-  Pit Wall).
+  appended so every driver is always pickable. About an hour before each start the **real
+  starting grid, penalties applied**, is known and the list switches to it, labelled "Starting
+  grid" (an open page switches by itself). Source: OpenF1's position feed just before the session
+  start, stored in `starting_grid` by the 5-minute cron `syncStartingGrid` (it matched Jolpi's
+  real grid for every race checked; OpenF1's own `starting_grid` endpoint has no 2026 data, and
+  Jolpi only has the grid after the race). Penalties announced earlier are not known to us
+  before that moment. Scoring is unaffected: you predict finishing positions.
 - **Gaston Mazzacane -ai-** is the AI player. When the user types **PREDICTION**, give his pick for
   the next race straight away, no questions: figure out which race, research real form and any
   qualifying already driven, give the ordered list (top 10 plus a first-retirement pick for a
@@ -376,8 +381,6 @@ Why: <two or three lines, sources named>
 
 ## 9. Open items and known gaps
 
-- Grid penalties: the prediction list follows the qualifying classification, not the starting
-  grid (Pit Wall, `grid-penalties`).
 - Dutch texts written by Claude (privacy policy, tutorial, FAQ, emails) have not been read by a
   native speaker.
 - `f1.miguelm.nl` redirects to `pouleposition.nl`; the user removes the DNS record and the tunnel
@@ -401,6 +404,7 @@ Why: <two or three lines, sources named>
 | 2026-10-11 | Sign-up and departure mails are logged in the database and retried | A missing notice could not be traced after a redeploy |
 | 2026-10-12 | Weekly sync looks in `sprint_results` for sprints; no scheduled alerts for races older than 3 days | It re-synced every sprint each Monday and emailed about Miami |
 | 2026-10-12 | `decisions.md` is the rulebook; Claude reads it first | The user wants the rules written down, not remembered |
+| 2026-10-25 | The prediction list switches to the real starting grid (penalties applied) once OpenF1's feed shows it, about an hour before the start | In 6 of 17 races the grid differed from qualifying within the top 10 (Singapore: Russell P6 to P19) |
 | 2026-10-12 | Season progression is shown as a season replay (slider through the races, yellow number square + blue bars), not a line chart | Twelve lines are unreadable on a phone; the owner picked it from three prototypes |
 | 2026-10-12 | Result emails hide the results by default in every app, with tap-to-reveal where the app supports it and a button to the site everywhere | Blur only works in 3 of the common apps and half the players use Gmail; the owner chose "hidden everywhere, tap to reveal where possible" |
 | 2026-10-12 | The Sign-up Emails log keeps no player email addresses | A new player can be mentioned by nickname, the address must not be exposed |

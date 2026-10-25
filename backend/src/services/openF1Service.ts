@@ -249,6 +249,52 @@ export const getRaceResults = async (sessionKey: number): Promise<OpenF1RaceResu
   }
 };
 
+// The real starting grid (penalties applied) as OpenF1's position feed shows it before lights
+// out. The feed starts about 50 minutes before the start, and its last positions before the
+// session start match Jolpi's `grid` for every race checked (Spa, Budapest, Monza, Baku,
+// Kuala Lumpur, Zandvoort, Marina Bay, including the penalised ones). OpenF1's own
+// starting_grid endpoint has no data for 2026. Returns [] until the feed is there.
+export interface OpenF1GridRow {
+  driver_number: number;
+  position: number;
+}
+
+const MIN_GRID_DRIVERS = 18;
+
+export const getStartingGrid = async (sessionKey: number): Promise<OpenF1GridRow[]> => {
+  const sessionResponse = await axios.get(`${OPENF1_API_URL}/sessions`, { params: { session_key: sessionKey } });
+  const session: OpenF1Session | undefined = sessionResponse.data?.[0];
+  if (!session) return [];
+
+  // 'date<' is OpenF1's way of writing date <= value. Before the feed starts the answer is a 404.
+  let rows: Array<{ driver_number: number; position: number; date: string }> = [];
+  try {
+    const positionResponse = await axios.get(`${OPENF1_API_URL}/position`, {
+      params: { session_key: sessionKey, 'date<': session.date_start.slice(0, 19) },
+    });
+    rows = positionResponse.data || [];
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return [];
+    throw error;
+  }
+
+  const latest = new Map<number, { position: number; date: string }>();
+  for (const row of rows) {
+    const known = latest.get(row.driver_number);
+    if (!known || row.date > known.date) latest.set(row.driver_number, { position: row.position, date: row.date });
+  }
+
+  const grid = [...latest.entries()]
+    .map(([driver_number, v]) => ({ driver_number, position: v.position }))
+    .sort((a, b) => a.position - b.position);
+
+  // A usable grid is complete and has each place exactly once; anything else is still arriving.
+  const complete =
+    grid.length >= MIN_GRID_DRIVERS &&
+    grid.every((g, i) => Number.isInteger(g.position) && g.position === i + 1);
+  return complete ? grid : [];
+};
+
 export const getLatestDrivers = async (): Promise<OpenF1Driver[]> => {
   try {
     // Get the latest session to fetch current drivers

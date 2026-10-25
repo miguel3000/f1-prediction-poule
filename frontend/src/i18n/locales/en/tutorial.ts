@@ -14,7 +14,7 @@ export const tutorial = {
   'tutorial.s2.empty': 'Empty',
   'tutorial.s2.caption': 'Example: three drivers are placed, the fourth slot is next.',
   'tutorial.s2.tip':
-    'The driver list follows the qualifying order once qualifying is done, so you can see how the grid will start. Before that it follows the previous race. A link above the grid shows the practice results.',
+    'The driver list follows the qualifying order once qualifying is done. About an hour before the start the real starting grid is known, penalties included, and the list switches to it. Before qualifying it follows the previous race. A link above the grid shows the practice results.',
 
   'tutorial.s3.title': 'Pick the first retirement',
   'tutorial.s3.text':
@@ -110,9 +110,9 @@ export const tutorial = {
   'tutorial.faq.q4': 'Which driver counts as the first retirement?',
   'tutorial.faq.a4':
     'Of the drivers who did not finish, the one who completed the fewest laps (classified last among the retirements) counts as first out. If nobody retires, nobody earns the bonus. A driver who finishes a lap down, or is disqualified after finishing, is not a retirement.',
-  'tutorial.faq.q5': 'The driver list is in qualifying order, but some drivers start elsewhere. Why?',
+  'tutorial.faq.q5': 'Why does the order of the driver list change?',
   'tutorial.faq.a5':
-    'The list shows the qualifying result, not the starting grid. A grid penalty can send a driver further back than he qualified. You predict where drivers finish, so a penalty never changes how your points are counted, only perhaps what you expect.',
+    'The list follows the qualifying result. About an hour before the start the real starting grid is known, grid penalties included, and the list switches to it; the label above the list then reads "Starting grid". An open page switches by itself within a couple of minutes. You predict where drivers finish, so a penalty never changes how your points are counted, only perhaps what you expect.',
   'tutorial.faq.q6': 'Why did my points change after the race?',
   'tutorial.faq.a6':
     'The first points come minutes after the race, from the provisional results. 24 hours later they are recalculated with the final classification, once penalties and disqualifications are settled. If your points change you get an updated email.',

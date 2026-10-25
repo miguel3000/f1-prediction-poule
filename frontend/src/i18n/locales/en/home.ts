@@ -22,6 +22,7 @@ export const home = {
   'predict.fillAll10': 'Please fill all 10 positions first',
   'predict.fillAll8': 'Please fill all 8 positions first',
   'predict.orderQualifying': 'Qualifying',
+  'predict.orderGrid': 'Starting grid',
   'predict.orderSprintQuali': 'Sprint Quali',
   'predict.orderPrevRace': 'Prev. Race',
   'predict.orderChampionship': 'Championship',

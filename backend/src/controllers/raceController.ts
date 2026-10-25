@@ -44,6 +44,25 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
 
     const race = raceResult.rows[0];
 
+    // Once the real starting grid is known (about an hour before the start, penalties applied) the
+    // list follows it; the qualifying times stay attached for the lap-time panel.
+    const storedGrid = await query(
+      `SELECT g.position, qr.q1, qr.q2, qr.q3, d.id, d.driver_number, d.name, d.name_acronym, d.team, d.image_url
+       FROM starting_grid g
+       JOIN drivers d ON d.id = g.driver_id
+       LEFT JOIN qualifying_results qr ON qr.race_id = g.race_id AND qr.driver_id = g.driver_id
+       WHERE g.race_id = $1
+       ORDER BY g.position ASC`,
+      [raceId]
+    );
+    if (storedGrid.rows.length > 0) {
+      return res.json({
+        source: race.race_type === 'sprint' ? 'sprint_grid' : 'grid',
+        hasQualifyingResults: true,
+        drivers: await withAllDrivers(race.season, storedGrid.rows)
+      });
+    }
+
     if (storedQualifying.rows.length > 0) {
       return res.json({
         source: race.race_type === 'sprint' ? 'sprint_qualifying' : 'qualifying',
