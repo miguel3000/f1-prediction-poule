@@ -242,3 +242,6 @@ CREATE TABLE IF NOT EXISTS starting_grid (
   PRIMARY KEY (race_id, driver_id),
   UNIQUE (race_id, position)
 );
+
+-- Set once the admin has been told a race or sprint is about to start without a starting grid
+ALTER TABLE races ADD COLUMN IF NOT EXISTS grid_alert_sent BOOLEAN DEFAULT FALSE;

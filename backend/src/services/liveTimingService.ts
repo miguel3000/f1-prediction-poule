@@ -2,6 +2,7 @@ import axios from 'axios';
 import WebSocket from 'ws';
 import { persistPracticeFromState } from './practiceResultsService';
 import { persistRaceClassificationFromState } from './raceClassificationService';
+import { persistStartingGridFromState } from './startingGridFromFeed';
 
 // Connects to F1's own live timing feed — the same unofficial SignalR stream
 // that every open-source F1 dashboard (f1-dash, FastF1's livetiming module,
@@ -170,6 +171,7 @@ function connect() {
             // either way it is worth keeping.
             persistPracticeFromState(state);
             persistRaceClassificationFromState(state);
+            persistStartingGridFromState(state);
             continue;
           }
 
@@ -188,6 +190,7 @@ function connect() {
               // Save the session that just ended before its state is replaced.
               persistPracticeFromState(state);
               persistRaceClassificationFromState(state);
+              persistStartingGridFromState(state);
               ws?.close();
               continue;
             }
@@ -198,6 +201,7 @@ function connect() {
             if (topic === 'SessionStatus') {
               persistPracticeFromState(state);
               persistRaceClassificationFromState(state);
+              persistStartingGridFromState(state);
             }
           }
         }
@@ -230,5 +234,6 @@ export const startLiveTimingIngest = () => {
   setInterval(() => {
     persistPracticeFromState(state);
     persistRaceClassificationFromState(state);
+    persistStartingGridFromState(state);
   }, 15_000);
 };

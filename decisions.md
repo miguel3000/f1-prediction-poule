@@ -112,11 +112,15 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   position numbers or three-letter codes (tried, removed). Any driver missing from the data is
   appended so every driver is always pickable. About an hour before each start the **real
   starting grid, penalties applied**, is known and the list switches to it, labelled "Starting
-  grid" (an open page switches by itself). Source: OpenF1's position feed just before the session
-  start, stored in `starting_grid` by the 5-minute cron `syncStartingGrid` (it matched Jolpi's
-  real grid for every race checked; OpenF1's own `starting_grid` endpoint has no 2026 data, and
-  Jolpi only has the grid after the race). Penalties announced earlier are not known to us
-  before that moment. Scoring is unaffected: you predict finishing positions.
+  grid" (an open page switches by itself). Sources, in this order: F1's own live timing feed (the
+  GridPos per car, which the app is already connected to and which fills `starting_grid` about an
+  hour before the start; first real test: US GP, 25 Oct 2026), then the 5-minute cron
+  `syncStartingGrid`, which asks OpenF1's position feed. OpenF1's free tier only serves a session
+  once it is over, so that route mostly helps after the fact; its own `starting_grid` endpoint has
+  no 2026 data and Jolpi only has the grid after the race. After the race the OpenF1 position feed
+  matched Jolpi's real grid for every race checked. If neither source has a grid 20 minutes before
+  a start, the admin gets one email and the list keeps the qualifying order. Penalties announced
+  earlier are not known to us before that moment. Scoring is unaffected: you predict finishing positions.
 - **Gaston Mazzacane -ai-** is the AI player. When the user types **PREDICTION**, give his pick for
   the next race straight away, no questions: figure out which race, research real form and any
   qualifying already driven, give the ordered list (top 10 plus a first-retirement pick for a

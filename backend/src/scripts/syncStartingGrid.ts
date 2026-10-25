@@ -1,8 +1,11 @@
 import { query } from '../config/database';
+import { sendAdminAlert } from '../services/emailService';
 import { fetchStartingGrid, getStoredGrid, storeStartingGrid } from '../services/startingGridService';
 
-// Runs every few minutes. For a race or sprint that starts within the next 3 hours it looks for
-// the real starting grid and stores it (again, if it changed) so the prediction list can show it.
+// Runs every few minutes as a fallback for the live feed. For a race or sprint that starts within
+// the next 3 hours without a stored starting grid it asks OpenF1 for one. OpenF1's free tier only
+// serves a session's data once the session is over, so this mostly helps after the fact; the
+// live feed (services/startingGridFromFeed.ts) is what fills the grid before the start.
 // It prints only when it does something.
 //
 //   node dist/scripts/syncStartingGrid.js                     normal run
@@ -21,13 +24,25 @@ async function main() {
   const racesResult = forced
     ? await query('SELECT id, season, round, race_name, race_date, race_type FROM races WHERE id = $1', [parseInt(forced, 10)])
     : await query(
-        `SELECT id, season, round, race_name, race_date, race_type FROM races
+        `SELECT id, season, round, race_name, race_date, race_type, grid_alert_sent FROM races
          WHERE race_date > NOW() AND race_date <= NOW() + INTERVAL '3 hours'
          ORDER BY race_date`
       );
 
   for (const race of racesResult.rows) {
     try {
+      // The grid should have arrived about 50 minutes before the start. If a start is 20 minutes away
+      // and there is still none, tell the admin once (the list then simply keeps the qualifying order).
+      if (!forced && !race.grid_alert_sent && new Date(race.race_date).getTime() - Date.now() <= 20 * 60_000) {
+        if ((await getStoredGrid(race.id)).size === 0) {
+          const sent = await sendAdminAlert(
+            `No starting grid yet for ${race.race_name}${race.race_type === 'sprint' ? ' (sprint)' : ''}`,
+            'The start is less than 20 minutes away and neither the live timing feed nor OpenF1 has given a starting grid, so the prediction list still follows the qualifying order. Grid penalties are not reflected for this session. Nothing else is affected.'
+          );
+          if (sent) await query('UPDATE races SET grid_alert_sent = TRUE WHERE id = $1', [race.id]);
+        }
+      }
+
       const grid = await fetchStartingGrid(race);
       if (grid.length === 0) {
         if (forced) console.log(`[CRON] ${race.race_name} (${race.race_type}): no complete starting grid available`);
@@ -43,9 +58,10 @@ async function main() {
         continue;
       }
 
+      // The live feed (services/startingGridFromFeed.ts) is the main source and works before the
+      // start; this OpenF1 route is the fallback and never overwrites a grid that is already stored.
       const stored = await getStoredGrid(race.id);
-      const unchanged = grid.every((g) => stored.get(g.driver_number) === g.position) && stored.size >= grid.length;
-      if (unchanged) continue;
+      if (stored.size > 0) continue;
 
       const result = await storeStartingGrid(race, grid);
       console.log(`[CRON] Starting grid stored for ${race.race_name} (${race.race_type}): ${line} [${result.stored} stored, ${result.unknown} unknown]`);

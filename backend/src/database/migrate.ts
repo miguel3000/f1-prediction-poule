@@ -217,6 +217,7 @@ const runMigration = async () => {
         UNIQUE (race_id, position)
       )
     `);
+    await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS grid_alert_sent BOOLEAN DEFAULT FALSE`);
     console.log('starting_grid ensured.');
 
     // Drop magic_links table (no longer needed - password auth only)
