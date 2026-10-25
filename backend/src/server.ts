@@ -106,6 +106,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// One address per page: www.pouleposition.nl and plain http go to https://pouleposition.nl with the
+// same path (a 301), so search engines and shared links see one site instead of copies. Cloudflare
+// reports how the visitor connected in the CF-Visitor header. API calls and the health check are
+// left alone.
+const viaPlainHttp = (header: unknown) => {
+  try {
+    return JSON.parse(String(header || '{}')).scheme === 'http';
+  } catch {
+    return false;
+  }
+};
+app.use((req, res, next) => {
+  const host = req.hostname.toLowerCase();
+  const wrongAddress = host === `www.${CANONICAL_HOST}` || (host === CANONICAL_HOST && viaPlainHttp(req.headers['cf-visitor']));
+  if (wrongAddress && (req.method === 'GET' || req.method === 'HEAD') && !req.path.startsWith('/api/') && req.path !== '/health') {
+    return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+  }
+  next();
+});
+
 // The old address f1.miguelm.nl now just forwards page visits to pouleposition.nl
 // (same path), so links in older emails and bookmarks keep working. Only GET/HEAD page
 // loads are forwarded; /api and /uploads are left alone for tabs that are still open.
