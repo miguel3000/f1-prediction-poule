@@ -1,7 +1,7 @@
 import type { meta as en_meta } from '../en/meta';
 
 export const meta: Record<keyof typeof en_meta, string> = {
-  'meta.home.title': 'Poule Position – F1-voorspellingsspel voor vrienden',
+  'meta.home.title': 'F1-poule spelen met vrienden – Poule Position',
   'meta.home.desc':
     'Voorspel de top 10 van elke Formule 1-race en sprint, verdien punten voor elke juiste positie en versla je vrienden in het seizoensklassement. Gratis F1-poule.',
   'meta.about.title': 'Over Poule Position – de F1-poule',

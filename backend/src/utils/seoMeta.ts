@@ -18,7 +18,7 @@ const PUBLIC_PAGES: Record<string, PageMeta> = {
   '/': {
     title: {
       en: 'Poule Position – F1 prediction game for friends',
-      nl: 'Poule Position – F1-voorspellingsspel voor vrienden',
+      nl: 'F1-poule spelen met vrienden – Poule Position',
     },
     desc: {
       en: 'Predict the top 10 of every Formula 1 race and sprint, score points for every correct position and beat your friends on the season leaderboard. Free F1 prediction poule.',
@@ -78,11 +78,25 @@ const loadTemplate = (indexPath: string) => {
   return template;
 };
 
-export const renderIndex = (indexPath: string, rawPath: string, lang: SeoLang): string => {
-  const path = normalizePath(rawPath);
+// Dutch pages live under /nl (/nl, /nl/tutorial, ...) so that search engines, which crawl without
+// a language, can index the Dutch version separately. English stays at the plain paths.
+const splitLangPrefix = (path: string): { lang: SeoLang | null; base: string } => {
+  const m = /^\/nl(\/.*)?$/.exec(path);
+  return m ? { lang: 'nl', base: m[1] ? normalizePath(m[1]) : '/' } : { lang: null, base: path };
+};
+
+const urlFor = (lang: SeoLang, base: string) =>
+  lang === 'nl' ? `${SITE}/nl${base === '/' ? '' : base}` : `${SITE}${base}`;
+
+export const renderIndex = (indexPath: string, rawPath: string, requestLang: SeoLang): string => {
+  const normalized = normalizePath(rawPath);
+  const prefixed = splitLangPrefix(normalized);
+  const path = prefixed.base;
+  // A Dutch address is always Dutch, whatever the visitor's language settings say.
+  const lang: SeoLang = prefixed.lang ?? requestLang;
   const page = PUBLIC_PAGES[path];
   const title = page ? page.title[lang] : path === '/auth' ? AUTH_TITLE[lang] : 'Poule Position';
-  const canonical = `${SITE}${path === '/' ? '/' : path}`;
+  const canonical = urlFor(prefixed.lang ?? 'en', path);
 
   let html = loadTemplate(indexPath);
   const setAttr = (pattern: RegExp, value: string) => {
@@ -102,6 +116,14 @@ export const renderIndex = (indexPath: string, rawPath: string, lang: SeoLang): 
     setAttr(/(<meta name="description" content=")[^"]*(")/, desc);
     setAttr(/(<meta property="og:description" content=")[^"]*(")/, desc);
     setAttr(/(<meta name="twitter:description" content=")[^"]*(")/, desc);
+
+    // Tell search engines the English and Dutch versions belong together.
+    const alternates = [
+      `    <link rel="alternate" hreflang="en" href="${urlFor('en', path)}" />`,
+      `    <link rel="alternate" hreflang="nl" href="${urlFor('nl', path)}" />`,
+      `    <link rel="alternate" hreflang="x-default" href="${urlFor('en', path)}" />`,
+    ].join('\n');
+    html = html.replace('</head>', `${alternates}\n  </head>`);
   } else {
     // Login-gated and utility pages stay out of search results.
     html = html.replace('</head>', '    <meta name="robots" content="noindex, nofollow" />\n  </head>');

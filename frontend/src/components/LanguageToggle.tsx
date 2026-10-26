@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useLang, Lang } from '../i18n/LanguageContext';
 import { saveLanguage } from '../services/api';
 
@@ -7,6 +8,8 @@ const OPTIONS: Lang[] = ['en', 'nl'];
 // on the dark navy, same two-state pattern as the Idea/Implementation switch.
 const LanguageToggle = () => {
   const { lang, setLang, t } = useLang();
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
 
   return (
     <div className="flex" role="group" aria-label={t('common.language')}>
@@ -16,6 +19,8 @@ const LanguageToggle = () => {
           type="button"
           onClick={() => {
             setLang(option);
+            // On a Dutch address (/nl/...) choosing English moves to the English address of the same page.
+            if (option === 'en' && /^\/nl(\/|$)/.test(pathname)) navigate((pathname.replace(/^\/nl/, '') || '/') + search);
             // Logged-in players keep this choice on every device. A failure just
             // means it stays a this-browser choice.
             if (localStorage.getItem('token')) saveLanguage(option).catch(() => undefined);

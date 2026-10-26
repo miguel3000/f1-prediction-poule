@@ -227,7 +227,11 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   `/tutorial`, `/rules`, `/privacy`), otherwise the home page, always with `?lang=`. It uses the
   path only, never the query string. A new public page is added to `SHAREABLE` in `utils/share.ts`.
 - **Public pages** are indexed (sitemap, server-rendered head); everything behind a login is
-  `noindex`. `pouleposition.nl` is the one canonical address; `f1.miguelm.nl` only redirects (301)
+  `noindex`. Every public page has an English address (`/tutorial`) and a Dutch one (`/nl/tutorial`,
+  home is `/nl`) with hreflang links between them, because Google crawls without a language and
+  would otherwise only see English. Dutch addresses are always Dutch and keep the site Dutch for
+  that visitor; the language switch leaves a `/nl` address when English is chosen; Dutch share
+  links use the `/nl` address. A new public page needs both addresses in `sitemap.xml`. `pouleposition.nl` is the one canonical address; `f1.miguelm.nl` only redirects (301)
   until the user removes it.
 - **Copy**: write from the player's side ("Your prediction is saved"), say what happens, no
   jargon, no apologies in error messages.
@@ -302,7 +306,7 @@ export const sendThing = async (email: string, nickname: string, language?: stri
 3. Server head: add the path to `PUBLIC_PAGES` in `backend/src/utils/seoMeta.ts`; client head:
    `PUBLIC_PAGES` in `frontend/src/components/PageMeta.tsx`; `frontend/public/sitemap.xml`.
 4. Menu or footer entry in `components/Navigation.tsx` (and `Footer.tsx`).
-5. Add the path to `SHAREABLE` in `frontend/src/utils/share.ts`.
+5. Add the path to `SHAREABLE` in `frontend/src/utils/share.ts` and both the English and the `/nl` address to `frontend/public/sitemap.xml` (with the hreflang alternates).
 6. Check at 375 and 320 px, both languages, and that a logged-out visit works.
 A page behind a login: wrap in `<ProtectedRoute>`, no sitemap or seoMeta entry.
 

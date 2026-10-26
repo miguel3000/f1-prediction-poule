@@ -28,6 +28,29 @@ import { AuthContext } from './context/AuthContext';
 import { useLang } from './i18n/LanguageContext';
 import { getProfile } from './services/api';
 
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Homepage />} />
+    <Route path="/races" element={<ProtectedRoute><RaceOverview /></ProtectedRoute>} />
+    <Route path="/drivers" element={<ProtectedRoute><DriverStandings /></ProtectedRoute>} />
+    <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+    <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+    <Route path="/tutorial" element={<Tutorial />} />
+    <Route path="/rules" element={<Rules />} />
+    <Route path="/auth" element={<Auth />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/pitlane" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+    <Route path="/predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
+    <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
+    <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+    <Route path="/live" element={<ProtectedRoute><LiveTiming /></ProtectedRoute>} />
+    <Route path="/pitwall" element={<ProtectedRoute requirePitwall><PitWall /></ProtectedRoute>} />
+    <Route path="/privacy" element={<PrivacyPolicy />} />
+    <Route path="/about" element={<About />} />
+  </Routes>
+);
+
 function App() {
   const { setLang } = useLang();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -84,25 +107,10 @@ function App() {
           <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />
 
           <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar xl:pb-8 relative z-10 flex-grow">
+            {/* The same pages answer at /nl/... too: the Dutch addresses search engines index. */}
             <Routes>
-              <Route path="/" element={<Homepage />} />
-              <Route path="/races" element={<ProtectedRoute><RaceOverview /></ProtectedRoute>} />
-              <Route path="/drivers" element={<ProtectedRoute><DriverStandings /></ProtectedRoute>} />
-              <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-              <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-              <Route path="/tutorial" element={<Tutorial />} />
-              <Route path="/rules" element={<Rules />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/pitlane" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
-              <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
-              <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
-              <Route path="/live" element={<ProtectedRoute><LiveTiming /></ProtectedRoute>} />
-              <Route path="/pitwall" element={<ProtectedRoute requirePitwall><PitWall /></ProtectedRoute>} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/about" element={<About />} />
+              <Route path="/nl/*" element={<AppRoutes />} />
+              <Route path="*" element={<AppRoutes />} />
             </Routes>
           </main>
 

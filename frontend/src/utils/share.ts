@@ -5,12 +5,16 @@ const SITE = 'https://pouleposition.nl';
 // friend to the home page instead.
 const SHAREABLE = ['/', '/about', '/tutorial', '/rules', '/privacy'];
 
-// The link carries ?lang= so the friend's link preview and first screen match the
-// language of whoever shared it. Only the path is used, never the query or hash of the
+// The link carries the language of whoever shared it (a /nl address, or ?lang=en) so the friend's
+// link preview and first screen match. Only the path is used, never the query or hash of the
 // current address, so nothing like a reset-password token can end up in a shared link.
 export const shareUrlFor = (pathname: string, lang: string): string => {
-  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
-  return `${SITE}${SHAREABLE.includes(path) ? path : '/'}?lang=${lang}`;
+  const trimmed = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  // /nl/tutorial is the Dutch address of /tutorial
+  const plain = trimmed.replace(/^\/nl(?=\/|$)/, '') || '/';
+  const path = SHAREABLE.includes(plain) ? plain : '/';
+  // Dutch links use the Dutch address, so the friend lands on the Dutch page that search engines know.
+  return lang === 'nl' ? `${SITE}/nl${path === '/' ? '' : path}` : `${SITE}${path}?lang=${lang}`;
 };
 
 export type ShareResult = 'shared' | 'copied' | 'failed' | 'cancelled';

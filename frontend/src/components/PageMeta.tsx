@@ -27,7 +27,10 @@ const PageMeta = () => {
   const { t, lang } = useLang();
 
   useEffect(() => {
-    const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+    const full = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+    // /nl/tutorial is the Dutch address of /tutorial
+    const dutchAddress = /^\/nl(\/|$)/.test(full);
+    const path = dutchAddress ? full.replace(/^\/nl/, '') || '/' : full;
     const page = PUBLIC_PAGES[path];
     const title = t(page ? page.title : path === '/auth' ? 'meta.auth.title' : 'meta.private.title');
 
@@ -43,9 +46,22 @@ const PageMeta = () => {
       setMeta('meta[name="twitter:description"]', 'content', desc);
     }
 
-    const url = `${SITE}${path === '/' ? '/' : path}`;
+    const addressOf = (nl: boolean) => `${SITE}${nl ? '/nl' : ''}${path === '/' ? (nl ? '' : '/') : path}`;
+    const url = addressOf(dutchAddress);
     setMeta('link[rel="canonical"]', 'href', url);
     setMeta('meta[property="og:url"]', 'content', url);
+
+    // The English and Dutch addresses of a public page point at each other.
+    document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+    if (page) {
+      [['en', addressOf(false)], ['nl', addressOf(true)], ['x-default', addressOf(false)]].forEach(([code, href]) => {
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'alternate');
+        link.setAttribute('hreflang', code);
+        link.setAttribute('href', href);
+        document.head.appendChild(link);
+      });
+    }
 
     // Private and auth pages should not appear in search results.
     let robots = document.head.querySelector('meta[name="robots"]');
