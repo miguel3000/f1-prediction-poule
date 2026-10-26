@@ -363,7 +363,7 @@ export const getFunStats = async (req: Request, res: Response) => {
            JOIN users u ON p.user_id = u.id
            JOIN races r ON p.race_id = r.id
            JOIN race_results rr ON p.race_id = rr.race_id AND rr.position = 1
-           WHERE p.position_1 = rr.driver_id AND r.season = $1
+           WHERE p.position_1 = rr.driver_id AND r.season = $1 AND u.plays_in_main = TRUE
            GROUP BY u.id, u.nickname
            ORDER BY count DESC LIMIT 5`,
           [season]
@@ -414,7 +414,7 @@ export const getFunStats = async (req: Request, res: Response) => {
            FROM predictions p
            JOIN users u ON p.user_id = u.id
            JOIN races r ON p.race_id = r.id
-           WHERE r.season = $1 AND r.status IN ('completed', 'provisional')
+           WHERE r.season = $1 AND r.status IN ('completed', 'provisional') AND u.plays_in_main = TRUE
            GROUP BY u.id, u.nickname
            HAVING COUNT(*) >= 2
            ORDER BY avg_points DESC LIMIT 5`,

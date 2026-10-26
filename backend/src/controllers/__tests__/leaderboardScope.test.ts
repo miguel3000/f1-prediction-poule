@@ -124,6 +124,30 @@ test('top_scorers_on_the_stats_page_exclude_group_only_players', async () => {
   assert.deepEqual(res.json.topScorers.map((t: any) => t.nickname), ['Alice', 'Bob', 'Carol']);
 });
 
+test('fun_stats_name_only_main_poule_players', async () => {
+  // Two completed main races where P1 was driver 1, so everybody who predicted P1 = driver 1 is a
+  // "crystal ball" and everybody has two scored races for the consistency list.
+  const second = await query(
+    `INSERT INTO races (season, round, race_name, circuit_name, country, race_date, race_type, status)
+     VALUES (2026, 3, 'Fun Stats Grand Prix', 'Test Circuit', 'Testland', NOW() - INTERVAL '3 days', 'main', 'completed') RETURNING id`
+  );
+  const drivers = (await query('SELECT id FROM drivers ORDER BY driver_number')).rows.map((r: any) => r.id);
+  const firstRace = (await query("SELECT id FROM races WHERE round = 1 AND race_type = 'main'")).rows[0].id;
+  for (const raceId of [firstRace, second.rows[0].id]) {
+    await query('INSERT INTO race_results (race_id, driver_id, position, points) VALUES ($1, $2, 1, 25)', [raceId, drivers[0]]);
+  }
+  for (const u of [A, B, C, D]) await addPrediction(u.id, second.rows[0].id, drivers, 10);
+
+  const res = await get('/api/stats/fun', A);
+  assert.equal(res.status, 200);
+  const crystal = res.json.crystalBall.map((r: any) => r.nickname);
+  const consistent = res.json.consistency.map((r: any) => r.nickname);
+  assert.ok(crystal.includes('Alice'), 'main players are listed');
+  assert.ok(consistent.includes('Alice'), 'main players are listed');
+  assert.ok(!crystal.includes('Dave'), 'a group-only player must not appear in the crystal ball list');
+  assert.ok(!consistent.includes('Dave'), 'a group-only player must not appear in the consistency list');
+});
+
 test('when_everyone_plays_in_main_the_standings_list_everyone_in_points_order', async () => {
   await query('UPDATE users SET plays_in_main = TRUE WHERE id = $1', [D.id]);
   const res = await get('/api/leaderboard', A);
