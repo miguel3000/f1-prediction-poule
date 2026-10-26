@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
-import { getLeaderboard, getSeasonHistory, getPlayerStats } from '../services/api';
+import { Link, useSearchParams } from 'react-router-dom';
+import { getLeaderboard, getSeasonHistory, getPlayerStats, getMyGroups } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
 import { ordinal } from '../i18n/format';
 import { AuthContext } from '../context/AuthContext';
 import ShareButton from '../components/ShareButton';
+import PouleSelector, { PouleOption } from '../components/PouleSelector';
 import SeasonReplay from '../components/progress/SeasonReplay';
 import type { SeasonRace, SeasonUser } from '../components/progress/types';
 
@@ -42,6 +44,7 @@ const getRankColor = (rank: number) => {
 const Leaderboard = () => {
   const { t, lang } = useLang();
   const { user } = useContext(AuthContext);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [seasonRaces, setSeasonRaces] = useState<SeasonRace[]>([]);
   const [seasonUsers, setSeasonUsers] = useState<SeasonUser[]>([]);
@@ -50,47 +53,56 @@ const Leaderboard = () => {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // The poules this player can look at: the main poule (unless they play only in groups), then
+  // their groups by name. null while loading; `failed` falls back to the server's default poule.
+  const [poules, setPoules] = useState<PouleOption[] | null>(null);
+  const [poulesFailed, setPoulesFailed] = useState(false);
   useEffect(() => {
-    fetchLeaderboard();
-    fetchSeasonHistory();
-    fetchPlayerStats();
+    getMyGroups()
+      .then((res) => {
+        const options: PouleOption[] = res.data.groups.map((g) => ({ id: String(g.id), label: g.name }));
+        if (res.data.playsInMain) options.unshift({ id: 'main', label: t('groups.mainPoule') });
+        setPoules(options);
+      })
+      .catch(() => {
+        setPoulesFailed(true);
+        setPoules([]);
+      });
+    // the main poule's label is translated below, so a language switch does not need a reload
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const pouleOptions = (poules ?? []).map((p) => (p.id === 'main' ? { ...p, label: t('groups.mainPoule') } : p));
 
-  const fetchPlayerStats = async () => {
-    try {
-      const response = await getPlayerStats();
-      setPlayerStats(response.data);
-    } catch (error) {
-      console.error('Failed to fetch player stats:', error);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
+  const requested = searchParams.get('poule');
+  const selected = requested ?? pouleOptions[0]?.id;
+  const noPoule = poules !== null && !poulesFailed && pouleOptions.length === 0;
+  const badPoule = poules !== null && !poulesFailed && !noPoule && !pouleOptions.some((p) => p.id === selected);
+  const ready = poules !== null && !noPoule && !badPoule;
+  // Without a usable list the server decides (it answers with the default poule).
+  const pouleParam = poulesFailed ? undefined : selected;
 
-  const fetchLeaderboard = async () => {
-    try {
-      const response = await getLeaderboard();
-      setLeaderboard(response.data);
-    } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    setLoading(true);
+    setHistoryLoading(true);
+    setStatsLoading(true);
+    getLeaderboard(pouleParam)
+      .then((res) => { if (!cancelled) setLeaderboard(res.data); })
+      .catch((error) => { if (!cancelled) { setLeaderboard([]); console.error('Failed to fetch leaderboard:', error); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    getSeasonHistory(pouleParam)
+      .then((res) => { if (!cancelled) { setSeasonRaces(res.data.races); setSeasonUsers(res.data.users); } })
+      .catch((error) => { if (!cancelled) { setSeasonRaces([]); setSeasonUsers([]); console.error('Failed to fetch season history:', error); } })
+      .finally(() => { if (!cancelled) setHistoryLoading(false); });
+    getPlayerStats(pouleParam)
+      .then((res) => { if (!cancelled) setPlayerStats(res.data); })
+      .catch((error) => { if (!cancelled) { setPlayerStats([]); console.error('Failed to fetch player stats:', error); } })
+      .finally(() => { if (!cancelled) setStatsLoading(false); });
+    return () => { cancelled = true; };
+  }, [ready, pouleParam]);
 
-  const fetchSeasonHistory = async () => {
-    try {
-      const response = await getSeasonHistory();
-      setSeasonRaces(response.data.races);
-      setSeasonUsers(response.data.users);
-    } catch (error) {
-      console.error('Failed to fetch season history:', error);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (poules === null) {
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-f1-yellow-500 mx-auto"></div>
@@ -99,6 +111,8 @@ const Leaderboard = () => {
     );
   }
 
+  const selectedLabel = pouleOptions.find((p) => p.id === selected)?.label;
+
   return (
     <div>
       <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-f1-yellow-500">{t('lb.title')}</h1>
@@ -106,6 +120,39 @@ const Leaderboard = () => {
         <ShareButton />
       </div>
 
+      {pouleOptions.length > 1 && selected && (
+        <div className="max-w-5xl mx-auto mb-8">
+          <PouleSelector
+            poules={pouleOptions}
+            value={selected}
+            onChange={(id) => setSearchParams({ poule: id })}
+            label={t('groups.selector.label')}
+          />
+        </div>
+      )}
+      {pouleOptions.length === 1 && selectedLabel && (
+        <p className="text-center text-white/80 text-sm uppercase tracking-wider -mt-4 mb-8 break-words">
+          {t('groups.standingsFor', { poule: selectedLabel })}
+        </p>
+      )}
+
+      {noPoule && (
+        <div className="max-w-3xl mx-auto card-f1 p-8 text-center">
+          <h2 className="text-xl font-bold text-f1-yellow-500 mb-3">{t('groups.noPoule.title')}</h2>
+          <p className="text-white mb-6">{t('groups.noPoule.text')}</p>
+          <Link to="/profile" className="btn-f1-primary inline-block">{t('groups.noPoule.profile')}</Link>
+        </div>
+      )}
+
+      {badPoule && (
+        <div className="max-w-3xl mx-auto card-f1 p-8 text-center">
+          <p className="text-white mb-6">{t('groups.badPoule')}</p>
+          <Link to="/leaderboard" className="btn-f1-primary inline-block">{t('groups.badPoule.back')}</Link>
+        </div>
+      )}
+
+      {ready && (
+        <>
       {/* Season Points Chart */}
       <div className="max-w-5xl mx-auto mb-10">
         <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">{t('lb.progression')}</h2>
@@ -121,7 +168,7 @@ const Leaderboard = () => {
         ) : (
           <div className="max-w-3xl">
             <p className="text-sm text-white/80 mb-3">{t('lb.replay.hint')}</p>
-            <SeasonReplay races={seasonRaces} users={seasonUsers} meId={user?.id} />
+            <SeasonReplay key={selected} races={seasonRaces} users={seasonUsers} meId={user?.id} />
           </div>
         )}
       </div>
@@ -130,7 +177,11 @@ const Leaderboard = () => {
       <div className="max-w-5xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 racing-stripe pl-6">{t('lb.fullStandings')}</h2>
 
-        {leaderboard.length === 0 ? (
+        {loading ? (
+          <div className="bg-gray-900 p-8 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-f1-yellow-500"></div>
+          </div>
+        ) : leaderboard.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-white text-lg">{t('lb.noUsers')}</p>
           </div>
@@ -246,6 +297,8 @@ const Leaderboard = () => {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 };

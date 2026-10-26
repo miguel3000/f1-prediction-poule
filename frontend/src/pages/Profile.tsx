@@ -1,9 +1,9 @@
-import { useState, useContext, useRef } from 'react';
+import { useState, useContext, useRef, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useLang, Lang } from '../i18n/LanguageContext';
-import { saveLanguage, changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, getNicknameSuggestion, deleteAccount as deleteAccountRequest } from '../services/api';
+import { saveLanguage, getMyGroups, setPlaysInMain as setPlaysInMainRequest, changeEmail as changeEmailRequest, changeNickname as changeNicknameRequest, getNicknameSuggestion, deleteAccount as deleteAccountRequest } from '../services/api';
 
 const Profile = () => {
   const { user, token, logout } = useContext(AuthContext);
@@ -15,6 +15,21 @@ const Profile = () => {
   const [success, setSuccess] = useState('');
 
   const [languageStatus, setLanguageStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+
+  // Whether the player shows up in the main poule, and in how many groups they are. A player in no
+  // group cannot switch the main poule off: they would be in no poule at all.
+  const [playsInMain, setPlaysInMain] = useState<boolean | null>(null);
+  const [groupCount, setGroupCount] = useState(0);
+  const [pouleStatus, setPouleStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  useEffect(() => {
+    if (!token) return;
+    getMyGroups()
+      .then((res) => {
+        setPlaysInMain(res.data.playsInMain);
+        setGroupCount(res.data.groups.length);
+      })
+      .catch(() => setPlaysInMain(null));
+  }, [token]);
 
   const [showNicknameForm, setShowNicknameForm] = useState(false);
   const [newNickname, setNewNickname] = useState('');
@@ -121,6 +136,18 @@ const Profile = () => {
       setLanguageStatus('saved');
     } catch {
       setLanguageStatus('error');
+    }
+  };
+
+  const handlePlaysInMain = async (value: boolean) => {
+    if (value === playsInMain) return;
+    setPouleStatus('idle');
+    try {
+      await setPlaysInMainRequest(value);
+      setPlaysInMain(value);
+      setPouleStatus('saved');
+    } catch {
+      setPouleStatus('error');
     }
   };
 
@@ -395,6 +422,38 @@ const Profile = () => {
                 <p className="text-xs text-red-400 mt-1">{tError('Failed to save language')}</p>
               )}
             </div>
+
+            {playsInMain !== null && (
+              <div className="bg-f1-neutral-800 p-4">
+                <p className="text-sm text-white mb-2">{t('groups.profile.title')}</p>
+                <div className="grid grid-cols-2 max-w-xs">
+                  {([[true, t('groups.profile.on')], [false, t('groups.profile.off')]] as [boolean, string][]).map(([value, label]) => {
+                    const blocked = !value && groupCount === 0;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => handlePlaysInMain(value)}
+                        disabled={blocked}
+                        aria-pressed={playsInMain === value}
+                        className={`py-2 text-sm font-bold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          playsInMain === value ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white hover:brightness-125'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-white/60 mt-2">
+                  {pouleStatus === 'saved' ? t('groups.profile.saved') : t('groups.profile.help')}
+                </p>
+                {groupCount === 0 && <p className="text-xs text-white/60 mt-1">{t('groups.profile.needGroup')}</p>}
+                {pouleStatus === 'error' && (
+                  <p className="text-xs text-red-400 mt-1">{tError('Failed to save the setting')}</p>
+                )}
+              </div>
+            )}
 
             <div className="bg-f1-neutral-800 p-4">
               <p className="text-sm text-white mb-1">{t('profile.totalPoints')}</p>

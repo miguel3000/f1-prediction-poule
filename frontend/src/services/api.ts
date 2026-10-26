@@ -138,8 +138,9 @@ export const getUserSprintPredictions = () =>
   api.get('/api/sprint-predictions');
 
 // Leaderboard
-export const getLeaderboard = () =>
-  api.get('/api/leaderboard');
+// `poule` is 'main' or a group id; left out, the server picks the player's default poule.
+export const getLeaderboard = (poule?: string) =>
+  api.get('/api/leaderboard', { params: poule ? { poule } : undefined });
 
 export const getTopThree = () =>
   api.get('/api/leaderboard/top-three');
@@ -147,11 +148,11 @@ export const getTopThree = () =>
 export const getUserRank = () =>
   api.get('/api/leaderboard/rank');
 
-export const getSeasonHistory = () =>
-  api.get('/api/leaderboard/season-history');
+export const getSeasonHistory = (poule?: string) =>
+  api.get('/api/leaderboard/season-history', { params: poule ? { poule } : undefined });
 
-export const getPlayerStats = () =>
-  api.get('/api/leaderboard/player-stats');
+export const getPlayerStats = (poule?: string) =>
+  api.get('/api/leaderboard/player-stats', { params: poule ? { poule } : undefined });
 
 // Upload
 export const uploadAvatar = (file: File) => {

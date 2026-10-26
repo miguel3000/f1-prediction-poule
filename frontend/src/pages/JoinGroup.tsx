@@ -36,16 +36,16 @@ const JoinGroup = () => {
 
   useEffect(() => {
     if (!signedIn || preview.state !== 'ok') return;
-    // Keep the player's own choice about the main poule unless they change it here.
-    setAlsoMain(user.plays_in_main !== false);
     getMyGroups()
       .then((res) => {
+        // Keep the player's own choice about the main poule unless they change it here.
+        setAlsoMain(res.data.playsInMain);
         // Group names are unique, so the name identifies the group.
         const mine = res.data.groups.find((g) => g.name === preview.name);
         setMemberGroupId(mine ? mine.id : null);
       })
       .catch(() => setMemberGroupId(null));
-  }, [signedIn, preview, user]);
+  }, [signedIn, preview]);
 
   const handleJoin = async () => {
     setJoining(true);
