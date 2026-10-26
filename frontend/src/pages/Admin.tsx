@@ -12,7 +12,16 @@ interface User {
   total_points: number;
   is_admin?: boolean;
   pitwall_access?: boolean;
+  can_start_groups?: boolean;
   created_at: string;
+}
+
+interface AdminGroup {
+  id: number;
+  name: string;
+  ownerId: number | null;
+  ownerNickname: string | null;
+  members: { id: number; nickname: string }[];
 }
 
 interface PitwallIdea {
@@ -116,6 +125,10 @@ const Admin = () => {
 
   const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
 
+  const [adminGroups, setAdminGroups] = useState<AdminGroup[]>([]);
+  const [groupBusyId, setGroupBusyId] = useState<number | null>(null);
+  const [reassignTo, setReassignTo] = useState<Record<number, string>>({});
+
   useEffect(() => {
     if (!user?.is_admin) return;
     getRaces(2026)
@@ -124,6 +137,7 @@ const Admin = () => {
     fetchUsers();
     fetchPitwallIdeas();
     fetchEmailLog();
+    fetchGroups();
   }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
@@ -175,6 +189,52 @@ const Admin = () => {
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch the email log');
     }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const response = await api.get('/api/admin/groups');
+      setAdminGroups(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch groups');
+    }
+  };
+
+  const handleToggleGroupStarter = async (target: User) => {
+    try {
+      await api.put(`/api/admin/users/${target.id}/group-starter`, { enabled: !target.can_start_groups });
+      setUsers((prev) => prev.map((u) => (u.id === target.id ? { ...u, can_start_groups: !target.can_start_groups } : u)));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update group access');
+    }
+  };
+
+  const runGroupAction = async (groupId: number, action: () => Promise<unknown>, failure: string) => {
+    setGroupBusyId(groupId);
+    try {
+      await action();
+    } catch (err: any) {
+      setError(err.response?.data?.error || failure);
+    } finally {
+      setGroupBusyId(null);
+      fetchGroups();
+    }
+  };
+
+  const handleDeleteGroup = (group: AdminGroup) => {
+    if (!confirm(`Delete the group "${group.name}"? Everyone is removed from it. Their points and predictions stay.`)) return;
+    runGroupAction(group.id, () => api.delete(`/api/admin/groups/${group.id}`), 'Failed to delete the group');
+  };
+
+  const handleRemoveGroupMember = (group: AdminGroup, member: { id: number; nickname: string }) => {
+    if (!confirm(`Remove "${member.nickname}" from "${group.name}"?`)) return;
+    runGroupAction(group.id, () => api.delete(`/api/admin/groups/${group.id}/members/${member.id}`), 'Failed to remove the member');
+  };
+
+  const handleReassignOwner = (group: AdminGroup) => {
+    const userId = parseInt(reassignTo[group.id] || '', 10);
+    if (!Number.isInteger(userId)) return;
+    runGroupAction(group.id, () => api.put(`/api/admin/groups/${group.id}/owner`, { userId }), 'Failed to reassign the owner');
   };
 
   const handleTogglePitwall = async (target: User) => {
@@ -1344,6 +1404,17 @@ const Admin = () => {
                       >
                         Set Password
                       </button>
+                      <button
+                        onClick={() => handleToggleGroupStarter(user)}
+                        className={`px-3 py-1 text-sm font-bold transition-colors ${
+                          user.can_start_groups
+                            ? 'bg-f1-yellow-500 text-black hover:brightness-110'
+                            : 'bg-f1-blue-dark text-white hover:brightness-125'
+                        }`}
+                        title="Let this player start groups"
+                      >
+                        Groups: {user.can_start_groups ? 'ON' : 'OFF'}
+                      </button>
                       {!user.is_admin && (
                         <button
                           onClick={() => handleTogglePitwall(user)}
@@ -1397,7 +1468,7 @@ const Admin = () => {
                 <p className="text-xs text-white mb-3">
                   ID {user.id} · Joined {new Date(user.created_at).toLocaleDateString()}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       setPasswordModal({ userId: user.id, nickname: user.nickname });
@@ -1408,6 +1479,14 @@ const Admin = () => {
                     className="flex-1 bg-f1-blue hover:brightness-110 text-white px-3 py-2 text-sm transition-colors"
                   >
                     Set Password
+                  </button>
+                  <button
+                    onClick={() => handleToggleGroupStarter(user)}
+                    className={`flex-1 px-3 py-2 text-sm font-bold transition-colors ${
+                      user.can_start_groups ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white'
+                    }`}
+                  >
+                    Groups: {user.can_start_groups ? 'ON' : 'OFF'}
                   </button>
                   {!user.is_admin && (
                     <button
@@ -1521,6 +1600,97 @@ const Admin = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Group play: every group with its owner and members (nicknames only, never emails) */}
+      <div className="card-f1 mt-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">Groups</h2>
+            <p className="text-xs text-white/60 mt-1">
+              Every group with its owner and members. Switch "Groups" on in the user list to let a player start groups.
+            </p>
+          </div>
+          <button onClick={fetchGroups} className="btn-f1-secondary text-sm py-2 px-4">
+            Refresh
+          </button>
+        </div>
+
+        {adminGroups.length === 0 ? (
+          <p className="text-center text-white py-6">No groups yet</p>
+        ) : (
+          <div>
+            {adminGroups.map((group, i) => (
+              <div key={group.id} className={`px-4 py-3 text-white ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <p className="font-f1 font-bold uppercase tracking-wide leading-tight break-words">{group.name}</p>
+                    <p className="text-[10px] text-white/70 uppercase tracking-wide">
+                      {group.members.length} {group.members.length === 1 ? 'member' : 'members'}
+                      {' \u00b7 '}
+                      {group.ownerNickname ? (
+                        <>Owner: {group.ownerNickname}</>
+                      ) : (
+                        <span className="bg-f1-yellow-500 text-black font-bold px-1.5 py-0.5">No owner</span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteGroup(group)}
+                    disabled={groupBusyId === group.id}
+                    className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors disabled:opacity-50"
+                  >
+                    Delete group
+                  </button>
+                </div>
+
+                {!group.ownerId && group.members.length > 0 && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <label htmlFor={`reassign-${group.id}`} className="text-xs uppercase tracking-wide text-white/80">
+                      Reassign to
+                    </label>
+                    <select
+                      id={`reassign-${group.id}`}
+                      value={reassignTo[group.id] || ''}
+                      onChange={(e) => setReassignTo((prev) => ({ ...prev, [group.id]: e.target.value }))}
+                      className="input-f1 py-1 text-sm"
+                    >
+                      <option value="">Choose a member</option>
+                      {group.members.map((m) => (
+                        <option key={m.id} value={m.id}>{m.nickname}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => handleReassignOwner(group)}
+                      disabled={!reassignTo[group.id] || groupBusyId === group.id}
+                      className="bg-f1-yellow-500 text-black font-bold px-3 py-1 text-sm hover:brightness-110 disabled:opacity-50"
+                    >
+                      Reassign
+                    </button>
+                  </div>
+                )}
+
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {group.members.map((m) => (
+                    <li key={m.id} className="flex items-center gap-2 bg-black/30 px-2 py-1 text-sm">
+                      <span className="break-words">{m.nickname}</span>
+                      {m.id !== group.ownerId && (
+                        <button
+                          onClick={() => handleRemoveGroupMember(group, m)}
+                          disabled={groupBusyId === group.id}
+                          aria-label={`Remove ${m.nickname} from ${group.name}`}
+                          className="text-white/70 hover:text-f1-yellow-400 font-bold disabled:opacity-50"
+                        >
+                          {'\u2715'}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
