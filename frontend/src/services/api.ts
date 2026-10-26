@@ -299,3 +299,22 @@ export const previewInvite = (code: string) =>
 export const joinGroup = (code: string, playsInMain?: boolean) =>
   api.post<{ groupId: number; name: string; alreadyMember: boolean }>('/api/groups/join', { code, playsInMain });
 export const setPlaysInMain = (value: boolean) => api.put('/api/auth/plays-in-main', { value });
+
+export interface PoulePick {
+  position: number;
+  driver: { id: number; name: string; name_acronym: string | null; team: string } | null;
+}
+export interface PoulePrediction {
+  user: { id: number; nickname: string; avatar_url: string | null };
+  picks: PoulePick[];
+  dnf_pick: { id: number; name: string; name_acronym: string | null } | null;
+  points_earned: number | null; // null until the race has been scored
+}
+export interface PoulePredictionsResponse {
+  locked: boolean;
+  race: { id: number; race_type: 'main' | 'sprint'; race_name: string };
+  predictions: PoulePrediction[];
+}
+// Everyone's picks for a race inside one poule; the server answers 403 until the race has started.
+export const getPoulePredictions = (raceId: number, poule?: string) =>
+  api.get<PoulePredictionsResponse>(`/api/races/${raceId}/predictions`, { params: poule ? { poule } : undefined });

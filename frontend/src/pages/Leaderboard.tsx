@@ -6,6 +6,7 @@ import { ordinal } from '../i18n/format';
 import { AuthContext } from '../context/AuthContext';
 import ShareButton from '../components/ShareButton';
 import PouleSelector, { PouleOption } from '../components/PouleSelector';
+import PoulePredictions from '../components/PoulePredictions';
 import SeasonReplay from '../components/progress/SeasonReplay';
 import type { SeasonRace, SeasonUser } from '../components/progress/types';
 
@@ -242,6 +243,8 @@ const Leaderboard = () => {
           </div>
         )}
       </div>
+
+      <PoulePredictions poule={pouleParam} meId={user?.id} />
 
       {/* Player Stats — deeper per-player breakdown beyond the totals column above */}
       <div className="max-w-5xl mx-auto mt-10">

@@ -76,7 +76,7 @@ test('main_race_returns_10_picks_and_the_dnf_pick', async () => {
     position: 1,
     driver: { id: season.driverIds[0], name: 'Driver 1', name_acronym: 'D01', team: 'Team 1' },
   });
-  assert.equal(alice.dnf_pick.id, season.driverIds[9]);
+  assert.deepEqual(alice.dnf_pick, { id: season.driverIds[9], name: 'Driver 10', name_acronym: 'D10' });
   assert.equal(alice.points_earned, 33);
 });
 

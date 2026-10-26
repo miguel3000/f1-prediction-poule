@@ -59,7 +59,9 @@ export const getPoulePredictions = async (req: Request, res: Response) => {
           position: i + 1,
           driver: drivers.get(r[`position_${i + 1}`]) ?? null,
         })),
-        dnf_pick: r.dnf_pick ? { id: r.dnf_pick, name: drivers.get(r.dnf_pick)?.name ?? '' } : null,
+        dnf_pick: r.dnf_pick
+          ? { id: r.dnf_pick, name: drivers.get(r.dnf_pick)?.name ?? '', name_acronym: drivers.get(r.dnf_pick)?.name_acronym ?? null }
+          : null,
         points_earned: scored ? Number(r.points_earned) || 0 : null,
       })),
     });
