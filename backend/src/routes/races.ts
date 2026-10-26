@@ -10,6 +10,7 @@ import {
   syncRaces
 } from '../controllers/raceController';
 import { authenticateAdmin } from '../middleware/adminAuth';
+import { getPoulePredictions } from '../controllers/poulePredictionsController';
 import { authenticate } from '../middleware/auth';
 
 const router = express.Router();
@@ -24,6 +25,7 @@ router.get('/weekends', authenticate, getRaceWeekends);
 router.get('/:id', authenticate, getRace);
 router.get('/:id/results', authenticate, getRaceResults);
 router.get('/:id/qualifying', authenticate, getQualifyingOrder);
+router.get('/:id/predictions', authenticate, getPoulePredictions); // everyone's picks, once the race has started
 router.post('/sync', authenticateAdmin, syncRaces); // Admin use — also exposed at /api/admin/cronjobs/sync-calendar
 
 export default router;
