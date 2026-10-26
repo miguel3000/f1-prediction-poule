@@ -1,9 +1,16 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
+import { resolvePoule } from '../services/pouleScope';
+import { sendGroupError } from './groupController';
+import { GroupError } from '../services/groupService';
 import { isDnfStatus } from '../utils/resultStatus';
+
+// Which poule a request is about (?poule=main or a group id); see services/pouleScope.ts
+const pouleOf = (req: Request): string | undefined => (typeof req.query.poule === 'string' ? req.query.poule : undefined);
 
 export const getLeaderboard = async (req: Request, res: Response) => {
   try {
+    const scope = await resolvePoule((req as any).userId, pouleOf(req));
     const result = await query(
       `WITH current_season AS (
         SELECT EXTRACT(YEAR FROM CURRENT_DATE)::int AS season
@@ -17,10 +24,10 @@ export const getLeaderboard = async (req: Request, res: Response) => {
       ),
       last_race_points AS (
         SELECT user_id, points_earned
-        FROM predictions WHERE race_id = (SELECT id FROM last_completed_race)
+        FROM predictions WHERE race_id = (SELECT id FROM last_completed_race) AND user_id = ANY($1)
         UNION ALL
         SELECT user_id, points_earned
-        FROM sprint_predictions WHERE race_id = (SELECT id FROM last_completed_race)
+        FROM sprint_predictions WHERE race_id = (SELECT id FROM last_completed_race) AND user_id = ANY($1)
       ),
       last_race_ranked AS (
         SELECT user_id, points_earned,
@@ -55,11 +62,14 @@ export const getLeaderboard = async (req: Request, res: Response) => {
       LEFT JOIN last_race_ranked lr ON u.id = lr.user_id
       LEFT JOIN best_race br ON u.id = br.user_id
       LEFT JOIN races r ON br.race_id = r.id
-      ORDER BY u.total_points DESC, u.nickname ASC`
+      WHERE u.id = ANY($1)
+      ORDER BY u.total_points DESC, u.nickname ASC`,
+      [scope.userIds]
     );
 
     res.json(result.rows);
   } catch (error) {
+    if (error instanceof GroupError) return sendGroupError(res, error);
     console.error('Get leaderboard error:', error);
     res.status(500).json({ error: 'Failed to get leaderboard' });
   }
@@ -67,17 +77,21 @@ export const getLeaderboard = async (req: Request, res: Response) => {
 
 export const getTopThree = async (req: Request, res: Response) => {
   try {
+    const scope = await resolvePoule((req as any).userId, pouleOf(req));
     const result = await query(
       `SELECT
         id, nickname, avatar_url, total_points,
         ROW_NUMBER() OVER (ORDER BY total_points DESC) as rank
        FROM users
+       WHERE id = ANY($1)
        ORDER BY total_points DESC, nickname ASC
-       LIMIT 3`
+       LIMIT 3`,
+      [scope.userIds]
     );
 
     res.json(result.rows);
   } catch (error) {
+    if (error instanceof GroupError) return sendGroupError(res, error);
     console.error('Get top three error:', error);
     res.status(500).json({ error: 'Failed to get top three' });
   }
@@ -86,6 +100,7 @@ export const getTopThree = async (req: Request, res: Response) => {
 export const getUserRank = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
+    const scope = await resolvePoule(userId, pouleOf(req));
 
     // Use window function for efficient rank calculation (handles ties properly)
     const result = await query(
@@ -94,9 +109,10 @@ export const getUserRank = async (req: Request, res: Response) => {
           id, nickname, avatar_url, total_points,
           DENSE_RANK() OVER (ORDER BY total_points DESC) as rank
         FROM users
+        WHERE id = ANY($2)
       ) ranked
       WHERE id = $1`,
-      [userId]
+      [userId, scope.userIds]
     );
 
     if (result.rows.length === 0) {
@@ -105,6 +121,7 @@ export const getUserRank = async (req: Request, res: Response) => {
 
     res.json(result.rows[0]);
   } catch (error) {
+    if (error instanceof GroupError) return sendGroupError(res, error);
     console.error('Get user rank error:', error);
     res.status(500).json({ error: 'Failed to get user rank' });
   }
@@ -112,6 +129,7 @@ export const getUserRank = async (req: Request, res: Response) => {
 
 export const getSeasonHistory = async (req: Request, res: Response) => {
   try {
+    const scope = await resolvePoule((req as any).userId, pouleOf(req));
     const result = await query(
       `WITH current_season AS (
         SELECT EXTRACT(YEAR FROM CURRENT_DATE)::int AS season
@@ -146,7 +164,9 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
       FROM users u
       CROSS JOIN season_races sr
       LEFT JOIN all_predictions ap ON ap.user_id = u.id AND ap.race_id = sr.id
-      ORDER BY sr.race_date ASC, u.nickname ASC`
+      WHERE u.id = ANY($1)
+      ORDER BY sr.race_date ASC, u.nickname ASC`,
+      [scope.userIds]
     );
 
     // Pivot rows into { races[], users[] } structure
@@ -180,6 +200,7 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
       users: Array.from(usersMap.values())
     });
   } catch (error) {
+    if (error instanceof GroupError) return sendGroupError(res, error);
     console.error('Get season history error:', error);
     res.status(500).json({ error: 'Failed to get season history' });
   }
@@ -191,6 +212,7 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
 // points_earned is only the summed total per prediction, not a breakdown.
 export const getPlayerStats = async (req: Request, res: Response) => {
   try {
+    const scope = await resolvePoule((req as any).userId, pouleOf(req));
     const racesResult = await query(
       `SELECT id, race_name, race_type, race_date
        FROM races
@@ -216,7 +238,7 @@ export const getPlayerStats = async (req: Request, res: Response) => {
       ),
       query(`SELECT * FROM predictions WHERE race_id = ANY($1)`, [raceIds]),
       query(`SELECT * FROM sprint_predictions WHERE race_id = ANY($1)`, [raceIds]),
-      query(`SELECT id, nickname, total_points FROM users`),
+      query(`SELECT id, nickname, total_points FROM users WHERE id = ANY($1)`, [scope.userIds]),
     ]);
 
     // resultsByRace[kind][raceId] -> [{ driver_id, position }]
@@ -320,6 +342,7 @@ export const getPlayerStats = async (req: Request, res: Response) => {
 
     res.json(stats);
   } catch (error) {
+    if (error instanceof GroupError) return sendGroupError(res, error);
     console.error('Get player stats error:', error);
     res.status(500).json({ error: 'Failed to get player stats' });
   }

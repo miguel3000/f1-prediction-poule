@@ -197,7 +197,7 @@ export const getSeasonStats = async (req: Request, res: Response) => {
     const topScorersResult = await query(
       `SELECT u.nickname, u.total_points
        FROM users u
-       WHERE u.total_points > 0
+       WHERE u.total_points > 0 AND u.plays_in_main = TRUE
        ORDER BY u.total_points DESC
        LIMIT 5`
     );
