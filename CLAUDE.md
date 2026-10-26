@@ -41,7 +41,12 @@ npm run dev          # Start with nodemon (hot reload)
 npm run build        # Compile TypeScript
 npm run migrate      # Run database migrations
 npm run seed         # Seed database
+npm test             # Tests against a throwaway Postgres (see below)
 ```
+
+Tests run against a throwaway database on port 5433 (`docker compose -f docker-compose.test.yml up -d`,
+or `scripts/test-db.sh start` without Docker); `npm test` resets it and builds the real schema with the real migration.
+Never point `DATABASE_URL` for tests at a database you care about: the reset refuses any name without `f1_test`.
 
 **Frontend:**
 ```bash
@@ -161,6 +166,9 @@ PostgreSQL with these main tables:
 - `sprint_predictions` - Sprint predictions (8 positions)
 - `race_results` - Official race results
 - `sprint_results` - Official sprint results
+- `groups` - Private poules (group play): unique `name`/`name_key`, `owner_id` (NULL when the owner's account is gone), secret `invite_code`
+- `group_members` - Who is in which group (PK `group_id, user_id`)
+- `users.can_start_groups` (may start groups, Pitlane switch) and `users.plays_in_main` (appears in the main poule); see `decisions.md` "Groups"
 
 ## API Endpoints
 
@@ -174,6 +182,7 @@ All routes prefixed with `/api`:
 - `/stats` - Practice, qualifying, race results
 - `/upload` - Avatar uploads
 - `/admin` - Admin functions
+- `/groups` - Group play: my groups, create/rename/delete, invite link, join, leave (authenticated; `GET /groups/join/:code` is a public preview)
 
 ## Environment Variables
 

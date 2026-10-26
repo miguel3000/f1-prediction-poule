@@ -128,6 +128,40 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   "Done, form filled". If it is unclear whether they want the sprint or the main race, ask that one thing.
 - Season points reset on 1 January (cron). Season predictions are a future pre-season event.
 
+### Groups (private poules)
+
+- A group is a private poule inside the game. Everyone still predicts once and scores the same;
+  each group has its own standings, season replay, player stats and predictions list. The **main
+  poule** is every player who plays in main. All of it is scoped in one place,
+  `services/pouleScope.ts` `resolvePoule`; any new standings/stats/predictions query must filter
+  on `u.id = ANY($1)` with its `userIds`.
+- **Who starts groups**: only players the owner picks, with the Pitlane "Groups" switch
+  (`users.can_start_groups`, off by default; admins need it too). A starter can have several groups;
+  no size limit while this is being tested.
+- **Names are unique** (ignoring case and extra spaces, `groups.name_key`), 3 to 40 characters,
+  stored as plain text and always shown escaped.
+- **The invite is one secret link** `/join/<code>` that the starter shares themselves. The app never
+  emails invites. It works for many people until the starter presses "New link": the old one then
+  shows "not valid". Codes are 24 random bytes; the preview shows only the group name, is rate
+  limited, and unknown and reset codes look identical. Only the owner sees the code; it is never put in a log or an email.
+- **Joining**: a new player signs up through `/auth?join=<code>`, lands on How to Play with a "You
+  joined" banner and gets the normal welcome email with one extra line naming the group; an existing
+  player sees "Join *name*?" and lands on the group standings. Everyone makes the choice "also play
+  in the main poule" (`users.plays_in_main`): it starts from their current setting (ticked for a new
+  player) and can be changed on the Profile page.
+- **Group-only players** are absent from every main list (standings, replay, stats, top scorers).
+  They cannot ask for the main poule (403) and default to their first group by name. A player in no
+  poule at all is told so on the Standings page and can switch the main poule back on in the Profile;
+  the Profile refuses "off" in the UI while they are in no group.
+- **Visibility**: standings and points are always visible inside a poule; other players'
+  **predictions only once the race has started** (`utils/predictionLock.ts`, the same moment
+  predictions lock), also in the main poule. Nobody outside a group can learn it exists (404).
+- The owner cannot leave (they delete the group; an admin can reassign it); members can leave.
+  Deleting a user removes their memberships and leaves the group ownerless, which the Pitlane shows
+  as "No owner" with a reassign control. Deleting a group removes memberships only; points and
+  predictions stay. Group lists show nicknames and avatars, never email addresses.
+- No group rank in result emails in this first version.
+
 ---
 
 ## 3. Data and results
@@ -249,6 +283,8 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   server errors have addresses masked (`services/emailLog.ts`). New logs, alerts and admin cards
   follow the same rule: nickname yes, address no.
 - No account enumeration in login, reset or sign-up responses.
+- Group member lists, the Pitlane Groups card and the predictions list show nickname and avatar
+  only, never an email address; a group's invite code is visible to its owner and nobody else.
 - The privacy page already promises deletion of an account and its data; account deletion must
   keep doing that.
 
@@ -394,6 +430,9 @@ Why: <two or three lines, sources named>
 - `f1.miguelm.nl` redirects to `pouleposition.nl`; the user removes the DNS record and the tunnel
   entry when its traffic is gone.
 - Sign-up emails to `moeders` and `SpaceAnanas` before 12 Oct were not logged; later ones are.
+- Group play: a group-only player who loses their last group (leaves, is removed, or the group is
+  deleted) is in no poule until they switch the main poule back on in the Profile; the server does
+  not do that for them, and `PUT /api/auth/plays-in-main` still accepts "off" for a player with no group.
 
 ---
 
@@ -416,3 +455,6 @@ Why: <two or three lines, sources named>
 | 2026-10-12 | Season progression is shown as a season replay (slider through the races, yellow number square + blue bars), not a line chart | Twelve lines are unreadable on a phone; the owner picked it from three prototypes |
 | 2026-10-12 | Result emails hide the results by default in every app, with tap-to-reveal where the app supports it and a button to the site everywhere | Blur only works in 3 of the common apps and half the players use Gmail; the owner chose "hidden everywhere, tap to reveal where possible" |
 | 2026-10-12 | The Sign-up Emails log keeps no player email addresses | A new player can be mentioned by nickname, the address must not be exposed |
+| 2026-10-26 | Groups: unique names, a secret invite link the starter shares, starters picked by the owner | The owner wants friends to play among themselves before next season |
+| 2026-10-26 | Other players' predictions are visible only once the race has started, in groups and in the main poule | Seeing picks before the lock would let players copy each other |
+| 2026-10-26 | A player can play in the main poule, in groups, or both ("also play in the main poule", default yes) | Group-only players must not leak into main lists; existing players stay as they are |
