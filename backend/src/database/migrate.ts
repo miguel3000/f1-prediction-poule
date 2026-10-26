@@ -220,6 +220,31 @@ const runMigration = async () => {
     await query(`ALTER TABLE races ADD COLUMN IF NOT EXISTS grid_alert_sent BOOLEAN DEFAULT FALSE`);
     console.log('starting_grid ensured.');
 
+    // Group play (private poules): two switches on users, the groups and their members
+    console.log('Checking for group play tables and columns...');
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plays_in_main BOOLEAN NOT NULL DEFAULT TRUE`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS can_start_groups BOOLEAN NOT NULL DEFAULT FALSE`);
+    await query(`
+      CREATE TABLE IF NOT EXISTS groups (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(40) NOT NULL,
+        name_key VARCHAR(40) NOT NULL UNIQUE,
+        owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        invite_code VARCHAR(64) NOT NULL UNIQUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await query(`
+      CREATE TABLE IF NOT EXISTS group_members (
+        group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (group_id, user_id)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members(user_id)`);
+    console.log('groups ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

@@ -1,0 +1,21 @@
+# Throwaway Postgres for the backend tests (and for local checks of the frontend):
+#   docker compose -f docker-compose.test.yml up -d
+# Host port 5433, so it never collides with the dev database on 5432.
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: f1-postgres-test
+    environment:
+      POSTGRES_DB: f1_test
+      POSTGRES_USER: f1user
+      POSTGRES_PASSWORD: f1password
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U f1user -d f1_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

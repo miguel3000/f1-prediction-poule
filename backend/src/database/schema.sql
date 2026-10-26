@@ -245,3 +245,26 @@ CREATE TABLE IF NOT EXISTS starting_grid (
 
 -- Set once the admin has been told a race or sprint is about to start without a starting grid
 ALTER TABLE races ADD COLUMN IF NOT EXISTS grid_alert_sent BOOLEAN DEFAULT FALSE;
+
+-- Group play (private poules): groups, who is in them, and two per-player switches.
+-- plays_in_main: whether the player appears in the main poule (everyone does today).
+-- can_start_groups: whether the owner has allowed this player to start groups.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plays_in_main BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS can_start_groups BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS groups (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(40) NOT NULL,
+  name_key VARCHAR(40) NOT NULL UNIQUE,
+  owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  invite_code VARCHAR(64) NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+  group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (group_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members(user_id);
