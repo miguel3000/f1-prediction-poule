@@ -1,6 +1,6 @@
 # Group play (private poules) — design
 
-Status: draft for the owner's approval. Nothing is built yet.
+Status: approved by the owner on 2026-10-26 (group names must be unique). Nothing is built yet.
 
 ## Why
 
@@ -69,8 +69,9 @@ asked to reassign it (it shows in the Pitlane); members are not kicked out. Dele
 that person's memberships.
 
 **Groups across seasons.** **(my call)** A group stays when the season changes in January; the standings
-show the current season, like the main poule. **(my call)** Group names do not have to be unique (the link
-identifies the group), 3 to 40 characters.
+show the current season, like the main poule. Group names must be unique (case-insensitive), 3 to 40 characters,
+and a taken name is refused with a clear message (owner's decision). The link, not the name, is what lets
+people join.
 
 **Emails.** Result emails, reminders and the welcome email stay as they are, apart from the one extra
 line in the welcome email. **(my call)** No group rank in result emails in the first version.
