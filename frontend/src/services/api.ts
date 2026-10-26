@@ -21,8 +21,16 @@ api.interceptors.request.use((config) => {
 });
 
 // Auth
-export const registerWithPassword = (nickname: string, email: string, password: string, language?: string) =>
-  api.post('/api/auth/register-password', { nickname, email, password, language });
+export const registerWithPassword = (
+  nickname: string,
+  email: string,
+  password: string,
+  language?: string,
+  group?: { joinCode: string; playsInMain: boolean }
+) =>
+  api.post<{ token: string; joinedGroup?: { id: number; name: string } }>('/api/auth/register-password', {
+    nickname, email, password, language, ...(group ?? {}),
+  });
 
 export const loginWithPassword = (email: string, password: string) =>
   api.post('/api/auth/login-password', { email, password });

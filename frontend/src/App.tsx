@@ -25,6 +25,7 @@ import PageMeta from './components/PageMeta';
 import Tutorial from './pages/Tutorial';
 import PitWall from './pages/PitWall';
 import Groups from './pages/Groups';
+import JoinGroup from './pages/JoinGroup';
 import { AuthContext } from './context/AuthContext';
 import { useLang } from './i18n/LanguageContext';
 import { getProfile } from './services/api';
@@ -39,6 +40,7 @@ const AppRoutes = () => (
     <Route path="/tutorial" element={<Tutorial />} />
     <Route path="/rules" element={<Rules />} />
     <Route path="/auth" element={<Auth />} />
+    <Route path="/join/:code" element={<JoinGroup />} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/pitlane" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

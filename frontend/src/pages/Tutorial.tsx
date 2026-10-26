@@ -278,7 +278,10 @@ const RealExample = ({ example }: { example: TutorialExample }) => {
 const Tutorial = () => {
   const { t } = useLang();
   const { user } = useContext(AuthContext);
-  const { hash } = useLocation();
+  const { hash, state } = useLocation();
+  // Set by the sign-up that came from a group invite link (see Auth).
+  const joinedGroup = (state as { joinedGroup?: { id: number; name: string } } | null)?.joinedGroup;
+  const [bannerClosed, setBannerClosed] = useState(false);
 
   // A real prediction by our AI player; if it cannot be loaded the page shows made-up examples instead.
   const [example, setExample] = useState<TutorialExample | null>(null);
@@ -344,6 +347,24 @@ const Tutorial = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
+      {joinedGroup && !bannerClosed && (
+        <div className="mb-6 bg-f1-blue flex items-stretch" role="status">
+          <div className="flex-1 min-w-0 px-4 py-3 text-white">
+            <p className="font-semibold break-words">{t('groups.joined.banner', { group: joinedGroup.name })}</p>
+            <Link to={`/leaderboard?poule=${joinedGroup.id}`} className="text-sm underline hover:text-f1-yellow-400">
+              {t('groups.joined.standings')}
+            </Link>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBannerClosed(true)}
+            aria-label={t('groups.joined.dismiss')}
+            className="w-12 shrink-0 bg-f1-yellow-500 text-black font-bold text-lg hover:brightness-110"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <h1 className="text-4xl font-bold mb-2 text-center text-f1-yellow-500">{t('tutorial.title')}</h1>
       <p className="text-center text-white mb-8">{t('tutorial.subtitle')}</p>
 
