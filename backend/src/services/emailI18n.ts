@@ -120,6 +120,7 @@ const en = {
   'welcome.rules': 'The full rules are on the website:',
   'welcome.rulesLink': 'Read the rules',
   'welcome.questions': 'Questions? Just reply to this email.',
+  'welcome.group': 'You joined the group {group}.',
   'welcome.late':
     'Sorry this email took a while. A normal pit stop takes about two seconds; our welcome email took quite a bit longer. The mechanic was busy tinkering with the website. Better late than never: here is your welcome after all.',
   'spoiler.preheader': 'Spoiler-free: the results stay hidden until you reveal them.',
@@ -243,6 +244,7 @@ const nl: Record<EmailKey, string> = {
   'welcome.rules': 'De volledige regels staan op de website:',
   'welcome.rulesLink': 'Lees de regels',
   'welcome.questions': 'Vragen? Beantwoord gewoon deze e-mail.',
+  'welcome.group': 'Je bent lid geworden van de groep {group}.',
   'welcome.late':
     'Sorry dat dit bericht er even over deed. Een gewone pitstop duurt ongeveer twee seconden; onze welkomstmail deed er flink langer over. De monteur had het te druk met sleutelen aan de website. Beter laat dan nooit: hier is alsnog je welkom.',
   'spoiler.preheader': 'Spoilervrij: de uitslag blijft verborgen tot jij hem laat zien.',

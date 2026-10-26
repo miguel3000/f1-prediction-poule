@@ -15,6 +15,8 @@ export type LoggedEmailKind = 'welcome' | 'member_joined' | 'member_left';
 export interface WelcomePayload {
   nickname: string;
   language?: string | null;
+  // The group the player joined through an invite link, named in the welcome mail
+  groupName?: string;
 }
 
 type Payload = WelcomePayload | MemberNoticeDetails;
@@ -27,8 +29,8 @@ const errorText = (error: unknown) => maskAddresses(error instanceof Error ? err
 
 const dispatch = async (kind: LoggedEmailKind, recipient: string, payload: Payload, late: boolean) => {
   if (kind === 'welcome') {
-    const { nickname, language } = payload as WelcomePayload;
-    await sendWelcomeEmail(recipient, nickname, language, { late });
+    const { nickname, language, groupName } = payload as WelcomePayload;
+    await sendWelcomeEmail(recipient, nickname, language, { late, groupName });
   } else {
     await sendMemberNotice(payload as MemberNoticeDetails);
   }

@@ -1167,7 +1167,7 @@ export const sendWelcomeEmail = async (
   email: string,
   nickname: string,
   language?: string | null,
-  opts: { late?: boolean } = {}
+  opts: { late?: boolean; groupName?: string } = {}
 ): Promise<void> => {
   const lang = normalizeLang(language);
   const appUrl = process.env.FRONTEND_URL!;
@@ -1186,6 +1186,7 @@ export const sendWelcomeEmail = async (
       ${emailBanner(et(lang, 'welcome.banner'), { bg: BRAND_YELLOW })}
       <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
       ${opts.late ? `<p style="line-height: 1.5; font-style: italic;">${et(lang, 'welcome.late')}</p>` : ''}
+      ${opts.groupName ? `<p style="line-height: 1.5;">${et(lang, 'welcome.group', { group: escapeHtml(opts.groupName) })}</p>` : ''}
       <p style="line-height: 1.5;">${et(lang, 'welcome.intro')}</p>
 
       ${heading(et(lang, 'welcome.how.title'))}

@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { query } from '../config/database';
 import { sendPasswordReset } from '../services/emailService';
 import { sendLogged, logSkipped } from '../services/emailLog';
+import { previewByCode, joinGroup } from '../services/groupService';
 import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
 import { randomNickname, numberedNickname } from '../utils/nicknameGenerator';
 
@@ -57,10 +58,10 @@ export const getProfile = async (req: Request, res: Response) => {
 // A burst of sign-ups (a bot hammering the form) is capped so it cannot flood the inbox.
 const MAX_SIGNUP_NOTICES_PER_HOUR = 10;
 
-const sendSignupEmails = (user: any) => {
+const sendSignupEmails = (user: any, groupName?: string) => {
   (async () => {
     const recent = await query("SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '1 hour'");
-    const welcome = { nickname: user.nickname, language: user.language };
+    const welcome = { nickname: user.nickname, language: user.language, ...(groupName ? { groupName } : {}) };
     const total = await query('SELECT COUNT(*) FROM users');
     const notice = {
       kind: 'joined' as const,
@@ -103,6 +104,9 @@ export const registerWithPassword = async (req: Request, res: Response) => {
     const { nickname, email, password } = req.body;
     // Whatever language the visitor was using when they signed up
     const language = req.body.language === 'en' || req.body.language === 'nl' ? req.body.language : null;
+    // Signing up through a group's invite link (see group play)
+    const joinCode = typeof req.body.joinCode === 'string' ? req.body.joinCode : undefined;
+    const playsInMain = typeof req.body.playsInMain === 'boolean' ? req.body.playsInMain : undefined;
 
     if (!nickname || !email || !password) {
       return res.status(400).json({ error: 'Nickname, email, and password are required' });
@@ -110,6 +114,12 @@ export const registerWithPassword = async (req: Request, res: Response) => {
 
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // A bad invite link is refused before anything is created, so nobody ends up registered
+    // but silently left out of the group they came for.
+    if (joinCode !== undefined && !(await previewByCode(joinCode))) {
+      return res.status(400).json({ error: 'Invite link is not valid' });
     }
 
     // Check if user already exists
@@ -133,6 +143,17 @@ export const registerWithPassword = async (req: Request, res: Response) => {
 
     const user = result.rows[0];
 
+    let joined: { groupId: number; name: string } | null = null;
+    if (joinCode !== undefined) {
+      try {
+        joined = await joinGroup(user.id, joinCode, playsInMain);
+      } catch (error) {
+        // Never leave a half-registered friend behind.
+        await query('DELETE FROM users WHERE id = $1', [user.id]);
+        throw error;
+      }
+    }
+
     // Generate session token
     const sessionToken = jwt.sign(
       { userId: user.id, email: user.email },
@@ -140,10 +161,11 @@ export const registerWithPassword = async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
-    sendSignupEmails(user);
+    sendSignupEmails(user, joined?.name);
 
     res.status(201).json({
       message: 'Account created successfully!',
+      ...(joined ? { joinedGroup: { id: joined.groupId, name: joined.name } } : {}),
       token: sessionToken,
       user: {
         id: user.id,
