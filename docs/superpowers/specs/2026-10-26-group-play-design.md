@@ -33,6 +33,7 @@ The app never emails invites. **(my call)** The link can be used by many people 
 - A new player registers first (the normal sign-up). The sign-up page says they are joining a group, and
   tells them they can choose to play in the main poule as well or only in the group.
 - Everyone who joins through a link makes that choice ("also play in the main poule", yes or no).
+  **(my call)** The box starts ticked ("yes"), which matches how everyone plays today.
   **(my call)** A player can change it later on their Profile page, and the existing players can use that
   switch too.
 - A player who is already in the group just sees "you are already in".
@@ -46,8 +47,9 @@ appear on the main Standings page, the main season replay, the main player stats
 the main poule (for example the top scorers on the Stats page). Their points and predictions are the same
 as before.
 
-**Standings.** The Standings page gets a "which poule" choice: the main poule, and one entry per group
-the player is in. Everything on that page follows it: the standings table, the season replay and the
+**Standings.** The Standings page gets a "which poule" choice: one entry per poule the player is in: the
+main poule (if they play in it) and each group. **(my call)** A player who plays only in a group does not
+see the main poule at all, the same way they are not in it. Everything on that page follows it: the standings table, the season replay and the
 player stats. **(my call)** Group standings use each member's whole-season points, like the main poule,
 including races before they joined, because predictions are the player's own. **(my call)** The other
 pages (Stats, Races, My Predictions) stay as they are in the first version.
@@ -66,6 +68,10 @@ delete a group. **(my call)** If a starter deletes their account, the group stay
 asked to reassign it (it shows in the Pitlane); members are not kicked out. Deleting an account removes
 that person's memberships.
 
+**Groups across seasons.** **(my call)** A group stays when the season changes in January; the standings
+show the current season, like the main poule. **(my call)** Group names do not have to be unique (the link
+identifies the group), 3 to 40 characters.
+
 **Emails.** Result emails, reminders and the welcome email stay as they are, apart from the one extra
 line in the welcome email. **(my call)** No group rank in result emails in the first version.
 
@@ -82,7 +88,7 @@ public list of groups, season predictions, changing what the other pages show.
 
 ## Anti-goals (a failure even if it technically works)
 
-- A stranger can find a group, or see who is in it, without the link.
+- A stranger can find a group, or see who is in it, without the link (so the link must be unguessable and joining rate-limited).
 - Anyone's email address becomes visible to another player.
 - Anyone's points or ranking in the main poule change without them choosing it.
 - A player's prediction becomes visible to others before the race starts.
