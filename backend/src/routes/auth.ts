@@ -12,6 +12,7 @@ import {
   deleteAccount,
   unsubscribe,
   suggestNickname,
+  setPlaysInMain,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 
@@ -43,6 +44,7 @@ router.get('/profile', authenticate, getProfile);
 router.put('/email', authenticate, changeEmail);
 router.put('/nickname', authenticate, changeNickname);
 router.put('/language', authenticate, changeLanguage);
+router.put('/plays-in-main', authenticate, setPlaysInMain);
 router.delete('/account', authenticate, deleteAccount);
 
 // Public — reached directly from an email link, not the app

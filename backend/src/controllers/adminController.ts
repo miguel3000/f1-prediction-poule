@@ -30,7 +30,7 @@ const cronJobStatus: {
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const result = await query(
-      `SELECT id, nickname, email, avatar_url, total_points, is_admin, pitwall_access, created_at
+      `SELECT id, nickname, email, avatar_url, total_points, is_admin, pitwall_access, can_start_groups, plays_in_main, created_at
        FROM users
        ORDER BY created_at DESC`
     );
@@ -63,6 +63,30 @@ export const setPitwallAccess = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Set pit wall access error:', error);
     res.status(500).json({ error: 'Failed to update Pit Wall access' });
+  }
+};
+
+// Lets one player start groups (group play). Off by default; only the owner of the site switches it.
+export const setGroupStarter = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { enabled } = req.body || {};
+
+    if (Number.isNaN(id) || typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'A user id and enabled (true/false) are required' });
+    }
+
+    const result = await query(
+      'UPDATE users SET can_start_groups = $1 WHERE id = $2 RETURNING id, nickname, can_start_groups',
+      [enabled, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Set group starter error:', error);
+    res.status(500).json({ error: 'Failed to update group access' });
   }
 };
 

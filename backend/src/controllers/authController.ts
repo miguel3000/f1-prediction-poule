@@ -39,6 +39,8 @@ export const getProfile = async (req: Request, res: Response) => {
       total_points: user.total_points,
       is_admin: user.is_admin,
       pitwall_access: user.pitwall_access ?? false,
+      can_start_groups: user.can_start_groups ?? false,
+      plays_in_main: user.plays_in_main ?? true,
       language: user.language ?? null,
       created_at: user.created_at
     });
@@ -284,6 +286,25 @@ export const changeLanguage = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Change language error:', error);
     res.status(500).json({ error: 'Failed to save language' });
+  }
+};
+
+// Whether the player appears in the main poule (see group play). Anyone can change their own.
+export const setPlaysInMain = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).userId;
+    const value = req.body?.value;
+    if (typeof value !== 'boolean') {
+      return res.status(400).json({ error: 'value must be true or false' });
+    }
+    const updated = await query('UPDATE users SET plays_in_main = $1 WHERE id = $2', [value, userId]);
+    if (updated.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ plays_in_main: value });
+  } catch (error) {
+    console.error('Set plays in main error:', error);
+    res.status(500).json({ error: 'Failed to save the setting' });
   }
 };
 

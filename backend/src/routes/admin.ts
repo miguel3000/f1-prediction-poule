@@ -15,6 +15,7 @@ import {
   getRacePredictionStatus,
   setUserPassword,
   setPitwallAccess,
+  setGroupStarter,
   listPitwallIdeas,
   decidePitwallIdea,
   listEmailLog
@@ -22,6 +23,7 @@ import {
 import { syncDrivers } from '../controllers/driverController';
 import { syncRaces } from '../controllers/raceController';
 import { authenticateAdmin } from '../middleware/adminAuth';
+import { adminListGroups, adminDeleteGroup, adminRemoveMember, adminReassignOwner } from '../controllers/groupController';
 
 const router = express.Router();
 
@@ -29,6 +31,13 @@ const router = express.Router();
 router.get('/users', authenticateAdmin, getAllUsers);
 router.delete('/users/:id', authenticateAdmin, deleteUser);
 router.post('/users/:userId/password', authenticateAdmin, setUserPassword);
+
+// Group play: who may start groups, and every group with its owner and members
+router.put('/users/:id/group-starter', authenticateAdmin, setGroupStarter);
+router.get('/groups', authenticateAdmin, adminListGroups);
+router.delete('/groups/:id', authenticateAdmin, adminDeleteGroup);
+router.delete('/groups/:id/members/:userId', authenticateAdmin, adminRemoveMember);
+router.put('/groups/:id/owner', authenticateAdmin, adminReassignOwner);
 
 // Player Pit Wall: who has access, and reviewing what they submit
 router.put('/users/:id/pitwall-access', authenticateAdmin, setPitwallAccess);

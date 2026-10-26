@@ -10,6 +10,8 @@ class SimpleCache {
   constructor() {
     // Clean up expired entries every 5 minutes
     this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+    // A cleanup timer must never keep a process alive (tests that import the cache would not exit).
+    this.cleanupInterval.unref();
   }
 
   set<T>(key: string, data: T, ttlMs: number): void {
