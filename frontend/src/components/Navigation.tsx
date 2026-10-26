@@ -30,6 +30,7 @@ const Navigation = ({ isOpen, onClose }: NavigationProps) => {
       { path: '/drivers',     label: t('nav.drivers'),       icon: <HelmetIcon /> },
       { path: '/teams',       label: t('nav.teams'),         icon: <TeamIcon /> },
       { path: '/leaderboard', label: t('nav.championship'),  icon: <TrophyIcon /> },
+      { path: '/groups',      label: t('nav.groups'),        icon: <TeamIcon /> },
       { path: '/predictions', label: t('nav.myPredictions'), icon: <PredictionIcon /> },
       { path: '/stats',       label: t('nav.statistics'),    icon: <ChartIcon /> },
       { path: '/news',        label: t('nav.news'),          icon: <NewsIcon /> },

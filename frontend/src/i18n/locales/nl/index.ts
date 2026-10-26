@@ -17,6 +17,7 @@ import { about } from './about';
 import { privacy } from './privacy';
 import { meta } from './meta';
 import { tutorial } from './tutorial';
+import { groups } from './groups';
 
 export const nl: Record<keyof typeof en, string> = {
   ...common,
@@ -37,4 +38,5 @@ export const nl: Record<keyof typeof en, string> = {
   ...privacy,
   ...meta,
   ...tutorial,
+  ...groups,
 };

@@ -261,3 +261,32 @@ export const sendBroadcastEmail = (subject: string, message: string) =>
 
 
 export default api;
+
+// ---- Group play (private poules) ----
+export interface MyGroup {
+  id: number;
+  name: string;
+  isOwner: boolean;
+  memberCount: number;
+  inviteCode: string | null; // only for the owner
+}
+export interface GroupMember {
+  id: number;
+  nickname: string;
+  avatar_url: string | null;
+}
+
+export const getMyGroups = () => api.get<{ playsInMain: boolean; groups: MyGroup[] }>('/api/groups/mine');
+export const createGroup = (name: string) =>
+  api.post<{ id: number; name: string; inviteCode: string }>('/api/groups', { name });
+export const renameGroup = (id: number, name: string) => api.patch<{ name: string }>(`/api/groups/${id}`, { name });
+export const newGroupLink = (id: number) => api.post<{ inviteCode: string }>(`/api/groups/${id}/new-link`);
+export const deleteGroup = (id: number) => api.delete(`/api/groups/${id}`);
+export const getGroupMembers = (id: number) => api.get<GroupMember[]>(`/api/groups/${id}/members`);
+export const removeGroupMember = (id: number, userId: number) => api.delete(`/api/groups/${id}/members/${userId}`);
+export const leaveGroup = (id: number) => api.post(`/api/groups/${id}/leave`);
+export const previewInvite = (code: string) =>
+  api.get<{ name: string }>(`/api/groups/join/${encodeURIComponent(code)}`);
+export const joinGroup = (code: string, playsInMain?: boolean) =>
+  api.post<{ groupId: number; name: string; alreadyMember: boolean }>('/api/groups/join', { code, playsInMain });
+export const setPlaysInMain = (value: boolean) => api.put('/api/auth/plays-in-main', { value });

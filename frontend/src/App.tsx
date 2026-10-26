@@ -24,6 +24,7 @@ import ResetPassword from './pages/ResetPassword';
 import PageMeta from './components/PageMeta';
 import Tutorial from './pages/Tutorial';
 import PitWall from './pages/PitWall';
+import Groups from './pages/Groups';
 import { AuthContext } from './context/AuthContext';
 import { useLang } from './i18n/LanguageContext';
 import { getProfile } from './services/api';
@@ -45,6 +46,7 @@ const AppRoutes = () => (
     <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
     <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
     <Route path="/live" element={<ProtectedRoute><LiveTiming /></ProtectedRoute>} />
+    <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
     <Route path="/pitwall" element={<ProtectedRoute requirePitwall><PitWall /></ProtectedRoute>} />
     <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route path="/about" element={<About />} />
