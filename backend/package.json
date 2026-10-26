@@ -15,7 +15,7 @@
     "predictions:copy-missing": "npx ts-node src/scripts/copyMissingPredictions.ts",
     "predictions:remind-missed": "npx ts-node src/scripts/sendMissedPredictionReminders.ts",
     "points:repair-totals": "npx ts-node src/scripts/repairTotalPoints.ts",
-    "test": "tsc && DATABASE_URL=postgresql://f1user:f1password@localhost:5433/f1_test JWT_SECRET=test-secret FRONTEND_URL=http://localhost node --test $(find dist -name '*.test.js')"
+    "test": "tsc && DATABASE_URL=postgresql://f1user:f1password@localhost:5433/f1_test JWT_SECRET=test-secret FRONTEND_URL=http://localhost node --test --test-concurrency=1 $(find dist -name '*.test.js')"
   },
   "keywords": [
     "f1",
