@@ -576,6 +576,51 @@ export const sendMissedPredictionReminder = async (
   }
 };
 
+// Tells a player their prediction was reset because a driver in it is not racing, and asks them to
+// predict again. Returns whether the mail went out, so the admin sees a failure instead of nothing.
+export const sendPredictionResetNotice = async (
+  email: string,
+  nickname: string,
+  raceName: string,
+  isSprint: boolean,
+  driverName: string,
+  standInName: string | null,
+  language?: string | null
+): Promise<boolean> => {
+  const lang = normalizeLang(language);
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: recipient(nickname, email),
+    subject: et(lang, 'predReset.subject', { race: raceName.replace(/[\r\n]+/g, ' ') }),
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner(et(lang, 'predReset.banner'), { bg: BRAND_YELLOW })}
+      <h2 style="color: ${BRAND_NAVY};">${et(lang, 'predReset.title')}</h2>
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p>
+        ${et(lang, isSprint ? 'predReset.bodySprint' : 'predReset.bodyRace', { driver: bold(driverName), race: bold(raceName) })}
+        ${standInName ? et(lang, 'predReset.standIn', { standIn: bold(standInName) }) : ''}
+      </p>
+      <p>
+        ${et(lang, 'predReset.ask')}
+      </p>
+      ${emailBanner(et(lang, 'common.submitPrediction'), { url: process.env.FRONTEND_URL!, bg: BRAND_NAVY, color: '#ffffff' })}
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        ${et(lang, 'common.goodLuck')}
+      </p>
+    `, lang),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Prediction reset notice sent to:', email, `[${lang}]`);
+    return true;
+  } catch (error) {
+    console.error('Error sending prediction reset notice:', error);
+    return false;
+  }
+};
+
 // Password reset link. Transactional, so no unsubscribe link. Deliberately
 // never logs the URL — it contains the reset token.
 export const sendPasswordReset = async (email: string, nickname: string, resetUrl: string, language?: string | null) => {

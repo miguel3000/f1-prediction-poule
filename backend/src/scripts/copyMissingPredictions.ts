@@ -1,6 +1,7 @@
 import { query } from '../config/database';
 import { sendAutoFillNotice, PredictionPickForEmail } from '../services/emailService';
 import { findSourcePrediction } from '../services/autoFillService';
+import { getExcludedDriverIds, usesExcludedDriver } from '../services/driverExclusionService';
 
 /**
  * For users who haven't submitted a prediction for an upcoming race,
@@ -62,11 +63,18 @@ async function copyMissingPredictions() {
       console.log(`[CRON] Found ${usersWithoutPrediction.rows.length} users without predictions`);
 
       let copiedCount = 0;
+      // A copied prediction must not put a driver who is not racing back into the race
+      const notRacing = await getExcludedDriverIds(race.season, race.round);
 
       for (const user of usersWithoutPrediction.rows) {
         const pred = await findSourcePrediction(user.id, isSprint, race.race_date);
 
         if (!pred) {
+          continue;
+        }
+
+        if (usesExcludedDriver(pred, positionColumns, notRacing, !isSprint)) {
+          console.log(`[CRON]   Not copying ${user.nickname}'s earlier prediction: it uses a driver who is not racing`);
           continue;
         }
 

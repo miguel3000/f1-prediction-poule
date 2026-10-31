@@ -24,6 +24,7 @@ import { syncDrivers } from '../controllers/driverController';
 import { syncRaces } from '../controllers/raceController';
 import { authenticateAdmin } from '../middleware/adminAuth';
 import { adminListGroups, adminDeleteGroup, adminRemoveMember, adminReassignOwner } from '../controllers/groupController';
+import { listDriverExclusions, addDriverExclusion, removeDriverExclusion } from '../controllers/driverExclusionController';
 
 const router = express.Router();
 
@@ -38,6 +39,11 @@ router.get('/groups', authenticateAdmin, adminListGroups);
 router.delete('/groups/:id', authenticateAdmin, adminDeleteGroup);
 router.delete('/groups/:id/members/:userId', authenticateAdmin, adminRemoveMember);
 router.put('/groups/:id/owner', authenticateAdmin, adminReassignOwner);
+
+// Drivers who are not racing a weekend: left out of the picker, predictions that use them are reset
+router.get('/driver-exclusions', authenticateAdmin, listDriverExclusions);
+router.post('/driver-exclusions', authenticateAdmin, addDriverExclusion);
+router.delete('/driver-exclusions/:round/:driverId', authenticateAdmin, removeDriverExclusion);
 
 // Player Pit Wall: who has access, and reviewing what they submit
 router.put('/users/:id/pitwall-access', authenticateAdmin, setPitwallAccess);

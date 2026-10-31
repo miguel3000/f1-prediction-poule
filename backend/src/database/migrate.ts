@@ -245,6 +245,18 @@ const runMigration = async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members(user_id)`);
     console.log('groups ensured.');
 
+    await query(`
+      CREATE TABLE IF NOT EXISTS driver_exclusions (
+        season INTEGER NOT NULL,
+        round INTEGER NOT NULL,
+        driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+        replaced_by_driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (season, round, driver_id)
+      )
+    `);
+    console.log('driver_exclusions ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

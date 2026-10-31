@@ -3,6 +3,7 @@ import { query } from '../config/database';
 import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
 import { fetchQualifying, storeQualifying, withAllDrivers, previousRaceOrder } from '../services/qualifyingService';
+import { getExcludedDriverIds } from '../services/driverExclusionService';
 
 // Get qualifying order for a race (with fallback to previous race results)
 export const getQualifyingOrder = async (req: Request, res: Response) => {
@@ -28,6 +29,10 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
 
     const race = raceResult.rows[0];
 
+    // Drivers who are not racing this weekend never reach the picker, whichever source the list comes from.
+    const notRacing = new Set(await getExcludedDriverIds(race.season, race.round));
+    const racing = (rows: any[]) => rows.filter((d: any) => !notRacing.has(d.id));
+
     // Once the real starting grid is known (about an hour before the start, penalties applied) the
     // list follows it; the qualifying times stay attached for the lap-time panel.
     const storedGrid = await query(
@@ -43,7 +48,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
       return res.json({
         source: race.race_type === 'sprint' ? 'sprint_grid' : 'grid',
         hasQualifyingResults: true,
-        drivers: await withAllDrivers(race.season, storedGrid.rows)
+        drivers: racing(await withAllDrivers(race.season, storedGrid.rows))
       });
     }
 
@@ -51,7 +56,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
       return res.json({
         source: race.race_type === 'sprint' ? 'sprint_qualifying' : 'qualifying',
         hasQualifyingResults: true,
-        drivers: await withAllDrivers(race.season, storedQualifying.rows)
+        drivers: racing(await withAllDrivers(race.season, storedQualifying.rows))
       });
     }
 
@@ -74,7 +79,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
         return res.json({
           source: race.race_type === 'sprint' ? 'sprint_qualifying' : 'qualifying',
           hasQualifyingResults: true,
-          drivers: await withAllDrivers(race.season, stored)
+          drivers: racing(await withAllDrivers(race.season, stored))
         });
       }
     } catch (error) {
@@ -87,7 +92,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
       return res.json({
         source: 'previous_race',
         hasQualifyingResults: false,
-        drivers: previousOrder
+        drivers: racing(previousOrder)
       });
     }
 
@@ -103,7 +108,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
     res.json({
       source: 'championship',
       hasQualifyingResults: false,
-      drivers: championshipOrder.rows.map((d: any, index: number) => ({
+      drivers: racing(championshipOrder.rows).map((d: any, index: number) => ({
         ...d,
         position: index + 1
       }))

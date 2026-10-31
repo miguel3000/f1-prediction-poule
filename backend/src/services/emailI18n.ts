@@ -60,6 +60,15 @@ const en = {
   'missed.fallback':
     "If you don't submit in time, your last prediction will be copied in automatically — so get your own picks in while you still can!",
 
+  'predReset.subject': 'Please predict again - {race}',
+  'predReset.banner': 'Prediction Reset',
+  'predReset.title': 'Please Predict Again',
+  'predReset.bodyRace': '{driver} is not racing at the {race}, so we had to reset your prediction, which included this driver.',
+  'predReset.bodySprint':
+    '{driver} is not racing in the {race} sprint, so we had to reset your sprint prediction, which included this driver.',
+  'predReset.standIn': '{standIn} takes over the seat.',
+  'predReset.ask': 'Please fill in your prediction again before the race starts. Predictions lock 1 minute before the start.',
+
   'autofill.subject': 'We Filled In Your Prediction - {race}',
   'autofill.banner': 'Prediction Auto-Filled',
   'autofill.title': "You Didn't Predict In Time",
@@ -183,6 +192,15 @@ const nl: Record<EmailKey, string> = {
   'missed.bodySprint': 'Je hebt nog geen sprintvoorspelling gedaan voor {race}, en die sluit over ongeveer 1 uur.',
   'missed.fallback':
     'Als je niet op tijd voorspelt, wordt je laatste voorspelling automatisch overgenomen — dus zet nu je eigen keuzes in!',
+
+  'predReset.subject': 'Voorspel opnieuw - {race}',
+  'predReset.banner': 'Voorspelling gereset',
+  'predReset.title': 'Voorspel alsjeblieft opnieuw',
+  'predReset.bodyRace': '{driver} doet niet mee aan de {race}, daarom hebben we je voorspelling, waarin deze coureur voorkwam, moeten resetten.',
+  'predReset.bodySprint':
+    '{driver} doet niet mee aan de sprint van de {race}, daarom hebben we je sprintvoorspelling, waarin deze coureur voorkwam, moeten resetten.',
+  'predReset.standIn': '{standIn} neemt de plek over.',
+  'predReset.ask': 'Vul je voorspelling alsjeblieft opnieuw in voordat de race begint. Voorspellingen sluiten 1 minuut voor de start.',
 
   'autofill.subject': 'We hebben je voorspelling ingevuld - {race}',
   'autofill.banner': 'Voorspelling automatisch ingevuld',

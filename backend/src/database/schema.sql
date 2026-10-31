@@ -268,3 +268,14 @@ CREATE TABLE IF NOT EXISTS group_members (
   PRIMARY KEY (group_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members(user_id);
+
+-- Drivers who are not racing a given weekend (illness, a stand-in drives). The weekend is a season
+-- and round, so it covers the sprint and the main race. They are left out of the prediction picker.
+CREATE TABLE IF NOT EXISTS driver_exclusions (
+  season INTEGER NOT NULL,
+  round INTEGER NOT NULL,
+  driver_id INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+  replaced_by_driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (season, round, driver_id)
+);

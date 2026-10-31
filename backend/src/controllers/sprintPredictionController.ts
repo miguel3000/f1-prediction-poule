@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { sendPredictionConfirmation } from '../services/emailService';
+import { getExcludedDriverIds, DRIVER_NOT_RACING_ERROR } from '../services/driverExclusionService';
 
 export const submitSprintPrediction = async (req: Request, res: Response) => {
   try {
@@ -30,6 +31,12 @@ export const submitSprintPrediction = async (req: Request, res: Response) => {
 
     if (now >= lockTime) {
       return res.status(400).json({ error: 'Predictions are locked for this sprint race' });
+    }
+
+    // A driver who is not racing this weekend cannot be picked
+    const notRacing = await getExcludedDriverIds(race.season, race.round);
+    if (positions.some((id: unknown) => notRacing.includes(Number(id)))) {
+      return res.status(400).json({ error: DRIVER_NOT_RACING_ERROR });
     }
 
     // Check if user already has a prediction for this race
