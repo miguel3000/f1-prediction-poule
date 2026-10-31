@@ -205,6 +205,28 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - Cron jobs: see the template in section 8. Qualifying: every 10 minutes Fri–Sun, Jolpi then
   OpenF1, one admin email if still missing 3 hours after the session.
 
+### Weekend flags
+
+- A watcher reads the FIA decision documents on race weekends and emails the **owner only** what
+  probably changes predictions. Players are told nothing, and nothing is changed automatically.
+  Design: `docs/superpowers/specs/2026-10-31-weekend-flags-design.md`.
+- It runs every 10 minutes (`check-fia-documents.sh`, cron) but only works from **6 days before a main
+  race until its prediction lock**. Papers published before the window opens are ignored.
+- Source: the first, expanded event block of `fia.com/documents/championships/fia-formula-one-world-championship-14`
+  (title, PDF link, CET publication time). PDFs are read with `pdftotext` (`poppler-utils` in the image);
+  only URLs on `www.fia.com` are fetched. Every document is stored in `fia_documents` (URL is the key),
+  every run in `fia_checks`, so a redeploy forgets nothing.
+- Titles decide what is opened (driver changes, revised entry lists, infringements, decisions, summons,
+  PU reports). **Flag** = driver change, grid drop (with the places), pit-lane start, disqualification
+  or exclusion, or a driver-list difference seen in the live feed at qualifying or race start. **Seen** =
+  everything else that was read; listed in the Pitlane, never emailed.
+- Fail-safe: a driver change is flagged from its title alone; an infringement or decision that cannot be
+  read is retried and flagged after three attempts, with the PDF link. Three failed runs in a row in the
+  window send one "watcher is failing" email; a flag mail that fails is retried by the next run.
+- A driver change tells the owner whether the stand-in is missing from our drivers table. Acting on a flag
+  is manual: the Pitlane card "Drivers not racing", and adding a missing driver row.
+- The Pitlane card "Race weekend flags" lists what was seen (flags first) and has "Check now".
+
 ---
 
 ## 4. Email
@@ -477,3 +499,4 @@ Why: <two or three lines, sources named>
 | 2026-10-26 | Other players' predictions are visible only once the race has started, in groups and in the main poule | Seeing picks before the lock would let players copy each other |
 | 2026-10-26 | A player can play in the main poule, in groups, or both ("also play in the main poule", default yes) | Group-only players must not leak into main lists; existing players stay as they are |
 | 2026-10-31 | A driver who is not racing a weekend is hidden from the picker, refused by the prediction endpoints, and predictions that use them are reset with an email to those players | Haas replaced Ocon with Hirakawa mid-weekend; players could still pick the driver who was not racing |
+| 2026-10-31 | A weekend watcher reads the FIA decision documents and emails the owner what probably changes predictions (driver changes, grid drops, pit-lane starts) | The Hirakawa swap and Bottas' 50-place drop were found by chance; general news search proved unreliable |

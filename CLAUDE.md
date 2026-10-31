@@ -169,6 +169,7 @@ PostgreSQL with these main tables:
 - `groups` - Private poules (group play): unique `name`/`name_key`, `owner_id` (NULL when the owner's account is gone), secret `invite_code`
 - `group_members` - Who is in which group (PK `group_id, user_id`)
 - `driver_exclusions` - Drivers not racing a weekend (season, round, driver_id, optional stand-in); see `decisions.md` "Drivers not racing a weekend"
+- `fia_documents` / `fia_checks` - Weekend flags: every FIA decision document seen on a race weekend (and live-feed driver-list differences), what was read from it and whether the owner was emailed; one row per watcher run. See `decisions.md` "Weekend flags"
 - `users.can_start_groups` (may start groups, Pitlane switch) and `users.plays_in_main` (appears in the main poule); see `decisions.md` "Groups"
 
 ## API Endpoints
