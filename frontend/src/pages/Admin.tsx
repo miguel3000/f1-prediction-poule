@@ -42,6 +42,25 @@ interface DriverExclusionOptions {
   exclusions: { round: number; driverId: number; driverName: string; replacedByName: string | null }[];
 }
 
+interface FlagDocument {
+  id: number;
+  title: string;
+  kind: string | null;
+  severity: 'flag' | 'seen' | null;
+  status: string;
+  summary: string | null;
+  publishedAt: string;
+  url: string;
+  emailed: boolean;
+  source: 'fia' | 'feed';
+}
+
+interface FlagsData {
+  window: { raceName: string; start: string; end: string } | null;
+  lastCheck: { ranAt: string; ok: boolean; found: number; added: number; error: string | null } | null;
+  documents: FlagDocument[];
+}
+
 interface EmailLogRow {
   id: number;
   kind: 'welcome' | 'member_joined' | 'member_left';
@@ -131,6 +150,10 @@ const Admin = () => {
 
   const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
 
+  const [flags, setFlags] = useState<FlagsData | null>(null);
+  const [flagsBusy, setFlagsBusy] = useState(false);
+  const [flagsResult, setFlagsResult] = useState<string | null>(null);
+
   const [notRacing, setNotRacing] = useState<DriverExclusionOptions | null>(null);
   const [nrRound, setNrRound] = useState('');
   const [nrDriver, setNrDriver] = useState('');
@@ -152,6 +175,7 @@ const Admin = () => {
     fetchEmailLog();
     fetchGroups();
     fetchNotRacing();
+    fetchFlags();
   }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
@@ -202,6 +226,36 @@ const Admin = () => {
       setEmailLog(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch the email log');
+    }
+  };
+
+  const fetchFlags = async () => {
+    try {
+      const response = await api.get('/api/admin/flags');
+      setFlags(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch the race weekend flags');
+    }
+  };
+
+  const handleCheckFlags = async () => {
+    setFlagsBusy(true);
+    setFlagsResult(null);
+    try {
+      const response = await api.post('/api/admin/flags/check');
+      const r = response.data;
+      setFlagsResult(
+        !r.ran
+          ? 'No race weekend right now, so nothing was checked.'
+          : r.ok
+          ? `Checked: ${r.added} new document${r.added === 1 ? '' : 's'}, ${r.flagged} new flag${r.flagged === 1 ? '' : 's'}, ${r.emailed} flag${r.emailed === 1 ? '' : 's'} emailed.`
+          : `The check failed: ${r.error ?? 'unknown error'}`
+      );
+      fetchFlags();
+    } catch (err: any) {
+      setFlagsResult(err.response?.data?.error || 'Failed to check the FIA documents');
+    } finally {
+      setFlagsBusy(false);
     }
   };
 
@@ -1666,6 +1720,74 @@ const Admin = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Weekend flags: FIA documents that probably change predictions */}
+      <div className="card-f1 mt-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">Race weekend flags</h2>
+            <p className="text-xs text-white/60 mt-1">
+              Reads the FIA decision documents every 10 minutes from 6 days before a race until predictions lock, and
+              emails you what probably changes predictions: driver changes, grid drops, pit-lane starts. Players are not told.
+            </p>
+          </div>
+          <button onClick={handleCheckFlags} disabled={flagsBusy} className="btn-f1-secondary text-sm py-2 px-4 flex-shrink-0 disabled:opacity-50">
+            {flagsBusy ? 'Checking...' : 'Check now'}
+          </button>
+        </div>
+
+        {flags && (
+          <div className="mb-4 space-y-2">
+            <p className="text-sm text-white">
+              {flags.window
+                ? `Watching until the prediction lock of the ${flags.window.raceName} (${new Date(flags.window.end).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}).`
+                : 'No race weekend right now.'}
+            </p>
+            {flags.lastCheck && (
+              <p className={`text-sm px-3 py-2 ${flags.lastCheck.ok ? 'text-white/80' : 'bg-red-900/40 border border-red-500 text-red-300'}`}>
+                {flags.lastCheck.ok
+                  ? `Last check ${new Date(flags.lastCheck.ranAt).toLocaleTimeString('nl-NL', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit' })}: ${flags.lastCheck.found} documents listed.`
+                  : `The last check failed (${new Date(flags.lastCheck.ranAt).toLocaleTimeString('nl-NL', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit' })}): ${flags.lastCheck.error ?? 'unknown error'}`}
+              </p>
+            )}
+          </div>
+        )}
+
+        {flagsResult && <div className="mb-4 px-4 py-3 bg-f1-blue-dark text-white text-sm" role="status">{flagsResult}</div>}
+
+        {flags && flags.documents.length === 0 ? (
+          <p className="text-center text-white py-6">Nothing seen yet</p>
+        ) : (
+          <div className="max-h-[28rem] overflow-y-auto">
+            {flags?.documents.map((d, i) => {
+              const isFlag = d.severity === 'flag';
+              return (
+                <div key={d.id} className={`flex items-stretch ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'} ${isFlag ? '' : 'opacity-70'}`}>
+                  <span className={`w-14 shrink-0 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider ${isFlag ? 'bg-f1-yellow-500 text-black' : 'bg-black/30 text-white/70'}`}>
+                    {isFlag ? 'Flag' : d.status === 'skipped' ? 'Skipped' : d.status === 'failed' ? 'Retry' : 'Seen'}
+                  </span>
+                  <div className="flex-1 min-w-0 px-4 py-2 text-white">
+                    <p className={`leading-tight break-words ${isFlag ? 'font-f1 font-bold uppercase tracking-wide' : 'text-sm'}`}>
+                      {d.summary || d.title}
+                    </p>
+                    <p className="text-[10px] text-white/70 uppercase tracking-wide break-words">
+                      {d.summary ? `${d.title} \u00b7 ` : ''}
+                      {new Date(d.publishedAt).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {isFlag ? (d.emailed ? ' \u00b7 emailed' : ' \u00b7 not emailed yet') : ''}
+                      {d.source === 'fia' && (
+                        <>
+                          {' \u00b7 '}
+                          <a href={d.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-f1-yellow-400">document</a>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

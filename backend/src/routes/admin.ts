@@ -25,6 +25,7 @@ import { syncRaces } from '../controllers/raceController';
 import { authenticateAdmin } from '../middleware/adminAuth';
 import { adminListGroups, adminDeleteGroup, adminRemoveMember, adminReassignOwner } from '../controllers/groupController';
 import { listDriverExclusions, addDriverExclusion, removeDriverExclusion } from '../controllers/driverExclusionController';
+import { listFlags, checkNow } from '../controllers/flagsController';
 
 const router = express.Router();
 
@@ -44,6 +45,10 @@ router.put('/groups/:id/owner', authenticateAdmin, adminReassignOwner);
 router.get('/driver-exclusions', authenticateAdmin, listDriverExclusions);
 router.post('/driver-exclusions', authenticateAdmin, addDriverExclusion);
 router.delete('/driver-exclusions/:round/:driverId', authenticateAdmin, removeDriverExclusion);
+
+// Weekend flags: what the FIA documents watcher has seen, and a manual check
+router.get('/flags', authenticateAdmin, listFlags);
+router.post('/flags/check', authenticateAdmin, checkNow);
 
 // Player Pit Wall: who has access, and reviewing what they submit
 router.put('/users/:id/pitwall-access', authenticateAdmin, setPitwallAccess);
