@@ -1,6 +1,6 @@
 import { query } from '../config/database';
 import { predictionLockTime } from '../utils/predictionLock';
-import type { ListedDocument } from './fiaDocumentsParser';
+import { parseListing, classifyTitle, parseDocumentText, type ListedDocument, type DocKind } from './fiaDocumentsParser';
 
 // Weekend flags: what the watcher remembers (fia_documents, fia_checks) and when it is allowed to work.
 // Everything that must survive a redeploy lives in the database (container logs do not).
@@ -155,4 +155,125 @@ export const listDocuments = async (limit: number) => {
     source: r.source as 'fia' | 'feed',
     attempts: r.attempts as number,
   }));
+};
+
+// ---- The check run -------------------------------------------------------------------------------
+
+export interface CheckDeps {
+  fetchListing: () => Promise<string>;
+  fetchPdfText: (url: string) => Promise<string>;
+  now?: () => Date;
+}
+
+export interface CheckResult {
+  ran: boolean;
+  ok: boolean;
+  found: number;
+  added: number;
+  flagged: number;
+  error?: string;
+}
+
+const MAX_ATTEMPTS = 3;
+
+// Whether the drivers of a driver change are in our drivers table: the stand-in missing is exactly
+// the gap that left Hirakawa out of the picker.
+const driverChangeInTable = async (facts: Record<string, unknown>, raceId: number) => {
+  const has = async (number: unknown) =>
+    typeof number === 'number' &&
+    (
+      await query(
+        `SELECT 1 FROM drivers WHERE driver_number = $1 AND season = (SELECT season FROM races WHERE id = $2)`,
+        [number, raceId]
+      )
+    ).rows.length > 0;
+  return { originalInTable: await has(facts.originalNumber), standInInTable: await has(facts.replacementNumber) };
+};
+
+// Opens every stored document that still has to be read. Returns how many became flags.
+const readPending = async (deps: CheckDeps, window: WatchWindow): Promise<number> => {
+  const pending = (
+    await query(
+      `SELECT id, title, url, attempts FROM fia_documents
+       WHERE source = 'fia' AND status IN ('pending', 'failed') AND attempts < $1
+       ORDER BY published_at, id`,
+      [MAX_ATTEMPTS]
+    )
+  ).rows;
+
+  let flagged = 0;
+  for (const doc of pending) {
+    const { read, kind } = classifyTitle(doc.title);
+    if (!read) {
+      await query("UPDATE fia_documents SET status = 'skipped', kind = 'other' WHERE id = $1", [doc.id]);
+      continue;
+    }
+
+    let parsed: ReturnType<typeof parseDocumentText> | null = null;
+    let failure: string | null = null;
+    try {
+      parsed = parseDocumentText(kind, await deps.fetchPdfText(doc.url));
+      if (!parsed.understood) failure = 'The document text could not be understood';
+    } catch (error) {
+      failure = error instanceof Error ? error.message : String(error);
+    }
+
+    if (parsed && parsed.understood) {
+      const facts: Record<string, unknown> = { ...parsed.facts };
+      if (kind === 'driver_change') Object.assign(facts, await driverChangeInTable(facts, window.raceId));
+      await query(
+        `UPDATE fia_documents SET status = 'read', kind = $2, severity = $3, summary = $4, facts = $5, read_error = NULL
+         WHERE id = $1`,
+        [doc.id, kind, parsed.severity, parsed.summary, JSON.stringify(facts)]
+      );
+      if (parsed.severity === 'flag') flagged++;
+      continue;
+    }
+
+    // Could not read it. A driver change is flagged from its title at once; anything else is retried and,
+    // when it still cannot be read, flagged (unread) rather than ignored.
+    const attempts = doc.attempts + 1;
+    if (kind === 'driver_change') {
+      await query(
+        `UPDATE fia_documents SET status = 'read', kind = $2, severity = 'flag', attempts = $3, read_error = $4,
+           summary = $5, facts = $6 WHERE id = $1`,
+        [doc.id, kind, attempts, failure, `Driver change (details could not be read, see the document): ${doc.title}`, JSON.stringify({ unreadable: true })]
+      );
+      flagged++;
+    } else if (attempts >= MAX_ATTEMPTS && (kind === 'infringement' || kind === 'decision')) {
+      await query(
+        `UPDATE fia_documents SET status = 'failed', kind = $2, severity = 'flag', attempts = $3, read_error = $4,
+           summary = $5, facts = $6 WHERE id = $1`,
+        [doc.id, kind, attempts, failure, `Could not read: ${doc.title}`, JSON.stringify({ unreadable: true })]
+      );
+      flagged++;
+    } else {
+      await query(
+        `UPDATE fia_documents SET status = 'failed', kind = $2, attempts = $3, read_error = $4 WHERE id = $1`,
+        [doc.id, kind as DocKind, attempts, failure]
+      );
+    }
+  }
+  return flagged;
+};
+
+// One pass of the watcher: inside the window, fetch the listing, store what is new, open what is worth
+// opening. Never throws; a failure is recorded as a failed run.
+export const runCheck = async (deps: CheckDeps): Promise<CheckResult> => {
+  const now = deps.now ? deps.now() : new Date();
+  const window = await getWatchWindow(now);
+  if (!window) return { ran: false, ok: true, found: 0, added: 0, flagged: 0 };
+
+  try {
+    const listing = parseListing(await deps.fetchListing());
+    if (!listing) throw new Error('The FIA page has no expanded event block (the page may have changed)');
+    const added = await storeListed(listing.event, listing.documents, window);
+    const flagged = await readPending(deps, window);
+    await recordCheck({ ok: true, found: listing.documents.length, added });
+    return { ran: true, ok: true, found: listing.documents.length, added, flagged };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await recordCheck({ ok: false, found: 0, added: 0, error: message });
+    return { ran: true, ok: false, found: 0, added: 0, flagged: 0, error: message };
+  }
 };
