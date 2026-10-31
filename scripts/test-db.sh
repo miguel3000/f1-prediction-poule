@@ -6,7 +6,9 @@
 DIR=/tmp/f1-pg-test
 case "$1" in
   start)
-    if [ ! -d "$DIR" ]; then
+    # macOS clears old files in /tmp, which can leave a half-empty cluster behind: start over then.
+    if [ ! -f "$DIR/PG_VERSION" ]; then
+      rm -rf "$DIR"
       LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 initdb -D "$DIR" -U f1user --auth=trust --locale=C --encoding=UTF8 >/dev/null || exit 1
     fi
     LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 pg_ctl -D "$DIR" -o "-p 5433 -k /tmp" -l "$DIR/server.log" -w start >/dev/null || exit 1

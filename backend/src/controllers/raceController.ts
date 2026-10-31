@@ -2,25 +2,9 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
-import { fetchQualifying, storeQualifying } from '../services/qualifyingService';
+import { fetchQualifying, storeQualifying, withAllDrivers, previousRaceOrder } from '../services/qualifyingService';
 
 // Get qualifying order for a race (with fallback to previous race results)
-// A qualifying list must never leave a driver out of the prediction picker: anyone
-// the session data lacks (no time set, data gap) is added after the classified
-// drivers, in championship order, with no grid position.
-const withAllDrivers = async (season: number, classified: any[]) => {
-  const have = new Set(classified.map((d: any) => d.id));
-  const all = await query(
-    `SELECT id, driver_number, name, name_acronym, team, image_url
-     FROM drivers WHERE season = $1 ORDER BY total_points DESC, name ASC`,
-    [season]
-  );
-  const missing = all.rows
-    .filter((d: any) => !have.has(d.id))
-    .map((d: any) => ({ ...d, position: null, q1: null, q2: null, q3: null }));
-  return [...classified, ...missing];
-};
-
 export const getQualifyingOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -97,32 +81,14 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
       console.log('Qualifying not available, falling back to previous race results');
     }
 
-    // Fallback: Get previous race results
-    const previousRaceResult = await query(
-      `SELECT id FROM races
-       WHERE season = $1 AND round < $2
-       ORDER BY round DESC LIMIT 1`,
-      [race.season, race.round]
-    );
-
-    if (previousRaceResult.rows.length > 0) {
-      const previousRaceId = previousRaceResult.rows[0].id;
-      const previousResults = await query(
-        `SELECT rr.position, d.id, d.driver_number, d.name, d.name_acronym, d.team, d.image_url
-         FROM race_results rr
-         JOIN drivers d ON rr.driver_id = d.id
-         WHERE rr.race_id = $1
-         ORDER BY rr.position ASC`,
-        [previousRaceId]
-      );
-
-      if (previousResults.rows.length > 0) {
-        return res.json({
-          source: 'previous_race',
-          hasQualifyingResults: false,
-          drivers: previousResults.rows
-        });
-      }
+    // Fallback: the previous race's classification, every other driver added after it
+    const previousOrder = await previousRaceOrder(race.season, race.round);
+    if (previousOrder) {
+      return res.json({
+        source: 'previous_race',
+        hasQualifyingResults: false,
+        drivers: previousOrder
+      });
     }
 
     // Final fallback: championship order

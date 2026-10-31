@@ -100,3 +100,39 @@ export const storeQualifying = async (race: QualifyingRace, rows: QualifyingRow[
   }
   return { stored, unknown };
 };
+
+// A qualifying list must never leave a driver out of the prediction picker: anyone the session
+// data lacks (no time set, data gap, a stand-in who just joined) is added after the classified
+// drivers, in championship order, with no grid position.
+export const withAllDrivers = async (season: number, classified: any[]) => {
+  const have = new Set(classified.map((d: any) => d.id));
+  const all = await query(
+    `SELECT id, driver_number, name, name_acronym, team, image_url
+     FROM drivers WHERE season = $1 ORDER BY total_points DESC, name ASC`,
+    [season]
+  );
+  const missing = all.rows
+    .filter((d: any) => !have.has(d.id))
+    .map((d: any) => ({ ...d, position: null, q1: null, q2: null, q3: null }));
+  return [...classified, ...missing];
+};
+
+// Before qualifying is known the list follows the previous race's classification, with every
+// other driver added after it. Null when there is no earlier race with results.
+export const previousRaceOrder = async (season: number, round: number): Promise<any[] | null> => {
+  const previousRace = await query(
+    `SELECT id FROM races WHERE season = $1 AND race_type = 'main' AND round < $2 ORDER BY round DESC LIMIT 1`,
+    [season, round]
+  );
+  if (previousRace.rows.length === 0) return null;
+  const results = await query(
+    `SELECT rr.position, d.id, d.driver_number, d.name, d.name_acronym, d.team, d.image_url
+     FROM race_results rr
+     JOIN drivers d ON rr.driver_id = d.id
+     WHERE rr.race_id = $1
+     ORDER BY rr.position ASC`,
+    [previousRace.rows[0].id]
+  );
+  if (results.rows.length === 0) return null;
+  return withAllDrivers(season, results.rows);
+};
