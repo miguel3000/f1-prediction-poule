@@ -37,6 +37,11 @@
 # Recalculates points considering disqualifications/penalties; only acts on status='provisional' races
 0 2-22 * * 0,1 /app/process-final-results.sh
 
+# WEEKEND FLAGS: every 10 minutes, all week. The script does nothing outside the window (6 days before a
+# main race until its prediction lock). Reads the FIA decision documents, emails the owner what probably
+# changes predictions (driver changes, grid drops, pit-lane starts).
+*/10 * * * * /app/check-fia-documents.sh
+
 # Log rotation to prevent log file from growing too large. Tuesday, so a race weekend's
 # job output is still readable on Monday (it used to be wiped at Sunday midnight).
 0 3 * * 2 echo "" > /var/log/cron.log

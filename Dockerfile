@@ -29,8 +29,9 @@ RUN npm run build
 FROM node:18-alpine
 WORKDIR /app
 
-# Install Python3 for FastF1 sync script (pip install fastf1 on first use)
-RUN apk add --no-cache python3 py3-pip
+# Install Python3 for FastF1 sync script (pip install fastf1 on first use), and poppler (pdftotext) so
+# the weekend flags watcher can read the FIA's PDF documents
+RUN apk add --no-cache python3 py3-pip poppler-utils
 
 # Copy backend package files and install production dependencies only
 COPY backend/package*.json ./
@@ -62,11 +63,12 @@ COPY send-provisional-results.sh /app/send-provisional-results.sh
 COPY process-final-results.sh /app/process-final-results.sh
 COPY copy-missing-predictions.sh /app/copy-missing-predictions.sh
 COPY send-missed-prediction-reminders.sh /app/send-missed-prediction-reminders.sh
+COPY check-fia-documents.sh /app/check-fia-documents.sh
 COPY reset-yearly-points.sh /app/reset-yearly-points.sh
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
 # Make scripts executable
-RUN chmod +x /app/sync-driver-standings.sh /app/sync-race-results.sh /app/sync-qualifying-results.sh /app/sync-starting-grid.sh /app/send-provisional-results.sh /app/process-final-results.sh /app/copy-missing-predictions.sh /app/send-missed-prediction-reminders.sh /app/reset-yearly-points.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/sync-driver-standings.sh /app/sync-race-results.sh /app/sync-qualifying-results.sh /app/sync-starting-grid.sh /app/send-provisional-results.sh /app/process-final-results.sh /app/copy-missing-predictions.sh /app/send-missed-prediction-reminders.sh /app/check-fia-documents.sh /app/reset-yearly-points.sh /app/docker-entrypoint.sh
 
 # Create log directory for cron
 RUN mkdir -p /var/log && touch /var/log/cron.log
