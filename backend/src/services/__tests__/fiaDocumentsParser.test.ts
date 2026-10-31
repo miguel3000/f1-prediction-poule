@@ -70,6 +70,24 @@ test('titles_decide_what_is_read', () => {
   }
 });
 
+test('unfamiliar_titles_that_sound_like_a_penalty_are_read_instead_of_skipped', () => {
+  for (const title of [
+    'Penalty - Car 12 - Unsafe release',
+    'Offence - Car 4 - Track limits',
+    'Disqualification - Car 5 - Qualifying',
+    'Withdrawal of Car 22',
+    'Exclusion - Car 9 - Qualifying',
+    'Pit lane start - Car 77',
+    'Grid penalty for Car 11',
+  ]) {
+    assert.deepEqual(classifyTitle(title), { read: true, kind: 'decision' }, title);
+  }
+  // Routine papers stay unread.
+  for (const title of ['Post-Qualifying Procedure', 'Race Director Notes - SC2 - SC1 Times', 'Entry List', 'Car Display Procedure']) {
+    assert.equal(classifyTitle(title).read, false, title);
+  }
+});
+
 test('driver_change_names_both_drivers_and_is_a_flag', () => {
   const r = parseDocumentText('driver_change', fixture('driver_change.txt'));
   assert.equal(r.severity, 'flag');

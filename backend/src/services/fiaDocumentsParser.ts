@@ -104,6 +104,11 @@ export const classifyTitle = (title: string): { read: boolean; kind: DocKind } =
   if (/^decision\b/i.test(title)) return { read: true, kind: 'decision' };
   if (/^summons\b/i.test(title)) return { read: true, kind: 'summons' };
   if (/pu elements|power unit elements/i.test(title)) return { read: true, kind: 'pu_report' };
+  // A title the FIA words differently from the ones above but that sounds like a penalty is read rather
+  // than skipped: missing exactly this news is the failure this watcher exists to prevent.
+  if (/penalt|offence|disqualif|exclu(?:sion|ded)|withdraw|pit ?lane start|start from the pit/i.test(title)) {
+    return { read: true, kind: 'decision' };
+  }
   return { read: false, kind: 'other' };
 };
 
