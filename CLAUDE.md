@@ -168,6 +168,7 @@ PostgreSQL with these main tables:
 - `sprint_results` - Official sprint results
 - `groups` - Private poules (group play): unique `name`/`name_key`, `owner_id` (NULL when the owner's account is gone), secret `invite_code`
 - `group_members` - Who is in which group (PK `group_id, user_id`)
+- `driver_exclusions` - Drivers not racing a weekend (season, round, driver_id, optional stand-in); see `decisions.md` "Drivers not racing a weekend"
 - `users.can_start_groups` (may start groups, Pitlane switch) and `users.plays_in_main` (appears in the main poule); see `decisions.md` "Groups"
 
 ## API Endpoints

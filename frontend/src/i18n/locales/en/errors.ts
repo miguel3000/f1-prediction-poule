@@ -65,4 +65,5 @@ export const errors = {
   'err.Invalid idea id': 'Invalid idea id',
   'err.Language must be en or nl': 'Language must be en or nl',
   'err.Failed to save language': 'Failed to save language',
+  'err.A driver in your prediction is not racing this weekend. Reload the page and pick again.': 'A driver in your prediction is not racing this weekend. Reload the page and pick again.',
 };

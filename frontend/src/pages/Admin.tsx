@@ -36,6 +36,12 @@ interface PitwallIdea {
   nickname: string;
 }
 
+interface DriverExclusionOptions {
+  weekends: { round: number; name: string }[];
+  drivers: { id: number; name: string; driverNumber: number }[];
+  exclusions: { round: number; driverId: number; driverName: string; replacedByName: string | null }[];
+}
+
 interface EmailLogRow {
   id: number;
   kind: 'welcome' | 'member_joined' | 'member_left';
@@ -125,6 +131,13 @@ const Admin = () => {
 
   const [emailLog, setEmailLog] = useState<EmailLogRow[]>([]);
 
+  const [notRacing, setNotRacing] = useState<DriverExclusionOptions | null>(null);
+  const [nrRound, setNrRound] = useState('');
+  const [nrDriver, setNrDriver] = useState('');
+  const [nrStandIn, setNrStandIn] = useState('');
+  const [nrBusy, setNrBusy] = useState(false);
+  const [nrResult, setNrResult] = useState<string | null>(null);
+
   const [adminGroups, setAdminGroups] = useState<AdminGroup[]>([]);
   const [groupBusyId, setGroupBusyId] = useState<number | null>(null);
   const [reassignTo, setReassignTo] = useState<Record<number, string>>({});
@@ -138,6 +151,7 @@ const Admin = () => {
     fetchPitwallIdeas();
     fetchEmailLog();
     fetchGroups();
+    fetchNotRacing();
   }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
@@ -188,6 +202,56 @@ const Admin = () => {
       setEmailLog(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch the email log');
+    }
+  };
+
+  const fetchNotRacing = async () => {
+    try {
+      const response = await api.get('/api/admin/driver-exclusions');
+      setNotRacing(response.data);
+      setNrRound((current) => current || String(response.data.weekends[0]?.round ?? ''));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch the drivers who are not racing');
+    }
+  };
+
+  const handleMarkNotRacing = async () => {
+    if (!notRacing || !nrRound || !nrDriver) return;
+    const driver = notRacing.drivers.find((d) => String(d.id) === nrDriver);
+    const weekend = notRacing.weekends.find((w) => String(w.round) === nrRound);
+    if (!confirm(`Mark ${driver?.name} as not racing at the ${weekend?.name}?\n\nPlayers who already predicted this driver have that prediction reset and get an email asking them to predict again.`)) {
+      return;
+    }
+    setNrBusy(true);
+    setNrResult(null);
+    try {
+      const response = await api.post('/api/admin/driver-exclusions', {
+        round: Number(nrRound),
+        driverId: Number(nrDriver),
+        replacedByDriverId: nrStandIn ? Number(nrStandIn) : null,
+      });
+      const { reset, emailed, failed } = response.data;
+      setNrResult(
+        `${driver?.name} is out of the picker. ${reset} prediction${reset === 1 ? '' : 's'} reset, ${emailed} email${emailed === 1 ? '' : 's'} sent${failed ? `, ${failed} could not be sent` : ''}.`
+      );
+      setNrDriver('');
+      setNrStandIn('');
+      fetchNotRacing();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to mark the driver as not racing');
+    } finally {
+      setNrBusy(false);
+    }
+  };
+
+  const handleBringBack = async (round: number, driverId: number, name: string) => {
+    if (!confirm(`Put ${name} back in the picker? Predictions that were reset stay reset.`)) return;
+    try {
+      await api.delete(`/api/admin/driver-exclusions/${round}/${driverId}`);
+      setNrResult(null);
+      fetchNotRacing();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to put the driver back');
     }
   };
 
@@ -1600,6 +1664,89 @@ const Admin = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Drivers who are not racing a weekend: out of the picker, their predictions reset */}
+      <div className="card-f1 mt-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">Drivers not racing</h2>
+          <p className="text-xs text-white/60 mt-1">
+            A driver who sits a weekend out (illness, a stand-in drives) disappears from the prediction picker for the
+            sprint and the main race. Predictions that already use them are reset and those players get an email asking
+            them to predict again.
+          </p>
+        </div>
+
+        {notRacing && notRacing.weekends.length === 0 ? (
+          <p className="text-center text-white py-6">No upcoming race weekend</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 mb-4">
+            <div>
+              <label htmlFor="nr-round" className="block text-xs uppercase tracking-wide text-white/80 mb-1">Weekend</label>
+              <select id="nr-round" value={nrRound} onChange={(e) => setNrRound(e.target.value)} className="input-f1 w-full py-2 text-sm">
+                {notRacing?.weekends.map((w) => (
+                  <option key={w.round} value={w.round}>Round {w.round} · {w.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="nr-driver" className="block text-xs uppercase tracking-wide text-white/80 mb-1">Not racing</label>
+              <select id="nr-driver" value={nrDriver} onChange={(e) => setNrDriver(e.target.value)} className="input-f1 w-full py-2 text-sm">
+                <option value="">Choose a driver</option>
+                {notRacing?.drivers.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name} (#{d.driverNumber})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="nr-standin" className="block text-xs uppercase tracking-wide text-white/80 mb-1">Stand-in (optional, named in the email)</label>
+              <select id="nr-standin" value={nrStandIn} onChange={(e) => setNrStandIn(e.target.value)} className="input-f1 w-full py-2 text-sm">
+                <option value="">No stand-in</option>
+                {notRacing?.drivers.filter((d) => String(d.id) !== nrDriver).map((d) => (
+                  <option key={d.id} value={d.id}>{d.name} (#{d.driverNumber})</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={handleMarkNotRacing}
+                disabled={nrBusy || !nrRound || !nrDriver}
+                className="btn-f1-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {nrBusy ? 'Working...' : 'Mark as not racing'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {nrResult && (
+          <div className="mb-4 px-4 py-3 bg-f1-blue-dark text-white text-sm" role="status">{nrResult}</div>
+        )}
+
+        {notRacing && notRacing.exclusions.length > 0 && (
+          <div>
+            {notRacing.exclusions.map((e, i) => (
+              <div
+                key={`${e.round}-${e.driverId}`}
+                className={`px-4 py-3 text-white flex items-center justify-between gap-3 flex-wrap ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}
+              >
+                <div className="min-w-0">
+                  <p className="font-f1 font-bold uppercase tracking-wide leading-tight break-words">{e.driverName}</p>
+                  <p className="text-[10px] text-white/70 uppercase tracking-wide">
+                    {notRacing.weekends.find((w) => w.round === e.round)?.name ?? `Round ${e.round}`}
+                    {e.replacedByName ? ` \u00b7 stand-in: ${e.replacedByName}` : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleBringBack(e.round, e.driverId, e.driverName)}
+                  className="bg-f1-yellow-500 text-black font-bold px-3 py-1 text-sm hover:brightness-110"
+                >
+                  Put back
+                </button>
               </div>
             ))}
           </div>

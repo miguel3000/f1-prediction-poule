@@ -162,6 +162,24 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   predictions stay. Group lists show nicknames and avatars, never email addresses.
 - No group rank in result emails in this first version.
 
+### Drivers not racing a weekend
+
+- A driver who sits a weekend out (illness, a stand-in drives) is marked in the Pitlane card "Drivers
+  not racing" (table `driver_exclusions`, one row per season, round and driver; it covers the sprint
+  and the main race). The optional stand-in is only named in the email.
+- He disappears from the prediction picker whatever the source of the list (starting grid,
+  qualifying, previous race, championship order), and `POST /api/predictions` and
+  `/api/sprint-predictions` refuse a prediction that uses him, in a position or as first-retirement
+  pick (`services/driverExclusionService.ts`).
+- Predictions that already use him are **deleted** (only races that have not locked) and each of
+  those players gets an email asking them to predict again (EN/NL, `sendPredictionResetNotice`).
+  Nothing is substituted for them. The Pitlane reports how many were reset and how many mails failed.
+- The auto-fill job never copies a prediction that uses such a driver; that player gets no copy and
+  only the missed-prediction reminder before the lock.
+- A weekend that has started cannot be changed. "Put back" removes the exclusion; reset predictions stay reset.
+- The driver table needs a row for a stand-in before qualifying (results are matched by car number):
+  add it, for example Hirakawa #50 for Haas, 31 Oct 2026.
+
 ---
 
 ## 3. Data and results
@@ -458,3 +476,4 @@ Why: <two or three lines, sources named>
 | 2026-10-26 | Groups: unique names, a secret invite link the starter shares, starters picked by the owner | The owner wants friends to play among themselves before next season |
 | 2026-10-26 | Other players' predictions are visible only once the race has started, in groups and in the main poule | Seeing picks before the lock would let players copy each other |
 | 2026-10-26 | A player can play in the main poule, in groups, or both ("also play in the main poule", default yes) | Group-only players must not leak into main lists; existing players stay as they are |
+| 2026-10-31 | A driver who is not racing a weekend is hidden from the picker, refused by the prediction endpoints, and predictions that use them are reset with an email to those players | Haas replaced Ocon with Hirakawa mid-weekend; players could still pick the driver who was not racing |

@@ -65,4 +65,5 @@ export const errors: Record<keyof typeof enErrors, string> = {
   'err.Invalid idea id': 'Ongeldig idee',
   'err.Language must be en or nl': 'De taal moet en of nl zijn',
   'err.Failed to save language': 'Taal opslaan mislukt',
+  'err.A driver in your prediction is not racing this weekend. Reload the page and pick again.': 'Een coureur in je voorspelling doet dit weekend niet mee. Laad de pagina opnieuw en kies opnieuw.',
 };
