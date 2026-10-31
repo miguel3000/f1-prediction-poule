@@ -3,6 +3,7 @@ import WebSocket from 'ws';
 import { persistPracticeFromState } from './practiceResultsService';
 import { persistRaceClassificationFromState } from './raceClassificationService';
 import { persistStartingGridFromState } from './startingGridFromFeed';
+import { checkFeedDriverList } from './driverListCheck';
 
 // Connects to F1's own live timing feed — the same unofficial SignalR stream
 // that every open-source F1 dashboard (f1-dash, FastF1's livetiming module,
@@ -172,6 +173,9 @@ function connect() {
             persistPracticeFromState(state);
             persistRaceClassificationFromState(state);
             persistStartingGridFromState(state);
+            // Weekend flags: a driver in the feed that we do not have (or the other way round). Never
+            // awaited and never allowed to throw: an unhandled rejection would stop the container.
+            checkFeedDriverList(state).catch((error) => console.error('[live-timing] Driver list check failed:', error));
             continue;
           }
 
