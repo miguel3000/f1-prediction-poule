@@ -279,3 +279,36 @@ CREATE TABLE IF NOT EXISTS driver_exclusions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (season, round, driver_id)
 );
+
+-- Weekend flags: every FIA decision document seen on a race weekend (and driver-list differences seen
+-- in the live feed), what was read from it, and whether the owner has been emailed about it.
+-- fia_checks records each run of the watcher so a silently failing watcher can be noticed.
+CREATE TABLE IF NOT EXISTS fia_documents (
+  id SERIAL PRIMARY KEY,
+  url TEXT NOT NULL UNIQUE,
+  source VARCHAR(10) NOT NULL DEFAULT 'fia',
+  event TEXT,
+  doc_number INTEGER,
+  title TEXT NOT NULL,
+  published_at TIMESTAMPTZ NOT NULL,
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status VARCHAR(10) NOT NULL DEFAULT 'pending',
+  kind VARCHAR(20),
+  severity VARCHAR(5),
+  summary TEXT,
+  facts JSONB NOT NULL DEFAULT '{}'::jsonb,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  read_error TEXT,
+  flag_emailed_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_fia_documents_published ON fia_documents(published_at DESC);
+
+CREATE TABLE IF NOT EXISTS fia_checks (
+  id SERIAL PRIMARY KEY,
+  ran_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ok BOOLEAN NOT NULL,
+  found INTEGER NOT NULL DEFAULT 0,
+  added INTEGER NOT NULL DEFAULT 0,
+  error TEXT,
+  alerted BOOLEAN NOT NULL DEFAULT FALSE
+);

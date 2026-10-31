@@ -257,6 +257,40 @@ const runMigration = async () => {
     `);
     console.log('driver_exclusions ensured.');
 
+    await query(`
+      CREATE TABLE IF NOT EXISTS fia_documents (
+        id SERIAL PRIMARY KEY,
+        url TEXT NOT NULL UNIQUE,
+        source VARCHAR(10) NOT NULL DEFAULT 'fia',
+        event TEXT,
+        doc_number INTEGER,
+        title TEXT NOT NULL,
+        published_at TIMESTAMPTZ NOT NULL,
+        first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        status VARCHAR(10) NOT NULL DEFAULT 'pending',
+        kind VARCHAR(20),
+        severity VARCHAR(5),
+        summary TEXT,
+        facts JSONB NOT NULL DEFAULT '{}'::jsonb,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        read_error TEXT,
+        flag_emailed_at TIMESTAMPTZ
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_fia_documents_published ON fia_documents(published_at DESC)`);
+    await query(`
+      CREATE TABLE IF NOT EXISTS fia_checks (
+        id SERIAL PRIMARY KEY,
+        ran_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        ok BOOLEAN NOT NULL,
+        found INTEGER NOT NULL DEFAULT 0,
+        added INTEGER NOT NULL DEFAULT 0,
+        error TEXT,
+        alerted BOOLEAN NOT NULL DEFAULT FALSE
+      )
+    `);
+    console.log('fia_documents ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);
