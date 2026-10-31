@@ -1022,6 +1022,124 @@ export const sendPitwallSubmitted = async (idea: {
   }
 };
 
+// ---- Weekend flags: mail to the owner only, in English ---------------------------------------------
+
+export interface FlagForEmail {
+  title: string;
+  kind: string | null;
+  summary: string | null;
+  facts: Record<string, any>;
+  url: string;
+  publishedAt: Date;
+  event: string | null;
+  source: 'fia' | 'feed';
+}
+
+const amsterdamTime = (date: Date): string =>
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Amsterdam',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(date);
+
+// What the owner could do about a flag. Never done automatically.
+const flagSuggestion = (flag: FlagForEmail): string => {
+  if (flag.kind === 'driver_change') {
+    const parts = [
+      `In the Pitlane card <strong>Drivers not racing</strong>, mark ${escapeHtml(String(flag.facts.originalName ?? 'the driver who is out'))} as not racing${
+        flag.facts.replacementName ? ` (stand-in ${escapeHtml(String(flag.facts.replacementName))})` : ''
+      }.`,
+    ];
+    if (flag.facts.standInInTable === false) {
+      parts.unshift(
+        `<strong>${escapeHtml(String(flag.facts.replacementName ?? 'The stand-in'))}${
+          flag.facts.replacementNumber ? ` (#${escapeHtml(String(flag.facts.replacementNumber))})` : ''
+        } is not in our driver table</strong>: add him before qualifying, or he cannot be picked.`
+      );
+    }
+    return parts.join(' ');
+  }
+  if (flag.kind === 'driver_list') {
+    return 'Compare the live driver list with our drivers table, and use the Pitlane card <strong>Drivers not racing</strong> if someone is out.';
+  }
+  return '';
+};
+
+// One mail per run listing every new flag. Returns whether it went out, so the caller can try again.
+export const sendFlagsDigest = async (to: string, flags: FlagForEmail[]): Promise<boolean> => {
+  const oneLine = (text: string) => text.replace(/[\r\n]+/g, ' ').trim();
+  const event = flags.find((f) => f.event)?.event ?? 'Race weekend';
+  const subject =
+    flags.length === 1
+      ? `Flag: ${oneLine(flags[0].summary ?? flags[0].title)}`
+      : `Flags: ${oneLine(event)} - ${flags.length} items`;
+  const pitlaneUrl = `${process.env.FRONTEND_URL}/pitlane`;
+
+  const cards = flags
+    .map((flag) => {
+      const suggestion = flagSuggestion(flag);
+      return `
+        <div style="border-left: 6px solid ${BRAND_YELLOW}; background: #f6f6f6; padding: 12px 16px; margin: 0 0 14px 0;">
+          <p style="margin: 0 0 6px 0; font-size: 17px; font-weight: bold; color: ${BRAND_NAVY};">${escapeHtml(flag.summary ?? flag.title)}</p>
+          <p style="margin: 0 0 6px 0; color: #666; font-size: 12px;">${escapeHtml(flag.title)} &middot; ${escapeHtml(amsterdamTime(flag.publishedAt))} Dutch time</p>
+          ${suggestion ? `<p style="margin: 0 0 6px 0;">${suggestion}</p>` : ''}
+          ${flag.source === 'fia' ? `<p style="margin: 0;"><a href="${escapeHtml(flag.url)}" style="color: ${BRAND_NAVY};">Read the document</a></p>` : ''}
+        </div>`;
+    })
+    .join('');
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to,
+    subject: subject.slice(0, 200),
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('Weekend Flags', { url: pitlaneUrl, bg: BRAND_YELLOW })}
+      <p>${flags.length === 1 ? 'Something' : `${flags.length} things`} that probably change${flags.length === 1 ? 's' : ''} predictions this weekend:</p>
+      ${cards}
+      <p style="color: #666; font-size: 12px; margin-top: 24px;">
+        Players are not told anything. Everything the watcher has seen is listed in the Pitlane (Race weekend flags).
+      </p>
+    `, 'en', { signature: false }),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Weekend flags email sent:', flags.length, 'flag(s)');
+    return true;
+  } catch (error) {
+    console.error('Error sending the weekend flags email:', error);
+    return false;
+  }
+};
+
+export const sendWatcherFailureNotice = async (to: string, lastError: string | null): Promise<boolean> => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to,
+    subject: 'Weekend flags: the watcher is failing',
+    html: emailDocument(`
+      ${emailHeader}
+      ${emailBanner('Watcher Failing', { url: `${process.env.FRONTEND_URL}/pitlane`, bg: BRAND_BLUE, color: '#ffffff' })}
+      <p>The check of the FIA documents page has failed three times in a row, so no flags are coming in.</p>
+      ${lastError ? `<p style="color: #666;">Last error: ${escapeHtml(lastError)}</p>` : ''}
+      <p>Until it works, look at the FIA documents page by hand on this race weekend.</p>
+    `, 'en', { signature: false }),
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Weekend flags watcher failure notice sent');
+    return true;
+  } catch (error) {
+    console.error('Error sending the watcher failure notice:', error);
+    return false;
+  }
+};
+
 // Sent to the admin when someone signs up or deletes their own account.
 // Nickname and email are player-written, so everything is escaped and kept out
 // of the subject's control characters.

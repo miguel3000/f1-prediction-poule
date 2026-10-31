@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import { predictionLockTime } from '../utils/predictionLock';
+import { sendFlagsDigest, sendWatcherFailureNotice } from './emailService';
 import { parseListing, classifyTitle, parseDocumentText, type ListedDocument, type DocKind } from './fiaDocumentsParser';
 
 // Weekend flags: what the watcher remembers (fia_documents, fia_checks) and when it is allowed to work.
@@ -276,4 +277,34 @@ export const runCheck = async (deps: CheckDeps): Promise<CheckResult> => {
     await recordCheck({ ok: false, found: 0, added: 0, error: message });
     return { ran: true, ok: false, found: 0, added: 0, flagged: 0, error: message };
   }
+};
+
+// ---- The email to the owner ----------------------------------------------------------------------
+
+// Mails every flag that has not been mailed yet, and, once per streak of failed runs, a notice that
+// the watcher itself is failing. A mail that does not go out changes nothing, so the next run tries again.
+export const emailPendingFlags = async (now: Date): Promise<{ sent: number }> => {
+  const to = process.env.ADMIN_EMAIL;
+  if (!to) {
+    console.error('ADMIN_EMAIL not configured — cannot send weekend flags');
+    return { sent: 0 };
+  }
+
+  let sent = 0;
+  const flags = await getUnsentFlags();
+  if (flags.length > 0 && (await sendFlagsDigest(to, flags))) {
+    await markFlagsEmailed(flags.map((f) => f.id));
+    sent = flags.length;
+  }
+
+  if (await shouldAlertWatcherFailure(now)) {
+    const last = await getLastCheck();
+    if (!(await sendWatcherFailureNotice(to, last?.error ?? null))) {
+      // Not delivered: allow the next run to send it.
+      await query(
+        `UPDATE fia_checks SET alerted = FALSE WHERE id = (SELECT id FROM fia_checks WHERE alerted ORDER BY id DESC LIMIT 1)`
+      );
+    }
+  }
+  return { sent };
 };
