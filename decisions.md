@@ -424,7 +424,9 @@ node dist/scripts/thing.js >> /var/log/cron.log 2>&1
 echo "[$(date)] thing completed"
 ```
 3. `COPY thing.sh /app/thing.sh` in the `Dockerfile` (next to the others) and a line in `crontab`
-   with a comment saying when and why. Times are UTC (Dutch summer time is UTC+2).
+   with a comment saying when and why. Times are UTC (Dutch summer time is UTC+2). Add the job to
+   `CRON_JOBS` in `frontend/src/pages/Admin.tsx` too (Pitlane, "System reference"); that list is typed
+   by hand and had drifted from the crontab.
 4. The cron log is wiped on Tuesday and on every redeploy. Alerts and state go to the database.
 5. Run the script once by hand on the Pi (`docker exec f1-app node dist/scripts/thing.js`) and
    check it does nothing it should not.
@@ -434,6 +436,9 @@ echo "[$(date)] thing completed"
   returning `{ error }`; route in `routes/admin.ts` behind `authenticateAdmin`.
 - Card in `frontend/src/pages/Admin.tsx`: `card-f1`, title, one-line explanation, Refresh button,
   alternating blue/dark-blue rows, status chips as in section 5. Blur or leave out personal data.
+- Pitlane order: Who's Predicted (opens on the upcoming race) first, User Management second, the working
+  cards after them. Reference material (cron jobs, scheduling logic, APIs and sources) lives in the closed
+  "System reference" dropdown at the bottom. A new external source gets a row in `DATA_SOURCES` in `Admin.tsx`.
 
 ### 8.6 A Pit Wall entry
 ```json
@@ -509,3 +514,4 @@ Why: <two or three lines, sources named>
 | 2026-10-31 | A driver who is not racing a weekend is hidden from the picker, refused by the prediction endpoints, and predictions that use them are reset with an email to those players | Haas replaced Ocon with Hirakawa mid-weekend; players could still pick the driver who was not racing |
 | 2026-10-31 | A weekend watcher reads the FIA decision documents and emails the owner what probably changes predictions (driver changes, grid drops, pit-lane starts) | The Hirakawa swap and Bottas' 50-place drop were found by chance; general news search proved unreliable |
 | 2026-11-01 | The starting grid is read from formula1.com's results page as soon as qualifying is over, ahead of the live feed and OpenF1 | The prediction list only switched to the real grid an hour before the start; the page has it (penalties applied) all day and matched Jolpi for all 18 races |
+| 2026-11-01 | Pitlane: Who's Predicted first and on the upcoming race, User Management second; cron jobs, scheduling logic and the APIs and sources sit in one closed "System reference" dropdown | The owner wanted the Pitlane cleaned up; the cron list shown there had drifted from the crontab (it missed five jobs and had wrong hours) |

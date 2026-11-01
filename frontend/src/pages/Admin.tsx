@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useContext } from 'react';
 import api from '../services/api';
-import { getRaces } from '../services/api';
+import { getRaces, getNextRace } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import ResultsCheckPanel from '../components/ResultsCheckPanel';
 
@@ -106,6 +106,40 @@ interface DiagnosisResult {
   lastSyncStatus: SyncJobState;
 }
 
+// The system reference lists. Cron times are UTC and copied from /crontab: change both together.
+const CRON_JOBS = [
+  { name: 'Yearly points reset', cron: '0 0 1 1 *', when: 'Every 1 January at 00:00. Sets every player\'s points back to zero for the new season.' },
+  { name: 'Driver standings sync', cron: '0 9 * * 1,4', when: 'Monday and Thursday at 09:00. Covers Sunday races and Saturday sprints.' },
+  { name: 'Race results sync', cron: '0 3 * * 1', when: 'Monday at 03:00. Syncs the race results.' },
+  { name: 'Qualifying results sync', cron: '*/10 * * * 5,6,0', when: 'Friday to Sunday, every 10 minutes. Does nothing once a session is stored; emails you if one is still missing hours later.' },
+  { name: 'Starting grid', cron: '*/5 * * * *', when: 'Every 5 minutes, all week. Every 15th minute it reads formula1.com for a start 75 minutes to 30 hours away; OpenF1 is the fallback in the last 3 hours.' },
+  { name: 'Missed-prediction reminder', cron: '*/5 1-20 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 01:00 to 20:59. Mails players who have not predicted, about an hour before the start.' },
+  { name: 'Copy missing predictions', cron: '*/2 2-20 * * 0,6', when: 'Saturday and Sunday, every 2 minutes from 02:00 to 20:59. Copies the last prediction of players who forgot, just after the lock.' },
+  { name: 'Provisional results', cron: '*/5 2-22 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 02:00 to 22:59. Stores results, scores predictions and mails players about 5 minutes after the finish.' },
+  { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours old, penalties included.' },
+  { name: 'Weekend flags', cron: '*/10 * * * *', when: 'Every 10 minutes, all week; works only from 6 days before a main race until its prediction lock. Reads the FIA decision documents and emails you what probably changes predictions.' },
+  { name: 'Log rotation', cron: '0 3 * * 2', when: 'Tuesday at 03:00. Empties /var/log/cron.log.' },
+];
+
+const DATA_SOURCES = [
+  { name: 'Jolpi (Ergast)', kind: 'API', addresses: ['https://api.jolpi.ca/ergast/f1'], use: 'Race calendar, drivers, standings, and the results of races, sprints and qualifying. Can lag after a session.' },
+  { name: 'OpenF1', kind: 'API', addresses: ['https://api.openf1.org/v1'], use: 'Sessions, drivers with headshots, session results and the position feed. Second source for results and qualifying; fallback for the starting grid.' },
+  { name: 'formula1.com results', kind: 'Page', addresses: ['https://www.formula1.com/en/results/<year>/races/<id>/<race>/starting-grid'], use: 'The starting grid with penalties applied, read from 30 hours to 75 minutes before the start. The earliest source; unofficial, so a layout change hands over to the other sources.' },
+  { name: 'F1 live timing', kind: 'Feed', addresses: ['livetiming.formula1.com/signalrcore'], use: 'The Live Timing page, practice results, the race classification, the starting grid in the last hour before a start, and the driver-list check at qualifying and race start. Unofficial.' },
+  { name: 'FIA decision documents', kind: 'Page', addresses: ['https://www.fia.com/documents/championships/fia-formula-one-world-championship-14'], use: 'Race weekend flags: driver changes, grid drops and pit-lane starts, read from the PDFs.' },
+  {
+    name: 'News feeds',
+    kind: 'Feed',
+    addresses: [
+      'https://www.formula1.com/en/latest/all.xml',
+      'https://www.motorsport.com/rss/f1/news/',
+      'https://www.autosport.com/rss/f1/news/',
+      'https://www.racefans.net/feed/',
+    ],
+    use: 'The headlines on the News page, cached for 15 minutes.',
+  },
+];
+
 const Admin = () => {
   const { user } = useContext(AuthContext);
   const [users, setUsers] = useState<User[]>([]);
@@ -170,6 +204,12 @@ const Admin = () => {
     getRaces(2026)
       .then(res => setPredictionRaces(res.data))
       .catch(() => { /* race list is a nice-to-have; ignore failures */ });
+    getNextRace()
+      .then(res => {
+        setSelectedPredictionRaceId(res.data.id);
+        handleFetchPredictionStatus(res.data.id);
+      })
+      .catch(() => { /* between seasons there is no upcoming race: the picker stays on "Select a race" */ });
     fetchUsers();
     fetchPitwallIdeas();
     fetchEmailLog();
@@ -623,6 +663,292 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Prediction Status */}
+      <div className="card-f1 mb-8">
+        <h2 className="text-2xl font-bold mb-2">Who's Predicted?</h2>
+        <p className="text-white text-sm mb-4">
+          Check which players have already submitted a prediction, to chase down stragglers before lock.
+          Opens on the upcoming race; pick another to look back.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <select
+            value={selectedPredictionRaceId}
+            onChange={(e) => {
+              const raceId = parseInt(e.target.value);
+              setSelectedPredictionRaceId(raceId);
+              setPredictionStatus(null);
+              setPredictionStatusError(null);
+              if (raceId) handleFetchPredictionStatus(raceId);
+            }}
+            className="flex-1 min-w-0 bg-f1-neutral-800 border border-f1-neutral-700 px-4 py-3 text-white focus:border-f1-yellow-500 focus:outline-none"
+          >
+            <option value="">Select a race…</option>
+            {predictionRaces.map(race => (
+              <option key={race.id} value={race.id}>
+                Round {race.round}: {race.race_name}{race.race_type === 'sprint' ? ' (Sprint)' : ''}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => handleFetchPredictionStatus(Number(selectedPredictionRaceId))}
+            disabled={!selectedPredictionRaceId || predictionStatusLoading}
+            className="btn-f1-secondary text-sm py-2 px-4 flex-shrink-0 disabled:opacity-50"
+          >
+            Refresh
+          </button>
+        </div>
+
+        {predictionStatusLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-yellow-500 mx-auto"></div>
+          </div>
+        ) : predictionStatusError ? (
+          <div className="px-4 py-3 bg-red-900/50 border border-red-500 text-red-200">
+            {predictionStatusError}
+          </div>
+        ) : predictionStatus ? (
+          <div>
+            <p className="text-sm text-white mb-3">
+              <span className="text-white font-bold">{predictionStatus.predicted}</span> of{' '}
+              <span className="text-white font-bold">{predictionStatus.total}</span> players have predicted{' '}
+              {predictionStatus.raceName}.
+            </p>
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-f1-neutral-700">
+                    <th className="text-left py-3 px-4">Nickname</th>
+                    <th className="text-left py-3 px-4">Email</th>
+                    <th className="text-left py-3 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {predictionStatus.users.map(user => (
+                    <tr key={user.id} className="border-b border-f1-neutral-800 hover:bg-f1-neutral-800/50">
+                      <td className="py-3 px-4 font-medium">{user.nickname}</td>
+                      <td className="py-3 px-4 text-white">{user.email}</td>
+                      <td className="py-3 px-4">
+                        {user.hasPredicted ? (
+                          <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1">✓ Predicted</span>
+                        ) : (
+                          <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1">Not yet</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-2">
+              {predictionStatus.users.map(user => (
+                <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{user.nickname}</p>
+                      <p className="text-xs text-white truncate">{user.email}</p>
+                    </div>
+                    {user.hasPredicted ? (
+                      <span className="shrink-0 text-xs bg-green-600/30 text-green-400 px-2 py-1">✓ Predicted</span>
+                    ) : (
+                      <span className="shrink-0 text-xs bg-red-600/30 text-red-400 px-2 py-1">Not yet</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {/* User management */}
+      <div className="card-f1 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">User Management</h2>
+          <button
+            onClick={fetchUsers}
+            disabled={loading}
+            className="btn-f1-secondary text-sm py-2 px-4"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+
+        {loading && users.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-f1-yellow-500 mx-auto"></div>
+            <p className="mt-4 text-white">Loading users...</p>
+          </div>
+        ) : (
+          <>
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-f1-neutral-700">
+                  <th className="text-left py-3 px-4">ID</th>
+                  <th className="text-left py-3 px-4">Nickname</th>
+                  <th className="text-left py-3 px-4">Email</th>
+                  <th className="text-left py-3 px-4">Points</th>
+                  <th className="text-left py-3 px-4">Created</th>
+                  <th className="text-left py-3 px-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="border-b border-f1-neutral-800 hover:bg-f1-neutral-800/50"
+                  >
+                    <td className="py-3 px-4 text-white">{user.id}</td>
+                    <td className="py-3 px-4 font-medium">
+                      {user.nickname}
+                      {user.is_admin && (
+                        <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-white">{user.email}</td>
+                    <td className="py-3 px-4 text-f1-yellow-500 font-bold">
+                      {user.total_points}
+                    </td>
+                    <td className="py-3 px-4 text-white text-sm">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 space-x-2">
+                      <button
+                        onClick={() => {
+                          setPasswordModal({ userId: user.id, nickname: user.nickname });
+                          setNewPassword('');
+                          setPasswordStatus('idle');
+                          setPasswordMessage(null);
+                        }}
+                        className="bg-f1-blue hover:brightness-110 text-white px-3 py-1 text-sm transition-colors"
+                      >
+                        Set Password
+                      </button>
+                      <button
+                        onClick={() => handleToggleGroupStarter(user)}
+                        className={`px-3 py-1 text-sm font-bold transition-colors ${
+                          user.can_start_groups
+                            ? 'bg-f1-yellow-500 text-black hover:brightness-110'
+                            : 'bg-f1-blue-dark text-white hover:brightness-125'
+                        }`}
+                        title="Let this player start groups"
+                      >
+                        Groups: {user.can_start_groups ? 'ON' : 'OFF'}
+                      </button>
+                      {!user.is_admin && (
+                        <button
+                          onClick={() => handleTogglePitwall(user)}
+                          className={`px-3 py-1 text-sm font-bold transition-colors ${
+                            user.pitwall_access
+                              ? 'bg-f1-yellow-500 text-black hover:brightness-110'
+                              : 'bg-f1-blue-dark text-white hover:brightness-125'
+                          }`}
+                          title="Let this player submit ideas on the Pit Wall"
+                        >
+                          Pit Wall: {user.pitwall_access ? 'ON' : 'OFF'}
+                        </button>
+                      )}
+                      {!user.is_admin && (
+                        <button
+                          onClick={() => handleDeleteUser(user.id, user.nickname)}
+                          className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {users.length === 0 && !loading && (
+              <div className="text-center py-8 text-white">
+                No users found
+              </div>
+            )}
+          </div>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3">
+            {users.map((user) => (
+              <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">
+                      {user.nickname}
+                      {user.is_admin && (
+                        <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-white truncate">{user.email}</p>
+                  </div>
+                  <p className="text-f1-yellow-500 font-bold shrink-0 ml-2">{user.total_points}</p>
+                </div>
+                <p className="text-xs text-white mb-3">
+                  ID {user.id} · Joined {new Date(user.created_at).toLocaleDateString()}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setPasswordModal({ userId: user.id, nickname: user.nickname });
+                      setNewPassword('');
+                      setPasswordStatus('idle');
+                      setPasswordMessage(null);
+                    }}
+                    className="flex-1 bg-f1-blue hover:brightness-110 text-white px-3 py-2 text-sm transition-colors"
+                  >
+                    Set Password
+                  </button>
+                  <button
+                    onClick={() => handleToggleGroupStarter(user)}
+                    className={`flex-1 px-3 py-2 text-sm font-bold transition-colors ${
+                      user.can_start_groups ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white'
+                    }`}
+                  >
+                    Groups: {user.can_start_groups ? 'ON' : 'OFF'}
+                  </button>
+                  {!user.is_admin && (
+                    <button
+                      onClick={() => handleTogglePitwall(user)}
+                      className={`flex-1 px-3 py-2 text-sm font-bold transition-colors ${
+                        user.pitwall_access ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white'
+                      }`}
+                    >
+                      Pit Wall: {user.pitwall_access ? 'ON' : 'OFF'}
+                    </button>
+                  )}
+                  {!user.is_admin && (
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.nickname)}
+                      className="flex-1 bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-2 text-sm transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {users.length === 0 && !loading && (
+              <div className="text-center py-8 text-white">
+                No users found
+              </div>
+            )}
+          </div>
+          </>
+        )}
+
+        <div className="mt-6 text-sm text-white">
+          Total users: <span className="text-white font-bold">{users.length}</span>
+        </div>
+      </div>
+
       {/* Admin Actions */}
       <div className="card-f1 mb-8">
         <h2 className="text-2xl font-bold mb-6">Admin Actions</h2>
@@ -1015,97 +1341,6 @@ const Admin = () => {
         </button>
       </div>
 
-      {/* Prediction Status */}
-      <div className="card-f1 mb-8">
-        <h2 className="text-2xl font-bold mb-2">Who's Predicted?</h2>
-        <p className="text-white text-sm mb-4">
-          Check which players have already submitted a prediction for a race, to chase down stragglers before lock.
-        </p>
-
-        <select
-          value={selectedPredictionRaceId}
-          onChange={(e) => {
-            const raceId = parseInt(e.target.value);
-            setSelectedPredictionRaceId(raceId);
-            setPredictionStatus(null);
-            setPredictionStatusError(null);
-            if (raceId) handleFetchPredictionStatus(raceId);
-          }}
-          className="w-full bg-f1-neutral-800 border border-f1-neutral-700 px-4 py-3 text-white focus:border-f1-yellow-500 focus:outline-none mb-4"
-        >
-          <option value="">Select a race…</option>
-          {predictionRaces.map(race => (
-            <option key={race.id} value={race.id}>
-              Round {race.round}: {race.race_name}{race.race_type === 'sprint' ? ' (Sprint)' : ''}
-            </option>
-          ))}
-        </select>
-
-        {predictionStatusLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-f1-yellow-500 mx-auto"></div>
-          </div>
-        ) : predictionStatusError ? (
-          <div className="px-4 py-3 bg-red-900/50 border border-red-500 text-red-200">
-            {predictionStatusError}
-          </div>
-        ) : predictionStatus ? (
-          <div>
-            <p className="text-sm text-white mb-3">
-              <span className="text-white font-bold">{predictionStatus.predicted}</span> of{' '}
-              <span className="text-white font-bold">{predictionStatus.total}</span> players have predicted{' '}
-              {predictionStatus.raceName}.
-            </p>
-            {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-f1-neutral-700">
-                    <th className="text-left py-3 px-4">Nickname</th>
-                    <th className="text-left py-3 px-4">Email</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {predictionStatus.users.map(user => (
-                    <tr key={user.id} className="border-b border-f1-neutral-800 hover:bg-f1-neutral-800/50">
-                      <td className="py-3 px-4 font-medium">{user.nickname}</td>
-                      <td className="py-3 px-4 text-white">{user.email}</td>
-                      <td className="py-3 px-4">
-                        {user.hasPredicted ? (
-                          <span className="text-xs bg-green-600/30 text-green-400 px-2 py-1">✓ Predicted</span>
-                        ) : (
-                          <span className="text-xs bg-red-600/30 text-red-400 px-2 py-1">Not yet</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="sm:hidden space-y-2">
-              {predictionStatus.users.map(user => (
-                <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{user.nickname}</p>
-                      <p className="text-xs text-white truncate">{user.email}</p>
-                    </div>
-                    {user.hasPredicted ? (
-                      <span className="shrink-0 text-xs bg-green-600/30 text-green-400 px-2 py-1">✓ Predicted</span>
-                    ) : (
-                      <span className="shrink-0 text-xs bg-red-600/30 text-red-400 px-2 py-1">Not yet</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-
       {/* Broadcast Email */}
       <div className="card-f1 mb-8">
         <h2 className="text-2xl font-bold mb-6">Broadcast Email</h2>
@@ -1180,470 +1415,8 @@ const Admin = () => {
         </form>
       </div>
 
-      {/* Scheduling Documentation */}
-      <div className="card-f1 mb-8">
-        <h2 className="text-2xl font-bold mb-6">Scheduling Logic Documentation</h2>
-
-        {/* Visual Timeline */}
-        <div className="bg-f1-neutral-800 p-6 mb-6">
-          <h3 className="text-lg font-bold text-f1-yellow-500 mb-4">Race Weekend Timeline</h3>
-          <div className="font-mono text-sm text-white space-y-2">
-            <p className="text-f1-yellow-400 font-bold">SUNDAY (Race Day)</p>
-            <p>12:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
-            <p>    │                                                    │</p>
-            <p>    ├─ Copy missing predictions (every 2 min until 18:00)│</p>
-            <p>    │                                                    │</p>
-            <p>    └─ Check for provisional results (every 5 min) ──────┘</p>
-            <p>                    │</p>
-            <p>                    ▼</p>
-            <p className="text-green-400">         Race ends ~14:00-16:00 UTC</p>
-            <p>                    │</p>
-            <p>                    ▼ (5 min after race)</p>
-            <p className="text-yellow-400">         📧 Provisional Results Email sent</p>
-            <p></p>
-            <p className="text-f1-blue font-bold">MONDAY (Next Day)</p>
-            <p>09:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
-            <p>    │                                                    │</p>
-            <p>    ├─ 09:00: Sync driver standings                      │</p>
-            <p>    ├─ 09:15: Sync race results                          │</p>
-            <p>    │                                                    │</p>
-            <p>    └─ Check for final results (hourly 12:00-20:00) ─────┘</p>
-            <p>                    │</p>
-            <p>                    ▼ (24+ hours after race)</p>
-            <p className="text-green-400">         📧 Final Results Email sent</p>
-            <p className="text-white">         (Points recalculated for DQs/penalties)</p>
-          </div>
-        </div>
-
-        {/* Job Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Copy Missing Predictions */}
-          <div className="bg-f1-neutral-800 p-5">
-            <h4 className="font-bold text-f1-yellow-400 mb-3">1. Copy Missing Predictions</h4>
-            <p className="text-sm text-white mb-3">
-              Runs for races that locked 1-10 minutes ago. Finds users who have predicted before
-              but NOT for this race, and copies their most recent prediction automatically.
-            </p>
-            <div className="text-xs space-y-1">
-              <p><span className="text-white">Schedule:</span> <span className="font-mono">*/2 12-18 * * 0</span></p>
-              <p><span className="text-white">Trigger:</span> Race locked 1-10 min ago</p>
-              <p><span className="text-white">Email:</span> None (silent operation)</p>
-            </div>
-          </div>
-
-          {/* Provisional Results */}
-          <div className="bg-f1-neutral-800 p-5">
-            <h4 className="font-bold text-yellow-400 mb-3">2. Send Provisional Results</h4>
-            <p className="text-sm text-white mb-3">
-              Fetches results from Jolpi API, stores in database, calculates points for each
-              user's prediction, and sends provisional results email.
-            </p>
-            <div className="text-xs space-y-1">
-              <p><span className="text-white">Schedule:</span> <span className="font-mono">*/5 12-20 * * 0</span></p>
-              <p><span className="text-white">Trigger:</span> Race finished 5 min - 3 hrs ago, not sent yet</p>
-              <p><span className="text-white">Email:</span> Provisional results with points breakdown</p>
-            </div>
-          </div>
-
-          {/* Final Results */}
-          <div className="bg-f1-neutral-800 p-5">
-            <h4 className="font-bold text-green-400 mb-3">3. Process Final Results</h4>
-            <p className="text-sm text-white mb-3">
-              Re-fetches results (may include DQs/penalties), recalculates all points from scratch,
-              updates user totals, and sends final results email.
-            </p>
-            <div className="text-xs space-y-1">
-              <p><span className="text-white">Schedule:</span> <span className="font-mono">0 12-20 * * 1</span></p>
-              <p><span className="text-white">Trigger:</span> Race 24+ hrs old, status = provisional</p>
-              <p><span className="text-white">Email:</span> Final points (shows changes if any)</p>
-            </div>
-          </div>
-
-          {/* Sync Jobs */}
-          <div className="bg-f1-neutral-800 p-5">
-            <h4 className="font-bold text-f1-blue mb-3">4. Sync Driver Standings & Race Results</h4>
-            <p className="text-sm text-white mb-3">
-              Updates F1 championship points and imports race results from Jolpi API.
-              Can be triggered manually from this panel.
-            </p>
-            <div className="text-xs space-y-1">
-              <p><span className="text-white">Schedule:</span> <span className="font-mono">0 9 * * 1,4</span> and <span className="font-mono">15 9 * * 1,4</span></p>
-              <p><span className="text-white">Trigger:</span> Mon & Thu at 09:00/09:15 UTC</p>
-              <p><span className="text-white">Email:</span> None</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Points System */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-f1-neutral-800 p-5">
-            <h4 className="font-bold text-f1-yellow-500 mb-3">Main Race Points (Top 10)</h4>
-            <div className="grid grid-cols-5 gap-2 text-center text-sm">
-              {[
-                { pos: 'P1', pts: 25 }, { pos: 'P2', pts: 18 }, { pos: 'P3', pts: 15 },
-                { pos: 'P4', pts: 12 }, { pos: 'P5', pts: 10 }, { pos: 'P6', pts: 8 },
-                { pos: 'P7', pts: 6 }, { pos: 'P8', pts: 4 }, { pos: 'P9', pts: 2 }, { pos: 'P10', pts: 1 }
-              ].map(({ pos, pts }) => (
-                <div key={pos} className="bg-f1-neutral-700 p-2">
-                  <p className="text-white text-xs">{pos}</p>
-                  <p className="font-bold">{pts}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bg-f1-neutral-800 p-5">
-            <h4 className="font-bold text-f1-yellow-500 mb-3">Sprint Race Points (Top 8)</h4>
-            <div className="grid grid-cols-4 gap-2 text-center text-sm">
-              {[
-                { pos: 'P1', pts: 8 }, { pos: 'P2', pts: 7 }, { pos: 'P3', pts: 6 }, { pos: 'P4', pts: 5 },
-                { pos: 'P5', pts: 4 }, { pos: 'P6', pts: 3 }, { pos: 'P7', pts: 2 }, { pos: 'P8', pts: 1 }
-              ].map(({ pos, pts }) => (
-                <div key={pos} className="bg-f1-neutral-700 p-2">
-                  <p className="text-white text-xs">{pos}</p>
-                  <p className="font-bold">{pts}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-green-400 mt-3">+50% bonus if predicted within ±1 position</p>
-          </div>
-        </div>
-
-        {/* Email Types */}
-        <div className="bg-f1-neutral-800 p-5 mb-6">
-          <h4 className="font-bold text-f1-yellow-500 mb-3">Email Types</h4>
-          {/* Desktop table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-f1-neutral-700">
-                  <th className="text-left py-2 px-3 text-white">Email</th>
-                  <th className="text-left py-2 px-3 text-white">Trigger</th>
-                  <th className="text-left py-2 px-3 text-white">Contents</th>
-                </tr>
-              </thead>
-              <tbody className="text-white">
-                <tr className="border-b border-f1-neutral-700/50">
-                  <td className="py-2 px-3 font-medium text-white">Prediction Confirmation</td>
-                  <td className="py-2 px-3">User saves prediction</td>
-                  <td className="py-2 px-3">List of predicted positions</td>
-                </tr>
-                <tr className="border-b border-f1-neutral-700/50">
-                  <td className="py-2 px-3 font-medium text-yellow-400">Provisional Results</td>
-                  <td className="py-2 px-3">~5 min after race</td>
-                  <td className="py-2 px-3">Race results, prediction breakdown, points earned</td>
-                </tr>
-                <tr>
-                  <td className="py-2 px-3 font-medium text-green-400">Final Results</td>
-                  <td className="py-2 px-3">24+ hours after race</td>
-                  <td className="py-2 px-3">Final points, changes highlighted if any</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="sm:hidden space-y-2 text-sm">
-            {[
-              { name: 'Prediction Confirmation', color: 'text-white', trigger: 'User saves prediction', contents: 'List of predicted positions' },
-              { name: 'Provisional Results', color: 'text-yellow-400', trigger: '~5 min after race', contents: 'Race results, prediction breakdown, points earned' },
-              { name: 'Final Results', color: 'text-green-400', trigger: '24+ hours after race', contents: 'Final points, changes highlighted if any' },
-            ].map(email => (
-              <div key={email.name} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
-                <p className={`font-medium ${email.color}`}>{email.name}</p>
-                <p className="text-white text-xs mt-1">Trigger: {email.trigger}</p>
-                <p className="text-white text-xs">Contents: {email.contents}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Yearly Points Reset */}
-        <div className="bg-f1-neutral-800 p-5 mb-6">
-          <h4 className="font-bold text-purple-400 mb-3">5. Yearly Points Reset</h4>
-          <p className="text-sm text-white mb-3">
-            Automatically resets all user points to 0 at the start of each new F1 season.
-            This ensures a fresh leaderboard competition every year.
-          </p>
-          <div className="text-xs space-y-1">
-            <p><span className="text-white">Schedule:</span> <span className="font-mono">0 0 1 1 *</span></p>
-            <p><span className="text-white">Trigger:</span> January 1st at 00:00 UTC</p>
-            <p><span className="text-white">Action:</span> UPDATE users SET total_points = 0</p>
-            <p><span className="text-white">Email:</span> None</p>
-          </div>
-        </div>
-
-        {/* Race Status Flow */}
-        <div className="bg-f1-neutral-800 p-5">
-          <h4 className="font-bold text-f1-yellow-500 mb-3">Race Status Flow</h4>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="bg-f1-blue-dark/50 text-white px-3 py-1">upcoming</span>
-            <span className="text-white">→ race ends →</span>
-            <span className="bg-f1-yellow-900/20 text-orange-300 px-3 py-1">provisional</span>
-            <span className="text-white">→ 24 hours →</span>
-            <span className="bg-green-900/50 text-green-300 px-3 py-1">completed</span>
-          </div>
-          <p className="text-xs text-white mt-3">
-            Provisional status allows for DQs/penalties to be applied before final points are calculated.
-          </p>
-        </div>
-      </div>
-
-      {/* System Information Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* API URLs */}
-        <div className="card-f1">
-          <h2 className="text-xl font-bold mb-4 text-f1-yellow-500">External APIs</h2>
-          <div className="space-y-3">
-            <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-white mb-1">OpenF1 API</p>
-              <p className="text-xs font-mono break-all">https://api.openf1.org/v1</p>
-              <p className="text-xs text-white mt-1">Driver info, live data</p>
-            </div>
-            <div className="bg-f1-neutral-800 p-4">
-              <p className="text-sm text-white mb-1">Jolpi Ergast API</p>
-              <p className="text-xs font-mono break-all">https://api.jolpi.ca/ergast/f1</p>
-              <p className="text-xs text-white mt-1">Championship standings, race results</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Cron Schedule Info */}
-        <div className="card-f1">
-          <h2 className="text-xl font-bold mb-4 text-f1-yellow-500">Cron Schedule Summary</h2>
-          <div className="space-y-2 text-sm">
-            <div className="bg-purple-900/30 border border-purple-500/30 p-3">
-              <div className="flex justify-between items-center">
-                <span className="text-purple-300 font-medium">Yearly points reset</span>
-                <span className="text-purple-400 font-mono text-xs">0 0 1 1 *</span>
-              </div>
-              <p className="text-xs text-purple-200/70 mt-1">Every January 1st at midnight</p>
-            </div>
-            <div className="bg-f1-neutral-800 p-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Driver standings sync</span>
-                <span className="text-white font-mono text-xs">0 9 * * 1,4</span>
-              </div>
-              <p className="text-xs text-white mt-1">Every Monday & Thursday at 9:00 AM</p>
-            </div>
-            <div className="bg-f1-neutral-800 p-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Race results sync</span>
-                <span className="text-white font-mono text-xs">0 3 * * 1</span>
-              </div>
-              <p className="text-xs text-white mt-1">Every Monday at 3:00 AM</p>
-            </div>
-            <div className="bg-f1-neutral-800 p-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Copy missing predictions</span>
-                <span className="text-white font-mono text-xs">*/2 12-18 * * 0</span>
-              </div>
-              <p className="text-xs text-white mt-1">Every Sunday, every 2 minutes between 12:00 - 18:00</p>
-            </div>
-            <div className="bg-f1-neutral-800 p-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Send provisional results</span>
-                <span className="text-white font-mono text-xs">*/5 12-20 * * 0</span>
-              </div>
-              <p className="text-xs text-white mt-1">Every Sunday, every 5 minutes between 12:00 - 20:00</p>
-            </div>
-            <div className="bg-f1-neutral-800 p-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Process final results</span>
-                <span className="text-white font-mono text-xs">0 12-20 * * 1</span>
-              </div>
-              <p className="text-xs text-white mt-1">Every Monday, hourly between 12:00 - 20:00</p>
-            </div>
-          </div>
-          <p className="text-xs text-white mt-3">All times are in UTC. Logs: /var/log/cron.log</p>
-        </div>
-      </div>
-
-      <div className="card-f1">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">User Management</h2>
-          <button
-            onClick={fetchUsers}
-            disabled={loading}
-            className="btn-f1-secondary text-sm py-2 px-4"
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-
-        {loading && users.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-f1-yellow-500 mx-auto"></div>
-            <p className="mt-4 text-white">Loading users...</p>
-          </div>
-        ) : (
-          <>
-          {/* Desktop table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-f1-neutral-700">
-                  <th className="text-left py-3 px-4">ID</th>
-                  <th className="text-left py-3 px-4">Nickname</th>
-                  <th className="text-left py-3 px-4">Email</th>
-                  <th className="text-left py-3 px-4">Points</th>
-                  <th className="text-left py-3 px-4">Created</th>
-                  <th className="text-left py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-f1-neutral-800 hover:bg-f1-neutral-800/50"
-                  >
-                    <td className="py-3 px-4 text-white">{user.id}</td>
-                    <td className="py-3 px-4 font-medium">
-                      {user.nickname}
-                      {user.is_admin && (
-                        <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-white">{user.email}</td>
-                    <td className="py-3 px-4 text-f1-yellow-500 font-bold">
-                      {user.total_points}
-                    </td>
-                    <td className="py-3 px-4 text-white text-sm">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 space-x-2">
-                      <button
-                        onClick={() => {
-                          setPasswordModal({ userId: user.id, nickname: user.nickname });
-                          setNewPassword('');
-                          setPasswordStatus('idle');
-                          setPasswordMessage(null);
-                        }}
-                        className="bg-f1-blue hover:brightness-110 text-white px-3 py-1 text-sm transition-colors"
-                      >
-                        Set Password
-                      </button>
-                      <button
-                        onClick={() => handleToggleGroupStarter(user)}
-                        className={`px-3 py-1 text-sm font-bold transition-colors ${
-                          user.can_start_groups
-                            ? 'bg-f1-yellow-500 text-black hover:brightness-110'
-                            : 'bg-f1-blue-dark text-white hover:brightness-125'
-                        }`}
-                        title="Let this player start groups"
-                      >
-                        Groups: {user.can_start_groups ? 'ON' : 'OFF'}
-                      </button>
-                      {!user.is_admin && (
-                        <button
-                          onClick={() => handleTogglePitwall(user)}
-                          className={`px-3 py-1 text-sm font-bold transition-colors ${
-                            user.pitwall_access
-                              ? 'bg-f1-yellow-500 text-black hover:brightness-110'
-                              : 'bg-f1-blue-dark text-white hover:brightness-125'
-                          }`}
-                          title="Let this player submit ideas on the Pit Wall"
-                        >
-                          Pit Wall: {user.pitwall_access ? 'ON' : 'OFF'}
-                        </button>
-                      )}
-                      {!user.is_admin && (
-                        <button
-                          onClick={() => handleDeleteUser(user.id, user.nickname)}
-                          className="bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-1 text-sm transition-colors"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {users.length === 0 && !loading && (
-              <div className="text-center py-8 text-white">
-                No users found
-              </div>
-            )}
-          </div>
-
-          {/* Mobile cards */}
-          <div className="sm:hidden space-y-3">
-            {users.map((user) => (
-              <div key={user.id} className="bg-f1-neutral-800 border border-f1-neutral-700 p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {user.nickname}
-                      {user.is_admin && (
-                        <span className="ml-2 text-xs bg-yellow-600/30 text-yellow-400 px-2 py-0.5">ADMIN</span>
-                      )}
-                    </p>
-                    <p className="text-xs text-white truncate">{user.email}</p>
-                  </div>
-                  <p className="text-f1-yellow-500 font-bold shrink-0 ml-2">{user.total_points}</p>
-                </div>
-                <p className="text-xs text-white mb-3">
-                  ID {user.id} · Joined {new Date(user.created_at).toLocaleDateString()}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => {
-                      setPasswordModal({ userId: user.id, nickname: user.nickname });
-                      setNewPassword('');
-                      setPasswordStatus('idle');
-                      setPasswordMessage(null);
-                    }}
-                    className="flex-1 bg-f1-blue hover:brightness-110 text-white px-3 py-2 text-sm transition-colors"
-                  >
-                    Set Password
-                  </button>
-                  <button
-                    onClick={() => handleToggleGroupStarter(user)}
-                    className={`flex-1 px-3 py-2 text-sm font-bold transition-colors ${
-                      user.can_start_groups ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white'
-                    }`}
-                  >
-                    Groups: {user.can_start_groups ? 'ON' : 'OFF'}
-                  </button>
-                  {!user.is_admin && (
-                    <button
-                      onClick={() => handleTogglePitwall(user)}
-                      className={`flex-1 px-3 py-2 text-sm font-bold transition-colors ${
-                        user.pitwall_access ? 'bg-f1-yellow-500 text-black' : 'bg-f1-blue-dark text-white'
-                      }`}
-                    >
-                      Pit Wall: {user.pitwall_access ? 'ON' : 'OFF'}
-                    </button>
-                  )}
-                  {!user.is_admin && (
-                    <button
-                      onClick={() => handleDeleteUser(user.id, user.nickname)}
-                      className="flex-1 bg-red-600 hover:bg-f1-yellow-600 hover:text-black text-white px-3 py-2 text-sm transition-colors"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {users.length === 0 && !loading && (
-              <div className="text-center py-8 text-white">
-                No users found
-              </div>
-            )}
-          </div>
-          </>
-        )}
-
-        <div className="mt-6 text-sm text-white">
-          Total users: <span className="text-white font-bold">{users.length}</span>
-        </div>
-      </div>
-
       {/* Pit Wall ideas submitted by players */}
-      <div className="card-f1 mt-8">
+      <div className="card-f1 mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Pit Wall Ideas</h2>
@@ -1725,7 +1498,7 @@ const Admin = () => {
       </div>
 
       {/* Weekend flags: FIA documents that probably change predictions */}
-      <div className="card-f1 mt-8">
+      <div className="card-f1 mb-8">
         <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3 mb-4">
           <div>
             <h2 className="text-2xl font-bold">Race weekend flags</h2>
@@ -1793,7 +1566,7 @@ const Admin = () => {
       </div>
 
       {/* Drivers who are not racing a weekend: out of the picker, their predictions reset */}
-      <div className="card-f1 mt-8">
+      <div className="card-f1 mb-8">
         <div className="mb-6">
           <h2 className="text-2xl font-bold">Drivers not racing</h2>
           <p className="text-xs text-white/60 mt-1">
@@ -1876,7 +1649,7 @@ const Admin = () => {
       </div>
 
       {/* Group play: every group with its owner and members (nicknames only, never emails) */}
-      <div className="card-f1 mt-8">
+      <div className="card-f1 mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Groups</h2>
@@ -1967,7 +1740,7 @@ const Admin = () => {
       </div>
 
       {/* Sign-up and departure emails: what went out, what failed */}
-      <div className="card-f1 mt-8">
+      <div className="card-f1 mb-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Sign-up Emails</h2>
@@ -2016,6 +1789,268 @@ const Admin = () => {
           </div>
         )}
       </div>
+
+      {/* System reference: cron jobs, scheduling logic and data sources, closed until needed */}
+      <details className="group/ref card-f1">
+        <summary className="flex items-center justify-between gap-3 cursor-pointer list-none">
+          <div>
+            <h2 className="text-2xl font-bold">System reference</h2>
+            <p className="text-xs text-white/60 mt-1">Cron jobs, scheduling logic and where the data comes from.</p>
+          </div>
+          <span aria-hidden="true" className="shrink-0 text-f1-yellow-500 text-3xl leading-none transition-transform group-open/ref:rotate-45">+</span>
+        </summary>
+
+        <div className="mt-6 space-y-1">
+          <details className="group/sec bg-f1-neutral-850 border border-f1-neutral-800">
+            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-4 py-3 bg-f1-blue text-white font-f1 font-bold uppercase tracking-wide text-sm group-open/sec:bg-f1-blue-dark">
+              <span>Cron jobs ({CRON_JOBS.length})</span>
+              <span aria-hidden="true" className="shrink-0 text-f1-yellow-500 text-lg leading-none transition-transform group-open/sec:rotate-45">+</span>
+            </summary>
+            {CRON_JOBS.map((job, i) => (
+              <div key={job.name} className={`px-4 py-3 text-white ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+                <div className="flex flex-wrap justify-between items-baseline gap-x-4">
+                  <span className="font-medium">{job.name}</span>
+                  <span className="font-mono text-xs text-white/80">{job.cron}</span>
+                </div>
+                <p className="text-xs text-white/80 mt-1">{job.when}</p>
+              </div>
+            ))}
+            <p className="px-4 py-3 text-xs text-white/60">
+              All times UTC (Dutch time is UTC+1 in winter, UTC+2 in summer). Log: /var/log/cron.log, emptied on Tuesday and on every redeploy.
+            </p>
+          </details>
+
+          <details className="group/sec bg-f1-neutral-850 border border-f1-neutral-800">
+            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-4 py-3 bg-f1-blue text-white font-f1 font-bold uppercase tracking-wide text-sm group-open/sec:bg-f1-blue-dark">
+              <span>Scheduling logic</span>
+              <span aria-hidden="true" className="shrink-0 text-f1-yellow-500 text-lg leading-none transition-transform group-open/sec:rotate-45">+</span>
+            </summary>
+            <div className="p-4">
+              {/* Visual Timeline */}
+              <div className="bg-f1-neutral-800 p-6 mb-6">
+                <h3 className="text-lg font-bold text-f1-yellow-500 mb-4">Race Weekend Timeline</h3>
+                <div className="font-mono text-sm text-white space-y-2 overflow-x-auto">
+                  <p className="text-f1-yellow-400 font-bold">SUNDAY (Race Day)</p>
+                  <p>12:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
+                  <p>    │                                                    │</p>
+                  <p>    ├─ Copy missing predictions (every 2 min until 18:00)│</p>
+                  <p>    │                                                    │</p>
+                  <p>    └─ Check for provisional results (every 5 min) ──────┘</p>
+                  <p>                    │</p>
+                  <p>                    ▼</p>
+                  <p className="text-green-400">         Race ends ~14:00-16:00 UTC</p>
+                  <p>                    │</p>
+                  <p>                    ▼ (5 min after race)</p>
+                  <p className="text-yellow-400">         📧 Provisional Results Email sent</p>
+                  <p></p>
+                  <p className="text-f1-blue font-bold">MONDAY (Next Day)</p>
+                  <p>09:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
+                  <p>    │                                                    │</p>
+                  <p>    ├─ 09:00: Sync driver standings                      │</p>
+                  <p>    ├─ 09:15: Sync race results                          │</p>
+                  <p>    │                                                    │</p>
+                  <p>    └─ Check for final results (hourly 12:00-20:00) ─────┘</p>
+                  <p>                    │</p>
+                  <p>                    ▼ (24+ hours after race)</p>
+                  <p className="text-green-400">         📧 Final Results Email sent</p>
+                  <p className="text-white">         (Points recalculated for DQs/penalties)</p>
+                </div>
+              </div>
+
+              {/* Job Details */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Copy Missing Predictions */}
+                <div className="bg-f1-neutral-800 p-5">
+                  <h4 className="font-bold text-f1-yellow-400 mb-3">1. Copy Missing Predictions</h4>
+                  <p className="text-sm text-white mb-3">
+                    Runs for races that locked 1-10 minutes ago. Finds users who have predicted before
+                    but NOT for this race, and copies their most recent prediction automatically.
+                  </p>
+                  <div className="text-xs space-y-1">
+                    <p><span className="text-white">Schedule:</span> <span className="font-mono">*/2 12-18 * * 0</span></p>
+                    <p><span className="text-white">Trigger:</span> Race locked 1-10 min ago</p>
+                    <p><span className="text-white">Email:</span> None (silent operation)</p>
+                  </div>
+                </div>
+
+                {/* Provisional Results */}
+                <div className="bg-f1-neutral-800 p-5">
+                  <h4 className="font-bold text-yellow-400 mb-3">2. Send Provisional Results</h4>
+                  <p className="text-sm text-white mb-3">
+                    Fetches results from Jolpi API, stores in database, calculates points for each
+                    user's prediction, and sends provisional results email.
+                  </p>
+                  <div className="text-xs space-y-1">
+                    <p><span className="text-white">Schedule:</span> <span className="font-mono">*/5 12-20 * * 0</span></p>
+                    <p><span className="text-white">Trigger:</span> Race finished 5 min - 3 hrs ago, not sent yet</p>
+                    <p><span className="text-white">Email:</span> Provisional results with points breakdown</p>
+                  </div>
+                </div>
+
+                {/* Final Results */}
+                <div className="bg-f1-neutral-800 p-5">
+                  <h4 className="font-bold text-green-400 mb-3">3. Process Final Results</h4>
+                  <p className="text-sm text-white mb-3">
+                    Re-fetches results (may include DQs/penalties), recalculates all points from scratch,
+                    updates user totals, and sends final results email.
+                  </p>
+                  <div className="text-xs space-y-1">
+                    <p><span className="text-white">Schedule:</span> <span className="font-mono">0 12-20 * * 1</span></p>
+                    <p><span className="text-white">Trigger:</span> Race 24+ hrs old, status = provisional</p>
+                    <p><span className="text-white">Email:</span> Final points (shows changes if any)</p>
+                  </div>
+                </div>
+
+                {/* Sync Jobs */}
+                <div className="bg-f1-neutral-800 p-5">
+                  <h4 className="font-bold text-f1-blue mb-3">4. Sync Driver Standings & Race Results</h4>
+                  <p className="text-sm text-white mb-3">
+                    Updates F1 championship points and imports race results from Jolpi API.
+                    Can be triggered manually from this panel.
+                  </p>
+                  <div className="text-xs space-y-1">
+                    <p><span className="text-white">Schedule:</span> <span className="font-mono">0 9 * * 1,4</span> and <span className="font-mono">15 9 * * 1,4</span></p>
+                    <p><span className="text-white">Trigger:</span> Mon & Thu at 09:00/09:15 UTC</p>
+                    <p><span className="text-white">Email:</span> None</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Points System */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-f1-neutral-800 p-5">
+                  <h4 className="font-bold text-f1-yellow-500 mb-3">Main Race Points (Top 10)</h4>
+                  <div className="grid grid-cols-5 gap-2 text-center text-sm">
+                    {[
+                      { pos: 'P1', pts: 25 }, { pos: 'P2', pts: 18 }, { pos: 'P3', pts: 15 },
+                      { pos: 'P4', pts: 12 }, { pos: 'P5', pts: 10 }, { pos: 'P6', pts: 8 },
+                      { pos: 'P7', pts: 6 }, { pos: 'P8', pts: 4 }, { pos: 'P9', pts: 2 }, { pos: 'P10', pts: 1 }
+                    ].map(({ pos, pts }) => (
+                      <div key={pos} className="bg-f1-neutral-700 p-2">
+                        <p className="text-white text-xs">{pos}</p>
+                        <p className="font-bold">{pts}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-f1-neutral-800 p-5">
+                  <h4 className="font-bold text-f1-yellow-500 mb-3">Sprint Race Points (Top 8)</h4>
+                  <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                    {[
+                      { pos: 'P1', pts: 8 }, { pos: 'P2', pts: 7 }, { pos: 'P3', pts: 6 }, { pos: 'P4', pts: 5 },
+                      { pos: 'P5', pts: 4 }, { pos: 'P6', pts: 3 }, { pos: 'P7', pts: 2 }, { pos: 'P8', pts: 1 }
+                    ].map(({ pos, pts }) => (
+                      <div key={pos} className="bg-f1-neutral-700 p-2">
+                        <p className="text-white text-xs">{pos}</p>
+                        <p className="font-bold">{pts}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-400 mt-3">+50% bonus if predicted within ±1 position</p>
+                </div>
+              </div>
+
+              {/* Email Types */}
+              <div className="bg-f1-neutral-800 p-5 mb-6">
+                <h4 className="font-bold text-f1-yellow-500 mb-3">Email Types</h4>
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-f1-neutral-700">
+                        <th className="text-left py-2 px-3 text-white">Email</th>
+                        <th className="text-left py-2 px-3 text-white">Trigger</th>
+                        <th className="text-left py-2 px-3 text-white">Contents</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-white">
+                      <tr className="border-b border-f1-neutral-700/50">
+                        <td className="py-2 px-3 font-medium text-white">Prediction Confirmation</td>
+                        <td className="py-2 px-3">User saves prediction</td>
+                        <td className="py-2 px-3">List of predicted positions</td>
+                      </tr>
+                      <tr className="border-b border-f1-neutral-700/50">
+                        <td className="py-2 px-3 font-medium text-yellow-400">Provisional Results</td>
+                        <td className="py-2 px-3">~5 min after race</td>
+                        <td className="py-2 px-3">Race results, prediction breakdown, points earned</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-medium text-green-400">Final Results</td>
+                        <td className="py-2 px-3">24+ hours after race</td>
+                        <td className="py-2 px-3">Final points, changes highlighted if any</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="sm:hidden space-y-2 text-sm">
+                  {[
+                    { name: 'Prediction Confirmation', color: 'text-white', trigger: 'User saves prediction', contents: 'List of predicted positions' },
+                    { name: 'Provisional Results', color: 'text-yellow-400', trigger: '~5 min after race', contents: 'Race results, prediction breakdown, points earned' },
+                    { name: 'Final Results', color: 'text-green-400', trigger: '24+ hours after race', contents: 'Final points, changes highlighted if any' },
+                  ].map(email => (
+                    <div key={email.name} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
+                      <p className={`font-medium ${email.color}`}>{email.name}</p>
+                      <p className="text-white text-xs mt-1">Trigger: {email.trigger}</p>
+                      <p className="text-white text-xs">Contents: {email.contents}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Yearly Points Reset */}
+              <div className="bg-f1-neutral-800 p-5 mb-6">
+                <h4 className="font-bold text-purple-400 mb-3">5. Yearly Points Reset</h4>
+                <p className="text-sm text-white mb-3">
+                  Automatically resets all user points to 0 at the start of each new F1 season.
+                  This ensures a fresh leaderboard competition every year.
+                </p>
+                <div className="text-xs space-y-1">
+                  <p><span className="text-white">Schedule:</span> <span className="font-mono">0 0 1 1 *</span></p>
+                  <p><span className="text-white">Trigger:</span> January 1st at 00:00 UTC</p>
+                  <p><span className="text-white">Action:</span> UPDATE users SET total_points = 0</p>
+                  <p><span className="text-white">Email:</span> None</p>
+                </div>
+              </div>
+
+              {/* Race Status Flow */}
+              <div className="bg-f1-neutral-800 p-5">
+                <h4 className="font-bold text-f1-yellow-500 mb-3">Race Status Flow</h4>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="bg-f1-blue-dark/50 text-white px-3 py-1">upcoming</span>
+                  <span className="text-white">→ race ends →</span>
+                  <span className="bg-f1-yellow-900/20 text-orange-300 px-3 py-1">provisional</span>
+                  <span className="text-white">→ 24 hours →</span>
+                  <span className="bg-green-900/50 text-green-300 px-3 py-1">completed</span>
+                </div>
+                <p className="text-xs text-white mt-3">
+                  Provisional status allows for DQs/penalties to be applied before final points are calculated.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details className="group/sec bg-f1-neutral-850 border border-f1-neutral-800">
+            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-4 py-3 bg-f1-blue text-white font-f1 font-bold uppercase tracking-wide text-sm group-open/sec:bg-f1-blue-dark">
+              <span>APIs and sources ({DATA_SOURCES.length})</span>
+              <span aria-hidden="true" className="shrink-0 text-f1-yellow-500 text-lg leading-none transition-transform group-open/sec:rotate-45">+</span>
+            </summary>
+            {DATA_SOURCES.map((source, i) => (
+              <div key={source.name} className={`px-4 py-3 text-white ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                  <span className="font-medium">{source.name}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-black/30 px-2 py-0.5">{source.kind}</span>
+                </div>
+                {source.addresses.map(address => (
+                  <p key={address} className="text-xs font-mono break-all text-white/80 mt-1">{address}</p>
+                ))}
+                <p className="text-xs text-white/80 mt-1">{source.use}</p>
+              </div>
+            ))}
+          </details>
+        </div>
+      </details>
 
       {/* Set Password Modal */}
       {passwordModal && (
