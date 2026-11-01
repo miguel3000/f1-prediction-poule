@@ -425,8 +425,9 @@ echo "[$(date)] thing completed"
 ```
 3. `COPY thing.sh /app/thing.sh` in the `Dockerfile` (next to the others) and a line in `crontab`
    with a comment saying when and why. Times are UTC (Dutch summer time is UTC+2). Add the job to
-   `CRON_JOBS` in `frontend/src/pages/Admin.tsx` too (Pitlane, "System reference"); that list is typed
-   by hand and had drifted from the crontab.
+   `CRON_JOBS` in `frontend/src/pages/Admin.tsx` too (Pitlane, "System reference"), and change
+   `RACE_TIMELINE` / `JOB_DETAILS` / `EMAIL_TYPES` there if the job changes what happens around a race
+   or which mail goes out. These lists are typed by hand and had drifted from the scripts.
 4. The cron log is wiped on Tuesday and on every redeploy. Alerts and state go to the database.
 5. Run the script once by hand on the Pi (`docker exec f1-app node dist/scripts/thing.js`) and
    check it does nothing it should not.

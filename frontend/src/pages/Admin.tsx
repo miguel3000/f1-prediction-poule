@@ -115,8 +115,8 @@ const CRON_JOBS = [
   { name: 'Starting grid', cron: '*/5 * * * *', when: 'Every 5 minutes, all week. Every 15th minute it reads formula1.com for a start 75 minutes to 30 hours away; OpenF1 is the fallback in the last 3 hours.' },
   { name: 'Missed-prediction reminder', cron: '*/5 1-20 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 01:00 to 20:59. Mails players who have not predicted, about an hour before the start.' },
   { name: 'Copy missing predictions', cron: '*/2 2-20 * * 0,6', when: 'Saturday and Sunday, every 2 minutes from 02:00 to 20:59. Copies the last prediction of players who forgot, just after the lock.' },
-  { name: 'Provisional results', cron: '*/5 2-22 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 02:00 to 22:59. Stores results, scores predictions and mails players about 5 minutes after the finish.' },
-  { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours old, penalties included.' },
+  { name: 'Provisional results', cron: '*/5 2-22 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 02:00 to 22:59. From 5 minutes after the start it looks for confirmed results, then scores predictions and mails players.' },
+  { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours past the start, penalties included.' },
   { name: 'Weekend flags', cron: '*/10 * * * *', when: 'Every 10 minutes, all week; works only from 6 days before a main race until its prediction lock. Reads the FIA decision documents and emails you what probably changes predictions.' },
   { name: 'Log rotation', cron: '0 3 * * 2', when: 'Tuesday at 03:00. Empties /var/log/cron.log.' },
 ];
@@ -138,6 +138,83 @@ const DATA_SOURCES = [
     ],
     use: 'The headlines on the News page, cached for 15 minutes.',
   },
+];
+
+// The scheduling documentation. Checked against backend/src/scripts and /crontab on 1 Nov 2026: when
+// a job's trigger, window or mail changes, change it here too.
+const RACE_TIMELINE = [
+  { when: 'T −6 days → lock', what: 'Weekend flags, main race only: every 10 minutes it reads the FIA decision documents and emails you what probably changes predictions.' },
+  { when: 'After qualifying', what: 'Qualifying results: every 10 minutes from Friday to Sunday until stored (Jolpi, then OpenF1). You get an email if one is still missing hours later.' },
+  { when: 'T −30 h → T −75 min', what: 'Starting grid from formula1.com, read every 15th minute and refreshed when a penalty changes it.' },
+  { when: 'T −3 h → T', what: "OpenF1 is the fallback for the grid. F1 live timing fills it in during the last hour and overwrites the page's grid." },
+  { when: 'T −65 → T −55 min', what: 'Missed-prediction reminder, once, to every player with no prediction for this race.' },
+  { when: 'T −1 min', what: 'Predictions lock (PREDICTION_LOCK_MINUTES, 1 on the Pi).' },
+  { when: 'T −1 → T +9 min', what: 'Copy missing predictions: players with none get their latest one copied, with a notice saying what was copied.' },
+  { when: 'From T +5 min', what: 'Provisional results, every 5 minutes until applied. Three sources are compared; applied when two agree, or when one is alone after 2.5 hours (sprint: 1.5 hours); held, with an email to you, when they disagree. Then points are calculated, the race becomes provisional and players get their results.' },
+  { when: 'T +6 h', what: 'Still nothing applied: one alert to you. The provisional job stops looking at this race; the Monday sync picks it up.' },
+  { when: 'T +24 h', what: 'Final results, checked hourly: sources compared again, points recalculated for penalties and disqualifications, final mail to players, "The results are in!" to everyone, race becomes completed. If the sources cannot agree, the stored results stay and you are told.' },
+  { when: 'Monday 03:00', what: 'Race results sync: catches any race that started but has no results or is still upcoming. Same cross-check, but it marks the race completed straight away, with no 24-hour pass.' },
+];
+
+const JOB_DETAILS = [
+  {
+    title: 'Missed-prediction reminder',
+    color: 'text-f1-blue',
+    about: 'Once per race, mails every player who has no prediction yet, so there is time to predict before the lock.',
+    schedule: '*/5 1-20 * * 0,6',
+    trigger: 'Start is 55-65 minutes away and no reminder was sent yet',
+    email: 'Reminder to players with no prediction',
+  },
+  {
+    title: 'Copy Missing Predictions',
+    color: 'text-f1-yellow-400',
+    about: "For players with no prediction for a race or sprint that just locked, copies their latest one, first-retirement pick included. For a sprint a main-race prediction counts too (its top 8). Skipped when the copy would use a driver who is not racing.",
+    schedule: '*/2 2-20 * * 0,6',
+    trigger: 'Lock passed 1-10 minutes ago, race still upcoming',
+    email: 'Auto-fill notice to each player whose prediction was copied',
+  },
+  {
+    title: 'Send Provisional Results',
+    color: 'text-yellow-400',
+    about: 'Compares the results from Jolpi, OpenF1 and F1 live timing. Applies them when two agree, or when one is alone after 2.5 hours (sprint: 1.5); holds and emails you when they disagree. Then calculates points and mails players.',
+    schedule: '*/5 2-22 * * 0,6',
+    trigger: 'Started 5 minutes to 6 hours ago, still upcoming, nothing sent yet',
+    email: 'Provisional results to every player who predicted',
+  },
+  {
+    title: 'Process Final Results',
+    color: 'text-green-400',
+    about: 'Checks the sources again a day later (disqualifications, penalties), recalculates every point from scratch and completes the race. If the sources cannot agree, the stored results stay as they are and you are told.',
+    schedule: '0 2-22 * * 0,1',
+    trigger: 'Started 24+ hours ago, status provisional',
+    email: 'Final results to players who predicted (changes shown), "The results are in!" to everyone',
+  },
+  {
+    title: 'Sync Race Results',
+    color: 'text-f1-blue',
+    about: 'Catch-all for races that started but have no results or are still upcoming. Same source cross-check as the provisional job; stores the results, completes the race straight away (no 24-hour pass) and calculates points. Can be run, or forced, from Admin Actions.',
+    schedule: '0 3 * * 1',
+    trigger: 'Monday at 03:00 UTC',
+    email: 'None',
+  },
+  {
+    title: 'Sync Driver Standings',
+    color: 'text-f1-blue',
+    about: "Updates each driver's championship points and nationality from Jolpi (the Standings page). Can be run from Admin Actions.",
+    schedule: '0 9 * * 1,4',
+    trigger: 'Monday and Thursday at 09:00 UTC',
+    email: 'None',
+  },
+];
+
+const EMAIL_TYPES = [
+  { name: 'Prediction Confirmation', color: 'text-white', trigger: 'Player saves a prediction', contents: 'The picks, and the first-retirement pick for a main race' },
+  { name: 'Missed-prediction Reminder', color: 'text-white', trigger: '55-65 minutes before a start', contents: 'Reminder to predict; only players with no prediction' },
+  { name: 'Auto-fill Notice', color: 'text-white', trigger: 'Just after the lock, when a prediction was copied', contents: 'Exactly which picks were copied' },
+  { name: 'Provisional Results', color: 'text-yellow-400', trigger: 'Once the results are confirmed after the start', contents: 'Results, per-driver breakdown, points earned' },
+  { name: 'Final Results', color: 'text-green-400', trigger: '24+ hours after the start', contents: 'Final points, changes highlighted if any' },
+  { name: 'The Results Are In', color: 'text-green-400', trigger: 'Together with the final results', contents: 'Short notice to every player, predicted or not' },
+  { name: 'Personal Results', color: 'text-white', trigger: 'Sent by hand from "Send Race Prediction Results"', contents: "Each player's own prediction against the result" },
 ];
 
 const Admin = () => {
@@ -1826,94 +1903,35 @@ const Admin = () => {
               <span aria-hidden="true" className="shrink-0 text-f1-yellow-500 text-lg leading-none transition-transform group-open/sec:rotate-45">+</span>
             </summary>
             <div className="p-4">
-              {/* Visual Timeline */}
-              <div className="bg-f1-neutral-800 p-6 mb-6">
-                <h3 className="text-lg font-bold text-f1-yellow-500 mb-4">Race Weekend Timeline</h3>
-                <div className="font-mono text-sm text-white space-y-2 overflow-x-auto">
-                  <p className="text-f1-yellow-400 font-bold">SUNDAY (Race Day)</p>
-                  <p>12:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
-                  <p>    │                                                    │</p>
-                  <p>    ├─ Copy missing predictions (every 2 min until 18:00)│</p>
-                  <p>    │                                                    │</p>
-                  <p>    └─ Check for provisional results (every 5 min) ──────┘</p>
-                  <p>                    │</p>
-                  <p>                    ▼</p>
-                  <p className="text-green-400">         Race ends ~14:00-16:00 UTC</p>
-                  <p>                    │</p>
-                  <p>                    ▼ (5 min after race)</p>
-                  <p className="text-yellow-400">         📧 Provisional Results Email sent</p>
-                  <p></p>
-                  <p className="text-f1-blue font-bold">MONDAY (Next Day)</p>
-                  <p>09:00 UTC ──────────────────────────────────────── 20:00 UTC</p>
-                  <p>    │                                                    │</p>
-                  <p>    ├─ 09:00: Sync driver standings                      │</p>
-                  <p>    ├─ 09:15: Sync race results                          │</p>
-                  <p>    │                                                    │</p>
-                  <p>    └─ Check for final results (hourly 12:00-20:00) ─────┘</p>
-                  <p>                    │</p>
-                  <p>                    ▼ (24+ hours after race)</p>
-                  <p className="text-green-400">         📧 Final Results Email sent</p>
-                  <p className="text-white">         (Points recalculated for DQs/penalties)</p>
+              {/* Per-race timeline */}
+              <div className="bg-f1-neutral-800 p-5 mb-6">
+                <h4 className="font-bold text-f1-yellow-500 mb-1">What happens around a race or sprint</h4>
+                <p className="text-xs text-white/60 mb-4">
+                  Times are relative to the scheduled start (T). Every job looks at each race and each sprint separately.
+                </p>
+                <div className="space-y-3">
+                  {RACE_TIMELINE.map(step => (
+                    <div key={step.when} className="flex flex-col sm:flex-row sm:gap-4">
+                      <p className="sm:w-44 shrink-0 font-mono text-xs text-f1-yellow-400">{step.when}</p>
+                      <p className="text-sm text-white">{step.what}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Job Details */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Copy Missing Predictions */}
-                <div className="bg-f1-neutral-800 p-5">
-                  <h4 className="font-bold text-f1-yellow-400 mb-3">1. Copy Missing Predictions</h4>
-                  <p className="text-sm text-white mb-3">
-                    Runs for races that locked 1-10 minutes ago. Finds users who have predicted before
-                    but NOT for this race, and copies their most recent prediction automatically.
-                  </p>
-                  <div className="text-xs space-y-1">
-                    <p><span className="text-white">Schedule:</span> <span className="font-mono">*/2 12-18 * * 0</span></p>
-                    <p><span className="text-white">Trigger:</span> Race locked 1-10 min ago</p>
-                    <p><span className="text-white">Email:</span> None (silent operation)</p>
+                {JOB_DETAILS.map(job => (
+                  <div key={job.title} className="bg-f1-neutral-800 p-5">
+                    <h4 className={`font-bold mb-3 ${job.color}`}>{job.title}</h4>
+                    <p className="text-sm text-white mb-3">{job.about}</p>
+                    <div className="text-xs space-y-1">
+                      <p><span className="text-white">Schedule:</span> <span className="font-mono">{job.schedule}</span></p>
+                      <p><span className="text-white">Trigger:</span> {job.trigger}</p>
+                      <p><span className="text-white">Email:</span> {job.email}</p>
+                    </div>
                   </div>
-                </div>
-
-                {/* Provisional Results */}
-                <div className="bg-f1-neutral-800 p-5">
-                  <h4 className="font-bold text-yellow-400 mb-3">2. Send Provisional Results</h4>
-                  <p className="text-sm text-white mb-3">
-                    Fetches results from Jolpi API, stores in database, calculates points for each
-                    user's prediction, and sends provisional results email.
-                  </p>
-                  <div className="text-xs space-y-1">
-                    <p><span className="text-white">Schedule:</span> <span className="font-mono">*/5 12-20 * * 0</span></p>
-                    <p><span className="text-white">Trigger:</span> Race finished 5 min - 3 hrs ago, not sent yet</p>
-                    <p><span className="text-white">Email:</span> Provisional results with points breakdown</p>
-                  </div>
-                </div>
-
-                {/* Final Results */}
-                <div className="bg-f1-neutral-800 p-5">
-                  <h4 className="font-bold text-green-400 mb-3">3. Process Final Results</h4>
-                  <p className="text-sm text-white mb-3">
-                    Re-fetches results (may include DQs/penalties), recalculates all points from scratch,
-                    updates user totals, and sends final results email.
-                  </p>
-                  <div className="text-xs space-y-1">
-                    <p><span className="text-white">Schedule:</span> <span className="font-mono">0 12-20 * * 1</span></p>
-                    <p><span className="text-white">Trigger:</span> Race 24+ hrs old, status = provisional</p>
-                    <p><span className="text-white">Email:</span> Final points (shows changes if any)</p>
-                  </div>
-                </div>
-
-                {/* Sync Jobs */}
-                <div className="bg-f1-neutral-800 p-5">
-                  <h4 className="font-bold text-f1-blue mb-3">4. Sync Driver Standings & Race Results</h4>
-                  <p className="text-sm text-white mb-3">
-                    Updates F1 championship points and imports race results from Jolpi API.
-                    Can be triggered manually from this panel.
-                  </p>
-                  <div className="text-xs space-y-1">
-                    <p><span className="text-white">Schedule:</span> <span className="font-mono">0 9 * * 1,4</span> and <span className="font-mono">15 9 * * 1,4</span></p>
-                    <p><span className="text-white">Trigger:</span> Mon & Thu at 09:00/09:15 UTC</p>
-                    <p><span className="text-white">Email:</span> None</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* Points System */}
@@ -1932,6 +1950,9 @@ const Admin = () => {
                       </div>
                     ))}
                   </div>
+                  <p className="text-xs text-green-400 mt-3">
+                    Points are for the position you predicted. One place off scores half (rounded). First retirement guessed right: +25.
+                  </p>
                 </div>
                 <div className="bg-f1-neutral-800 p-5">
                   <h4 className="font-bold text-f1-yellow-500 mb-3">Sprint Race Points (Top 8)</h4>
@@ -1946,7 +1967,9 @@ const Admin = () => {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-green-400 mt-3">+50% bonus if predicted within ±1 position</p>
+                  <p className="text-xs text-green-400 mt-3">
+                    Points are for the position you predicted. One place off scores half (rounded). No first-retirement pick in a sprint.
+                  </p>
                 </div>
               </div>
 
@@ -1964,32 +1987,20 @@ const Admin = () => {
                       </tr>
                     </thead>
                     <tbody className="text-white">
-                      <tr className="border-b border-f1-neutral-700/50">
-                        <td className="py-2 px-3 font-medium text-white">Prediction Confirmation</td>
-                        <td className="py-2 px-3">User saves prediction</td>
-                        <td className="py-2 px-3">List of predicted positions</td>
-                      </tr>
-                      <tr className="border-b border-f1-neutral-700/50">
-                        <td className="py-2 px-3 font-medium text-yellow-400">Provisional Results</td>
-                        <td className="py-2 px-3">~5 min after race</td>
-                        <td className="py-2 px-3">Race results, prediction breakdown, points earned</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3 font-medium text-green-400">Final Results</td>
-                        <td className="py-2 px-3">24+ hours after race</td>
-                        <td className="py-2 px-3">Final points, changes highlighted if any</td>
-                      </tr>
+                      {EMAIL_TYPES.map(email => (
+                        <tr key={email.name} className="border-b border-f1-neutral-700/50 last:border-b-0">
+                          <td className={`py-2 px-3 font-medium ${email.color}`}>{email.name}</td>
+                          <td className="py-2 px-3">{email.trigger}</td>
+                          <td className="py-2 px-3">{email.contents}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Mobile cards */}
                 <div className="sm:hidden space-y-2 text-sm">
-                  {[
-                    { name: 'Prediction Confirmation', color: 'text-white', trigger: 'User saves prediction', contents: 'List of predicted positions' },
-                    { name: 'Provisional Results', color: 'text-yellow-400', trigger: '~5 min after race', contents: 'Race results, prediction breakdown, points earned' },
-                    { name: 'Final Results', color: 'text-green-400', trigger: '24+ hours after race', contents: 'Final points, changes highlighted if any' },
-                  ].map(email => (
+                  {EMAIL_TYPES.map(email => (
                     <div key={email.name} className="bg-f1-neutral-800 border border-f1-neutral-700 p-3">
                       <p className={`font-medium ${email.color}`}>{email.name}</p>
                       <p className="text-white text-xs mt-1">Trigger: {email.trigger}</p>
@@ -1997,14 +2008,17 @@ const Admin = () => {
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-white/60 mt-3">
+                  Mails to you only: results the sources disagree on, no results after 6 hours, missing qualifying or starting grid,
+                  weekend flags, a failing flags watcher, and new sign-ups and departures.
+                </p>
               </div>
 
               {/* Yearly Points Reset */}
               <div className="bg-f1-neutral-800 p-5 mb-6">
-                <h4 className="font-bold text-purple-400 mb-3">5. Yearly Points Reset</h4>
+                <h4 className="font-bold text-purple-400 mb-3">Yearly Points Reset</h4>
                 <p className="text-sm text-white mb-3">
-                  Automatically resets all user points to 0 at the start of each new F1 season.
-                  This ensures a fresh leaderboard competition every year.
+                  Sets every player's total points to 0 at the start of each new F1 season.
                 </p>
                 <div className="text-xs space-y-1">
                   <p><span className="text-white">Schedule:</span> <span className="font-mono">0 0 1 1 *</span></p>
@@ -2012,6 +2026,10 @@ const Admin = () => {
                   <p><span className="text-white">Action:</span> UPDATE users SET total_points = 0</p>
                   <p><span className="text-white">Email:</span> None</p>
                 </div>
+                <p className="text-xs text-orange-300 mt-3">
+                  Known gap: the next points calculation adds up every prediction ever made, so the reset does not hold yet.
+                  The jobs also look only at the 2026 season.
+                </p>
               </div>
 
               {/* Race Status Flow */}
@@ -2019,13 +2037,14 @@ const Admin = () => {
                 <h4 className="font-bold text-f1-yellow-500 mb-3">Race Status Flow</h4>
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="bg-f1-blue-dark/50 text-white px-3 py-1">upcoming</span>
-                  <span className="text-white">→ race ends →</span>
+                  <span className="text-white">→ results confirmed →</span>
                   <span className="bg-f1-yellow-900/20 text-orange-300 px-3 py-1">provisional</span>
-                  <span className="text-white">→ 24 hours →</span>
+                  <span className="text-white">→ 24 hours after the start →</span>
                   <span className="bg-green-900/50 text-green-300 px-3 py-1">completed</span>
                 </div>
                 <p className="text-xs text-white mt-3">
-                  Provisional status allows for DQs/penalties to be applied before final points are calculated.
+                  Provisional leaves room for disqualifications and penalties before the final points are calculated.
+                  The Monday race results sync is the exception: it takes a race from upcoming straight to completed.
                 </p>
               </div>
             </div>
