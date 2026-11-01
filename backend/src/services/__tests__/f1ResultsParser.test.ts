@@ -35,7 +35,9 @@ test('the_mexico_grid_is_read_with_penalties_applied', () => {
   assert.equal(at(5), 3); // Verstappen, after his one-place penalty
   assert.equal(at(18), 50); // Hirakawa, Ocon's stand-in
   assert.equal(at(21), 77); // Bottas, from the back after the power-unit penalty
-  assert.equal(at(22), 30); // Lawson, no qualifying time
+  // Lawson starts from the pit lane. The table does not say so (the page has only a place and an empty
+  // time; the pit lane is in a note under the table), so he is read as last, which is where he starts.
+  assert.equal(at(22), 30);
 });
 
 test('a_page_without_a_grid_table_is_null', () => {
