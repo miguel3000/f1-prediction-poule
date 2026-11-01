@@ -110,17 +110,25 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   24 hours later (penalties). The final run never changes stored results on unconfirmed data.
 - The prediction list is in **qualifying order**, labelled Sprint Quali or Qualifying; no
   position numbers or three-letter codes (tried, removed). Any driver missing from the data is
-  appended so every driver is always pickable. About an hour before each start the **real
-  starting grid, penalties applied**, is known and the list switches to it, labelled "Starting
-  grid" (an open page switches by itself). Sources, in this order: F1's own live timing feed (the
-  GridPos per car, which the app is already connected to and which fills `starting_grid` about an
-  hour before the start; first real test: US GP, 25 Oct 2026), then the 5-minute cron
-  `syncStartingGrid`, which asks OpenF1's position feed. OpenF1's free tier only serves a session
-  once it is over, so that route mostly helps after the fact; its own `starting_grid` endpoint has
-  no 2026 data and Jolpi only has the grid after the race. After the race the OpenF1 position feed
-  matched Jolpi's real grid for every race checked. If neither source has a grid 20 minutes before
-  a start, the admin gets one email and the list keeps the qualifying order. Penalties announced
-  earlier are not known to us before that moment. Scoring is unaffected: you predict finishing positions.
+  appended so every driver is always pickable. Once qualifying is over the **real starting grid,
+  penalties applied**, is known and the list switches to it, labelled "Starting grid" (an open
+  page switches by itself). Sources, earliest first: **formula1.com's results page**
+  (`/en/results/<year>/races/<id>/<slug>/starting-grid`, `sprint-grid` for a sprint; server-rendered
+  HTML table, plain request; read by the 5-minute cron `syncStartingGrid` every 15th minute for a
+  start 75 minutes to 30 hours away, and refreshed when a penalty changes it; the race id comes
+  from the page `/en/results/<year>/races`, whose n-th race is our round n, trusted only while that
+  list is as long as our calendar; checked 1 Nov 2026 against Jolpi's grid for all 18 races so far:
+  identical, penalties included; it is unofficial scraping, so a layout change just means this
+  source finds no grid and the next ones take over). Then F1's own live timing feed (the GridPos
+  per car, which the app is already connected to and which fills `starting_grid` about an hour
+  before the start and overwrites the page's grid; first real test: US GP, 25 Oct 2026), then
+  `syncStartingGrid` again, which asks OpenF1's position feed. OpenF1's free tier only serves a
+  session once it is over, so that route mostly helps after the fact; its own `starting_grid`
+  endpoint has no 2026 data and Jolpi only has the grid after the race. After the race the OpenF1
+  position feed matched Jolpi's real grid for every race checked. If no source has a grid 20
+  minutes before a start, the admin gets one email and the list keeps the qualifying order.
+  Penalties announced after the page was last read and before the feed arrives are not reflected
+  until the feed does. Scoring is unaffected: you predict finishing positions.
 - **Gaston Mazzacane -ai-** is the AI player. When the user types **PREDICTION**, give his pick for
   the next race straight away, no questions: figure out which race, research real form and any
   qualifying already driven, give the ordered list (top 10 plus a first-retirement pick for a
@@ -500,3 +508,4 @@ Why: <two or three lines, sources named>
 | 2026-10-26 | A player can play in the main poule, in groups, or both ("also play in the main poule", default yes) | Group-only players must not leak into main lists; existing players stay as they are |
 | 2026-10-31 | A driver who is not racing a weekend is hidden from the picker, refused by the prediction endpoints, and predictions that use them are reset with an email to those players | Haas replaced Ocon with Hirakawa mid-weekend; players could still pick the driver who was not racing |
 | 2026-10-31 | A weekend watcher reads the FIA decision documents and emails the owner what probably changes predictions (driver changes, grid drops, pit-lane starts) | The Hirakawa swap and Bottas' 50-place drop were found by chance; general news search proved unreliable |
+| 2026-11-01 | The starting grid is read from formula1.com's results page as soon as qualifying is over, ahead of the live feed and OpenF1 | The prediction list only switched to the real grid an hour before the start; the page has it (penalties applied) all day and matched Jolpi for all 18 races |
