@@ -3,6 +3,8 @@ import * as jolpiService from '../services/jolpiService';
 import * as openF1Service from '../services/openF1Service';
 import { query } from '../config/database';
 import { savePracticeRows } from '../services/practiceResultsService';
+import { seasonFromQuery } from '../services/season';
+import { seasonPointsCte } from '../services/seasonPoints';
 
 interface PracticeResultRow {
   position: number;
@@ -32,7 +34,7 @@ const formatPracticeRows = (rows: PracticeResultRow[]) =>
 export const getPracticeResults = async (req: Request, res: Response) => {
   try {
     const { round, session } = req.params;
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
     const roundNum = parseInt(round);
     const sessionNum = parseInt(session);
 
@@ -74,7 +76,7 @@ export const getPracticeResults = async (req: Request, res: Response) => {
 export const getQualifyingResults = async (req: Request, res: Response) => {
   try {
     const { round } = req.params;
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     const results = await jolpiService.getQualifyingResults(season, parseInt(round));
 
@@ -100,7 +102,7 @@ export const getQualifyingResults = async (req: Request, res: Response) => {
 export const getRaceResultsFromApi = async (req: Request, res: Response) => {
   try {
     const { round } = req.params;
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     const results = await jolpiService.getRaceResults(season, parseInt(round));
 
@@ -128,7 +130,7 @@ export const getRaceResultsFromApi = async (req: Request, res: Response) => {
 export const getSprintResultsFromApi = async (req: Request, res: Response) => {
   try {
     const { round } = req.params;
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     const results = await jolpiService.getSprintResults(season, parseInt(round));
 
@@ -156,7 +158,7 @@ export const getSprintResultsFromApi = async (req: Request, res: Response) => {
 // of only appearing once the whole weekend is marked completed.
 export const getCompletedRaces = async (req: Request, res: Response) => {
   try {
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     const result = await query(
       `SELECT id, round, race_name, circuit_name, country, race_date, race_type, status
@@ -180,7 +182,7 @@ export const getCompletedRaces = async (req: Request, res: Response) => {
 // Get season statistics summary
 export const getSeasonStats = async (req: Request, res: Response) => {
   try {
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     // Get race counts
     const racesResult = await query(
@@ -195,11 +197,14 @@ export const getSeasonStats = async (req: Request, res: Response) => {
 
     // Get top prediction scorers
     const topScorersResult = await query(
-      `SELECT u.nickname, u.total_points
+      `WITH ${seasonPointsCte('$1')}
+       SELECT u.nickname, spt.points AS total_points
        FROM users u
-       WHERE u.total_points > 0 AND u.plays_in_main = TRUE
-       ORDER BY u.total_points DESC
-       LIMIT 5`
+       JOIN season_points spt ON spt.user_id = u.id
+       WHERE spt.points > 0 AND u.plays_in_main = TRUE
+       ORDER BY spt.points DESC
+       LIMIT 5`,
+      [season]
     );
 
     // Get total predictions made
@@ -224,7 +229,7 @@ export const getSeasonStats = async (req: Request, res: Response) => {
 export const getSprintQualifyingResultsFromApi = async (req: Request, res: Response) => {
   try {
     const { round } = req.params;
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
     const roundNum = parseInt(round);
 
     // SQ results are stored in qualifying_results with race_type='sprint'
@@ -316,7 +321,7 @@ export const getSprintQualifyingResultsFromApi = async (req: Request, res: Respo
 // Fun and interesting season stats computed from the DB
 export const getFunStats = async (req: Request, res: Response) => {
   try {
-    const season = parseInt(req.query.season as string) || 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     const [poles, wins, predictedWinners, crystalBall, biggestUpset, bestLap, consistency] =
       await Promise.all([

@@ -44,7 +44,7 @@ export interface OpenF1SessionResult {
   points: number;
 }
 
-export const getMeetings = async (year: number = 2026): Promise<OpenF1Meeting[]> => {
+export const getMeetings = async (year: number): Promise<OpenF1Meeting[]> => {
   try {
     const response = await axios.get(`${OPENF1_API_URL}/meetings`, {
       params: { year }
@@ -295,10 +295,10 @@ export const getStartingGrid = async (sessionKey: number): Promise<OpenF1GridRow
   return complete ? grid : [];
 };
 
-export const getLatestDrivers = async (): Promise<OpenF1Driver[]> => {
+export const getLatestDrivers = async (year: number): Promise<OpenF1Driver[]> => {
   try {
     // Get the latest session to fetch current drivers
-    const meetings = await getMeetings(2026);
+    const meetings = await getMeetings(year);
     if (meetings.length === 0) return [];
 
     const latestMeeting = meetings[meetings.length - 1];

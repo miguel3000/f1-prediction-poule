@@ -7,8 +7,7 @@ import {
   DriverExclusionError,
 } from '../services/driverExclusionService';
 import { sendPredictionResetNotice } from '../services/emailService';
-
-const SEASON = 2026;
+import { activeSeason } from '../services/season';
 
 const sendError = (res: Response, error: unknown, fallback: string) => {
   if (error instanceof DriverExclusionError) {
@@ -23,15 +22,16 @@ const sendError = (res: Response, error: unknown, fallback: string) => {
 // What the Pitlane card needs: the weekends still to come, every driver, and what is marked now.
 export const listDriverExclusions = async (_req: Request, res: Response) => {
   try {
+    const season = await activeSeason();
     const [weekends, drivers, exclusions] = await Promise.all([
       query(
         `SELECT DISTINCT ON (round) round, race_name AS name
          FROM races WHERE season = $1 AND race_type = 'main' AND race_date > NOW()
          ORDER BY round, race_date`,
-        [SEASON]
+        [season]
       ),
-      query('SELECT id, name, driver_number FROM drivers WHERE season = $1 ORDER BY name', [SEASON]),
-      listExclusions(SEASON),
+      query('SELECT id, name, driver_number FROM drivers WHERE season = $1 ORDER BY name', [season]),
+      listExclusions(season),
     ]);
     res.json({
       weekends: weekends.rows,
@@ -55,7 +55,8 @@ export const addDriverExclusion = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'The stand-in must be a driver' });
     }
 
-    const reset = await excludeDriver(SEASON, round, driverId, replacedByDriverId ?? null);
+    const season = await activeSeason();
+    const reset = await excludeDriver(season, round, driverId, replacedByDriverId ?? null);
 
     let emailed = 0;
     let failed = 0;
@@ -85,7 +86,7 @@ export const removeDriverExclusion = async (req: Request, res: Response) => {
     if (Number.isNaN(round) || Number.isNaN(driverId)) {
       return res.status(400).json({ error: 'A weekend (round) and a driver are required' });
     }
-    await includeDriver(SEASON, round, driverId);
+    await includeDriver(await activeSeason(), round, driverId);
     res.json({ ok: true });
   } catch (error) {
     sendError(res, error, 'Failed to put the driver back');

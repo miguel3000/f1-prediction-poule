@@ -4,6 +4,7 @@ import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
 import { fetchQualifying, storeQualifying, withAllDrivers, previousRaceOrder } from '../services/qualifyingService';
 import { getExcludedDriverIds } from '../services/driverExclusionService';
+import { activeSeason, listSeasons, seasonFromQuery, seasonToLoad } from '../services/season';
 
 // Get qualifying order for a race (with fallback to previous race results)
 export const getQualifyingOrder = async (req: Request, res: Response) => {
@@ -121,8 +122,7 @@ export const getQualifyingOrder = async (req: Request, res: Response) => {
 
 export const getRaces = async (req: Request, res: Response) => {
   try {
-    const { season } = req.query;
-    const seasonYear = season ? parseInt(season as string) : 2026;
+    const seasonYear = await seasonFromQuery(req.query.season);
 
     const result = await query(
       'SELECT * FROM races WHERE season = $1 ORDER BY round ASC',
@@ -226,10 +226,21 @@ export const getRaceResults = async (req: Request, res: Response) => {
 };
 
 
+// The seasons we have, and the one the app is in (see services/season.ts)
+export const getSeasons = async (_req: Request, res: Response) => {
+  try {
+    res.json({ active: await activeSeason(), seasons: await listSeasons() });
+  } catch (error) {
+    console.error('Get seasons error:', error);
+    res.status(500).json({ error: 'Failed to get seasons' });
+  }
+};
+
 export const syncRaces = async (req: Request, res: Response) => {
   try {
-    // Fetch races from Jolpi API
-    const jolpiRaces = await jolpiService.getRaces(2026);
+    // Fetch races from Jolpi API. A new season is loaded by passing ?season= (or on 1 January).
+    const season = seasonToLoad(req.query.season);
+    const jolpiRaces = await jolpiService.getRaces(season);
     let totalCount = 0;
 
     for (const race of jolpiRaces) {
@@ -311,7 +322,7 @@ export const syncRaces = async (req: Request, res: Response) => {
          WHERE r.season = $1 AND r.race_type = 'sprint' AND r.round <> ALL($2::int[])
            AND NOT EXISTS (SELECT 1 FROM sprint_predictions WHERE race_id = r.id)
            AND NOT EXISTS (SELECT 1 FROM sprint_results WHERE race_id = r.id)`,
-        [2026, sprintRounds]
+        [season, sprintRounds]
       );
       if (removed.rowCount) console.log(`Removed ${removed.rowCount} sprint row(s) not in the official schedule`);
     }
@@ -331,10 +342,7 @@ export const syncRaces = async (req: Request, res: Response) => {
 // pages fall back to the qualifying and race times they already have.
 export const getRaceWeekends = async (req: Request, res: Response) => {
   try {
-    const season = req.query.season ? parseInt(req.query.season as string, 10) : 2026;
-    if (!Number.isInteger(season)) {
-      return res.status(400).json({ error: 'Invalid season' });
-    }
+    const season = await seasonFromQuery(req.query.season);
 
     const toIso = (s?: { date: string; time?: string }) => {
       if (!s?.date) return null;

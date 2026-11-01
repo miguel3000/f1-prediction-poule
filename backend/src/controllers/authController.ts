@@ -8,6 +8,11 @@ import { sendLogged, logSkipped } from '../services/emailLog';
 import { previewByCode, joinGroup } from '../services/groupService';
 import { EmailKey, EmailLang, normalizeLang, et } from '../services/emailI18n';
 import { randomNickname, numberedNickname } from '../utils/nicknameGenerator';
+import { activeSeason } from '../services/season';
+import { getSeasonTotal } from '../services/seasonPoints';
+
+// The points shown next to a player: what they have scored in the active season.
+const pointsThisSeason = async (userId: number): Promise<number> => getSeasonTotal(userId, await activeSeason());
 
 const SALT_ROUNDS = 10;
 
@@ -37,7 +42,7 @@ export const getProfile = async (req: Request, res: Response) => {
       nickname: user.nickname,
       email: user.email,
       avatar_url: user.avatar_url,
-      total_points: user.total_points,
+      total_points: await pointsThisSeason(user.id),
       is_admin: user.is_admin,
       pitwall_access: user.pitwall_access ?? false,
       can_start_groups: user.can_start_groups ?? false,
@@ -93,7 +98,7 @@ const notifyAdminOfDeparture = (user: any, predictionCount: number) => {
       language: user.language,
       totalMembers: Number(total.rows[0].count),
       memberSince: user.created_at,
-      totalPoints: user.total_points,
+      totalPoints: await pointsThisSeason(user.id),
       predictionCount,
     });
   })().catch((error) => console.error('Departure notice failed:', error));
@@ -172,7 +177,7 @@ export const registerWithPassword = async (req: Request, res: Response) => {
         nickname: user.nickname,
         email: user.email,
         avatar_url: user.avatar_url,
-        total_points: user.total_points,
+        total_points: await pointsThisSeason(user.id),
         is_admin: user.is_admin,
         pitwall_access: user.pitwall_access ?? false,
         language: user.language ?? null
@@ -513,7 +518,7 @@ export const loginWithPassword = async (req: Request, res: Response) => {
         nickname: user.nickname,
         email: user.email,
         avatar_url: user.avatar_url,
-        total_points: user.total_points,
+        total_points: await pointsThisSeason(user.id),
         is_admin: user.is_admin,
         pitwall_access: user.pitwall_access ?? false,
         language: user.language ?? null

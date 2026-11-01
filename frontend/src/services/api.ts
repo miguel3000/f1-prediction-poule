@@ -77,7 +77,11 @@ export interface WeekendSession {
   startsAt: string;
 }
 
-export const getRaceWeekends = (season = 2026) =>
+// The seasons we have races for (newest first) and the one the app is in
+export const getSeasons = () =>
+  api.get<{ active: number; seasons: number[] }>('/api/races/seasons');
+
+export const getRaceWeekends = (season?: number) =>
   api.get<{ season: number; weekends: Record<string, WeekendSession[]> }>('/api/races/weekends', { params: { season } });
 
 export interface TutorialExample {
@@ -139,8 +143,9 @@ export const getUserSprintPredictions = () =>
 
 // Leaderboard
 // `poule` is 'main' or a group id; left out, the server picks the player's default poule.
-export const getLeaderboard = (poule?: string) =>
-  api.get('/api/leaderboard', { params: poule ? { poule } : undefined });
+// `season` left out, the server answers for the active season.
+export const getLeaderboard = (poule?: string, season?: number) =>
+  api.get('/api/leaderboard', { params: { poule, season } });
 
 export const getTopThree = () =>
   api.get('/api/leaderboard/top-three');
@@ -148,11 +153,11 @@ export const getTopThree = () =>
 export const getUserRank = () =>
   api.get('/api/leaderboard/rank');
 
-export const getSeasonHistory = (poule?: string) =>
-  api.get('/api/leaderboard/season-history', { params: poule ? { poule } : undefined });
+export const getSeasonHistory = (poule?: string, season?: number) =>
+  api.get('/api/leaderboard/season-history', { params: { poule, season } });
 
-export const getPlayerStats = (poule?: string) =>
-  api.get('/api/leaderboard/player-stats', { params: poule ? { poule } : undefined });
+export const getPlayerStats = (poule?: string, season?: number) =>
+  api.get('/api/leaderboard/player-stats', { params: { poule, season } });
 
 // Upload
 export const uploadAvatar = (file: File) => {

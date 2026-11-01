@@ -5,24 +5,24 @@ import { calculateRacePoints } from '../controllers/leaderboardController';
 async function syncRaceResults() {
   try {
     console.log('[CRON] Starting race results sync...');
-    const season = 2026;
 
-    // Find races that have passed but don't have results yet or are marked as upcoming.
+    // Find races that have passed but don't have results yet or are marked as upcoming. Only the
+    // last 60 days: a race older than that is handled by hand from the Pitlane (this used to be
+    // limited to season 2026, which would have stopped it working in 2027).
     // Sprints keep their results in sprint_results, so that is the table to look in for them
     // (looking in race_results made every past sprint look empty, so each Monday re-synced
     // all of them and could email an alert about a months-old race).
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
        FROM races r
-       WHERE r.season = $1
-         AND r.race_date < NOW()
+       WHERE r.race_date < NOW()
+         AND r.race_date > NOW() - INTERVAL '60 days'
          AND (
            r.status = 'upcoming'
            OR (r.race_type = 'sprint' AND NOT EXISTS (SELECT 1 FROM sprint_results WHERE race_id = r.id))
            OR (r.race_type <> 'sprint' AND NOT EXISTS (SELECT 1 FROM race_results WHERE race_id = r.id))
          )
-       ORDER BY r.race_date DESC`,
-      [season]
+       ORDER BY r.race_date DESC`
     );
 
     const races = racesResult.rows;

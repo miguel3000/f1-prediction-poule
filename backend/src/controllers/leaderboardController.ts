@@ -4,6 +4,8 @@ import { resolvePoule } from '../services/pouleScope';
 import { sendGroupError } from './groupController';
 import { GroupError } from '../services/groupService';
 import { isDnfStatus } from '../utils/resultStatus';
+import { seasonFromQuery } from '../services/season';
+import { seasonPointsCte, getSeasonTotals } from '../services/seasonPoints';
 
 // Which poule a request is about (?poule=main or a group id); see services/pouleScope.ts
 const pouleOf = (req: Request): string | undefined => (typeof req.query.poule === 'string' ? req.query.poule : undefined);
@@ -11,14 +13,12 @@ const pouleOf = (req: Request): string | undefined => (typeof req.query.poule ==
 export const getLeaderboard = async (req: Request, res: Response) => {
   try {
     const scope = await resolvePoule((req as any).userId, pouleOf(req));
+    const season = await seasonFromQuery(req.query.season);
     const result = await query(
-      `WITH current_season AS (
-        SELECT EXTRACT(YEAR FROM CURRENT_DATE)::int AS season
-      ),
-      last_completed_race AS (
+      `WITH last_completed_race AS (
         SELECT id FROM races
         WHERE status IN ('completed', 'provisional')
-          AND season = (SELECT season FROM current_season)
+          AND season = $2
         ORDER BY race_date DESC
         LIMIT 1
       ),
@@ -41,30 +41,32 @@ export const getLeaderboard = async (req: Request, res: Response) => {
           SELECT p.user_id, p.points_earned, p.race_id
           FROM predictions p
           JOIN races r ON p.race_id = r.id
-          WHERE p.points_earned > 0 AND r.season = (SELECT season FROM current_season)
+          WHERE p.points_earned > 0 AND r.season = $2
           UNION ALL
           SELECT sp.user_id, sp.points_earned, sp.race_id
           FROM sprint_predictions sp
           JOIN races r ON sp.race_id = r.id
-          WHERE sp.points_earned > 0 AND r.season = (SELECT season FROM current_season)
+          WHERE sp.points_earned > 0 AND r.season = $2
         ) all_preds
         ORDER BY user_id, points_earned DESC
-      )
+      ),
+      ${seasonPointsCte('$2')}
       SELECT
-        u.id, u.nickname, u.avatar_url, u.total_points,
-        ROW_NUMBER() OVER (ORDER BY u.total_points DESC, u.nickname ASC) as rank,
+        u.id, u.nickname, u.avatar_url, COALESCE(spt.points, 0) AS total_points,
+        ROW_NUMBER() OVER (ORDER BY COALESCE(spt.points, 0) DESC, u.nickname ASC) as rank,
         COALESCE(lr.points_earned, 0) as last_race_points,
         lr.last_race_rank,
         COALESCE(br.best_points, 0) as best_race_points,
         r.race_name as best_race_name,
-        MAX(u.total_points) OVER () - u.total_points as diff_to_leader
+        MAX(COALESCE(spt.points, 0)) OVER () - COALESCE(spt.points, 0) as diff_to_leader
       FROM users u
+      LEFT JOIN season_points spt ON spt.user_id = u.id
       LEFT JOIN last_race_ranked lr ON u.id = lr.user_id
       LEFT JOIN best_race br ON u.id = br.user_id
       LEFT JOIN races r ON br.race_id = r.id
       WHERE u.id = ANY($1)
-      ORDER BY u.total_points DESC, u.nickname ASC`,
-      [scope.userIds]
+      ORDER BY COALESCE(spt.points, 0) DESC, u.nickname ASC`,
+      [scope.userIds, season]
     );
 
     res.json(result.rows);
@@ -78,15 +80,18 @@ export const getLeaderboard = async (req: Request, res: Response) => {
 export const getTopThree = async (req: Request, res: Response) => {
   try {
     const scope = await resolvePoule((req as any).userId, pouleOf(req));
+    const season = await seasonFromQuery(req.query.season);
     const result = await query(
-      `SELECT
-        id, nickname, avatar_url, total_points,
-        ROW_NUMBER() OVER (ORDER BY total_points DESC) as rank
-       FROM users
-       WHERE id = ANY($1)
-       ORDER BY total_points DESC, nickname ASC
+      `WITH ${seasonPointsCte('$2')}
+       SELECT
+        u.id, u.nickname, u.avatar_url, COALESCE(spt.points, 0) AS total_points,
+        ROW_NUMBER() OVER (ORDER BY COALESCE(spt.points, 0) DESC) as rank
+       FROM users u
+       LEFT JOIN season_points spt ON spt.user_id = u.id
+       WHERE u.id = ANY($1)
+       ORDER BY COALESCE(spt.points, 0) DESC, u.nickname ASC
        LIMIT 3`,
-      [scope.userIds]
+      [scope.userIds, season]
     );
 
     res.json(result.rows);
@@ -101,18 +106,21 @@ export const getUserRank = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).userId;
     const scope = await resolvePoule(userId, pouleOf(req));
+    const season = await seasonFromQuery(req.query.season);
 
     // Use window function for efficient rank calculation (handles ties properly)
     const result = await query(
-      `SELECT id, nickname, avatar_url, total_points, rank FROM (
+      `WITH ${seasonPointsCte('$3')}
+       SELECT id, nickname, avatar_url, total_points, rank FROM (
         SELECT
-          id, nickname, avatar_url, total_points,
-          DENSE_RANK() OVER (ORDER BY total_points DESC) as rank
-        FROM users
-        WHERE id = ANY($2)
+          u.id, u.nickname, u.avatar_url, COALESCE(spt.points, 0) AS total_points,
+          DENSE_RANK() OVER (ORDER BY COALESCE(spt.points, 0) DESC) as rank
+        FROM users u
+        LEFT JOIN season_points spt ON spt.user_id = u.id
+        WHERE u.id = ANY($2)
       ) ranked
       WHERE id = $1`,
-      [userId, scope.userIds]
+      [userId, scope.userIds, season]
     );
 
     if (result.rows.length === 0) {
@@ -130,14 +138,12 @@ export const getUserRank = async (req: Request, res: Response) => {
 export const getSeasonHistory = async (req: Request, res: Response) => {
   try {
     const scope = await resolvePoule((req as any).userId, pouleOf(req));
+    const season = await seasonFromQuery(req.query.season);
     const result = await query(
-      `WITH current_season AS (
-        SELECT EXTRACT(YEAR FROM CURRENT_DATE)::int AS season
-      ),
-      season_races AS (
+      `WITH season_races AS (
         SELECT id, race_name, country, race_date, race_type, round
         FROM races
-        WHERE season = (SELECT season FROM current_season)
+        WHERE season = $2
           AND status IN ('completed', 'provisional')
         ORDER BY race_date ASC
       ),
@@ -166,7 +172,7 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
       LEFT JOIN all_predictions ap ON ap.user_id = u.id AND ap.race_id = sr.id
       WHERE u.id = ANY($1)
       ORDER BY sr.race_date ASC, u.nickname ASC`,
-      [scope.userIds]
+      [scope.userIds, season]
     );
 
     // Pivot rows into { races[], users[] } structure
@@ -213,12 +219,14 @@ export const getSeasonHistory = async (req: Request, res: Response) => {
 export const getPlayerStats = async (req: Request, res: Response) => {
   try {
     const scope = await resolvePoule((req as any).userId, pouleOf(req));
+    const season = await seasonFromQuery(req.query.season);
     const racesResult = await query(
       `SELECT id, race_name, race_type, race_date
        FROM races
-       WHERE season = EXTRACT(YEAR FROM CURRENT_DATE)::int
+       WHERE season = $1
          AND status IN ('completed', 'provisional')
-       ORDER BY race_date ASC`
+       ORDER BY race_date ASC`,
+      [season]
     );
     const races = racesResult.rows;
 
@@ -238,8 +246,9 @@ export const getPlayerStats = async (req: Request, res: Response) => {
       ),
       query(`SELECT * FROM predictions WHERE race_id = ANY($1)`, [raceIds]),
       query(`SELECT * FROM sprint_predictions WHERE race_id = ANY($1)`, [raceIds]),
-      query(`SELECT id, nickname, total_points FROM users WHERE id = ANY($1)`, [scope.userIds]),
+      query(`SELECT id, nickname FROM users WHERE id = ANY($1)`, [scope.userIds]),
     ]);
+    const seasonTotals = await getSeasonTotals(scope.userIds, season);
 
     // resultsByRace[kind][raceId] -> [{ driver_id, position }]
     const resultsByRace: Record<'main' | 'sprint', Map<number, { driver_id: number; position: number }[]>> = {
@@ -306,7 +315,7 @@ export const getPlayerStats = async (req: Request, res: Response) => {
         return {
           id: user.id,
           nickname: user.nickname,
-          total_points: user.total_points,
+          total_points: seasonTotals.get(user.id) ?? 0,
           predictions_made: 0,
           avg_points_per_race: 0,
           accuracy_pct: 0,
@@ -316,6 +325,7 @@ export const getPlayerStats = async (req: Request, res: Response) => {
         };
       }
 
+      const total = seasonTotals.get(user.id) ?? 0;
       const sortedLog = [...agg.raceLog].sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
@@ -328,9 +338,9 @@ export const getPlayerStats = async (req: Request, res: Response) => {
       return {
         id: user.id,
         nickname: user.nickname,
-        total_points: user.total_points,
+        total_points: total,
         predictions_made: agg.predictionsMade,
-        avg_points_per_race: Math.round((user.total_points / agg.predictionsMade) * 10) / 10,
+        avg_points_per_race: Math.round((total / agg.predictionsMade) * 10) / 10,
         accuracy_pct: agg.positionsGuessed > 0 ? Math.round((agg.exactPicks / agg.positionsGuessed) * 1000) / 10 : 0,
         exact_picks: agg.exactPicks,
         current_streak: currentStreak,
@@ -457,20 +467,8 @@ export const calculateRacePoints = async (raceId: number) => {
          WHERE id = ANY($1)`,
         [predictionIds]
       );
-
-      // Recompute total_points from source of truth (predictions + sprint_predictions)
-      // for affected users, rather than incrementing. This keeps calculateRacePoints
-      // idempotent: re-running it for the same race can never double-count points.
-      const userIds = Array.from(new Set(predictionUpdates.map(p => p.userId)));
-
-      await query(
-        `UPDATE users u
-         SET total_points =
-           COALESCE((SELECT SUM(points_earned) FROM predictions WHERE user_id = u.id), 0) +
-           COALESCE((SELECT SUM(points_earned) FROM sprint_predictions WHERE user_id = u.id), 0)
-         WHERE u.id = ANY($1)`,
-        [userIds]
-      );
+      // No running total is kept: a season's total is summed from points_earned when it is shown
+      // (services/seasonPoints.ts), so scoring a race can never mix two seasons.
     }
 
     console.log(`Points calculated for ${predictions.length} ${raceType} predictions for race ${raceId}`);

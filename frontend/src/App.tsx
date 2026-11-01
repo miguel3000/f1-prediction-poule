@@ -27,6 +27,7 @@ import PitWall from './pages/PitWall';
 import Groups from './pages/Groups';
 import JoinGroup from './pages/JoinGroup';
 import { AuthContext } from './context/AuthContext';
+import { SeasonProvider } from './context/SeasonContext';
 import { useLang } from './i18n/LanguageContext';
 import { getProfile } from './services/api';
 
@@ -104,24 +105,26 @@ function App() {
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
-      <Router>
-        <PageMeta />
-        <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: '#121012' }}>
-          <Header onMoreToggle={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
-          <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />
+      <SeasonProvider token={token}>
+        <Router>
+          <PageMeta />
+          <div className="min-h-screen text-white flex flex-col" style={{ backgroundColor: '#121012' }}>
+            <Header onMoreToggle={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
+            <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />
 
-          <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar xl:pb-8 relative z-10 flex-grow">
-            {/* The same pages answer at /nl/... too: the Dutch addresses search engines index. */}
-            <Routes>
-              <Route path="/nl/*" element={<AppRoutes />} />
-              <Route path="*" element={<AppRoutes />} />
-            </Routes>
-          </main>
+            <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar xl:pb-8 relative z-10 flex-grow">
+              {/* The same pages answer at /nl/... too: the Dutch addresses search engines index. */}
+              <Routes>
+                <Route path="/nl/*" element={<AppRoutes />} />
+                <Route path="*" element={<AppRoutes />} />
+              </Routes>
+            </main>
 
-          <Footer />
-          <BottomTabBar onMoreClick={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
-        </div>
-      </Router>
+            <Footer />
+            <BottomTabBar onMoreClick={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
+          </div>
+        </Router>
+      </SeasonProvider>
     </AuthContext.Provider>
   );
 }

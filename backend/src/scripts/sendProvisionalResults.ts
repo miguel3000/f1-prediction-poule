@@ -20,7 +20,6 @@ const sprintPointsMap: { [key: number]: number } = {
 async function processProvisionalResults() {
   try {
     console.log('[CRON] Starting provisional results processing...');
-    const season = 2026;
 
     // Find races that finished at least 5 minutes ago and haven't had provisional
     // results sent yet. Widened to a 6-hour retry window (two effective 3h passes)
@@ -28,13 +27,11 @@ async function processProvisionalResults() {
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
        FROM races r
-       WHERE r.season = $1
-         AND r.race_date < NOW() - INTERVAL '5 minutes'
+       WHERE r.race_date < NOW() - INTERVAL '5 minutes'
          AND r.race_date > NOW() - INTERVAL '6 hours'
          AND r.provisional_results_sent = FALSE
          AND r.status = 'upcoming'
-       ORDER BY r.race_date DESC`,
-      [season]
+       ORDER BY r.race_date DESC`
     );
 
     const races = racesResult.rows;
@@ -172,12 +169,10 @@ async function processProvisionalResults() {
     const staleResult = await query(
       `SELECT id, race_name, round
        FROM races
-       WHERE season = $1
-         AND race_date <= NOW() - INTERVAL '6 hours'
+       WHERE race_date <= NOW() - INTERVAL '6 hours'
          AND status = 'upcoming'
          AND provisional_results_sent = FALSE
-         AND provisional_alert_sent = FALSE`,
-      [season]
+         AND provisional_alert_sent = FALSE`
     );
 
     for (const race of staleResult.rows) {

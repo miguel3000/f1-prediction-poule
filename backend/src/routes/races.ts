@@ -7,6 +7,7 @@ import {
   getRaceResults,
   getQualifyingOrder,
   getRaceWeekends,
+  getSeasons,
   syncRaces
 } from '../controllers/raceController';
 import { authenticateAdmin } from '../middleware/adminAuth';
@@ -22,6 +23,8 @@ router.get('/', authenticate, getRaces);
 router.get('/next', authenticate, getNextRace);
 // Before '/:id' so "weekends" is not taken for a race id
 router.get('/weekends', authenticate, getRaceWeekends);
+// Also before '/:id'
+router.get('/seasons', authenticate, getSeasons);
 router.get('/:id', authenticate, getRace);
 router.get('/:id/results', authenticate, getRaceResults);
 router.get('/:id/qualifying', authenticate, getQualifyingOrder);

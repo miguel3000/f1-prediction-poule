@@ -5,6 +5,8 @@ import WeekendBars from '../components/WeekendBars';
 import WeekendSummary from '../components/WeekendSummary';
 import { formatNLDay, formatNLTime, formatNLDayTime } from '../utils/dateTime';
 import { useLang, TranslationKey } from '../i18n/LanguageContext';
+import { useSeason } from '../context/SeasonContext';
+import SeasonPicker from '../components/SeasonPicker';
 
 interface Race {
   id: number;
@@ -38,14 +40,16 @@ const RaceOverview = () => {
   const [weekendsState, setWeekendsState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const navigate = useNavigate();
   const { t, locale } = useLang();
+  const { season, ready } = useSeason();
 
   useEffect(() => {
-    fetchRaces();
-  }, []);
+    if (ready) fetchRaces();
+  }, [ready, season]);
 
   const fetchRaces = async () => {
+    setLoading(true);
     try {
-      const response = await getRaces(2026);
+      const response = await getRaces(season);
 
       // Sort races: upcoming first, then in_progress, then completed
       // Within each status group, maintain chronological order
@@ -72,13 +76,14 @@ const RaceOverview = () => {
   // The full weekend schedule is a bonus on top of the qualifying and race times each
   // race already has, so if it cannot be loaded the cards and popup simply show those.
   useEffect(() => {
-    getRaceWeekends(2026)
+    if (!ready) return;
+    getRaceWeekends(season)
       .then((res) => {
         setWeekends(res.data.weekends);
         setWeekendsState(Object.keys(res.data.weekends).length > 0 ? 'ready' : 'failed');
       })
       .catch(() => setWeekendsState('failed'));
-  }, []);
+  }, [ready, season]);
 
   const handleRaceClick = async (race: Race) => {
     setSelectedRace(race);
@@ -136,8 +141,9 @@ const RaceOverview = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-2 text-center text-f1-yellow-500">
-        {t('races.title', { year: 2026 })}
+        {t('races.title', { year: season })}
       </h1>
+      <SeasonPicker />
       <p className="text-center text-white text-xs mb-8">{t('races.timesNote')}</p>
 
       {nextRace && (

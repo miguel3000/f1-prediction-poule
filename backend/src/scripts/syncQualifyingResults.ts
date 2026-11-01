@@ -12,8 +12,6 @@ import { sendAdminAlert } from '../services/emailService';
  */
 async function syncQualifyingResults() {
   try {
-    const season = 2026;
-
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type, r.qualifying_alert_sent,
               -- when the qualifying session should long be over and published
@@ -22,12 +20,10 @@ async function syncQualifyingResults() {
                    ELSE r.race_date - INTERVAL '17 hours'
               END AS expected_by
        FROM races r
-       WHERE r.season = $1
-         AND r.race_date - INTERVAL '1 day' < NOW()
+       WHERE r.race_date - INTERVAL '1 day' < NOW()
          AND r.race_date > NOW() - INTERVAL '2 days'
          AND NOT EXISTS (SELECT 1 FROM qualifying_results WHERE race_id = r.id)
-       ORDER BY r.race_date DESC`,
-      [season]
+       ORDER BY r.race_date DESC`
     );
 
     if (racesResult.rows.length === 0) {

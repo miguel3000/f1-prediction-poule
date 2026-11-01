@@ -3,6 +3,10 @@ import { useLang } from '../i18n/LanguageContext';
 import { getDriverStandings, getTeamStandings } from '../services/api';
 import { teamKey, driverKey } from '../utils/teamKey';
 
+// The line-ups on this page are written by hand for one season, so its points come from that season
+// too. When a new season starts, update the line-ups below and this number together.
+const LINEUP_SEASON = 2026;
+
 interface DriverStat { points: number; wins: number; number: number }
 interface TeamStat { points: number; position: number }
 
@@ -14,7 +18,7 @@ const Teams = () => {
   // Live points: per driver from our standings, per team from the official
   // constructor standings. If either call fails the page just shows the line-up.
   useEffect(() => {
-    getDriverStandings(2026)
+    getDriverStandings(LINEUP_SEASON)
       .then((res) => {
         const drivers: any[] = res.data.drivers || res.data;
         setDriverStats(
@@ -22,7 +26,7 @@ const Teams = () => {
         );
       })
       .catch(() => undefined);
-    getTeamStandings(2026)
+    getTeamStandings(LINEUP_SEASON)
       .then((res) => {
         setTeamStats(new Map((res.data as any[]).map((x) => [teamKey(x.name), { points: x.points, position: x.position }])));
       })
@@ -201,7 +205,7 @@ const Teams = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl font-bold mb-2 text-center text-f1-yellow-500">
-        {t('teams.title', { year: 2026 })}
+        {t('teams.title', { year: LINEUP_SEASON })}
       </h1>
       <p className="text-center text-white mb-8">
         {t('teams.subtitle')}

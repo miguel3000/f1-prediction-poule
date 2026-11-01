@@ -1,10 +1,11 @@
 import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
+import { activeSeason } from '../services/season';
 
 async function syncDriverStandings() {
   try {
     console.log('[CRON] Starting driver standings sync...');
-    const season = 2026;
+    const season = await activeSeason();
     const standings = await jolpiService.getDriverStandings(season);
     let updated = 0;
     let notFound = 0;

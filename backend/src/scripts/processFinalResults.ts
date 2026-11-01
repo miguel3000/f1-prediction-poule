@@ -6,18 +6,15 @@ import { sendFinalResults, sendResultsAreInEmail, UserPredictionResult } from '.
 async function processFinalResults() {
   try {
     console.log('[CRON] Starting final results processing...');
-    const season = 2026;
 
     // Find races that are 24+ hours old and haven't had final results processed
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
        FROM races r
-       WHERE r.season = $1
-         AND r.race_date < NOW() - INTERVAL '24 hours'
+       WHERE r.race_date < NOW() - INTERVAL '24 hours'
          AND r.final_results_processed = FALSE
          AND r.status = 'provisional'
-       ORDER BY r.race_date DESC`,
-      [season]
+       ORDER BY r.race_date DESC`
     );
 
     const races = racesResult.rows;
@@ -68,8 +65,8 @@ async function processFinalResults() {
         await applyDecision(race, decision);
 
         // Recalculate all points with final results. calculateRacePoints() overwrites
-        // points_earned and recomputes total_points from source of truth, so this is
-        // safe to run even though points were already set during provisional processing.
+        // points_earned from scratch, so this is safe to run even though points were already set
+        // during provisional processing.
         await calculateRacePoints(race.id);
 
         // Update race status to completed

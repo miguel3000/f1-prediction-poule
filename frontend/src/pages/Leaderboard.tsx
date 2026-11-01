@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getLeaderboard, getSeasonHistory, getPlayerStats, getMyGroups } from '../services/api';
+import { useSeason } from '../context/SeasonContext';
+import SeasonPicker from '../components/SeasonPicker';
 import { useLang } from '../i18n/LanguageContext';
 import { ordinal } from '../i18n/format';
 import { AuthContext } from '../context/AuthContext';
@@ -45,6 +47,7 @@ const getRankColor = (rank: number) => {
 const Leaderboard = () => {
   const { t, lang } = useLang();
   const { user } = useContext(AuthContext);
+  const { season, ready: seasonReady } = useSeason();
   const [searchParams, setSearchParams] = useSearchParams();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [seasonRaces, setSeasonRaces] = useState<SeasonRace[]>([]);
@@ -78,7 +81,7 @@ const Leaderboard = () => {
   const selected = requested ?? pouleOptions[0]?.id;
   const noPoule = poules !== null && !poulesFailed && pouleOptions.length === 0;
   const badPoule = poules !== null && !poulesFailed && !noPoule && !pouleOptions.some((p) => p.id === selected);
-  const ready = poules !== null && !noPoule && !badPoule;
+  const ready = poules !== null && !noPoule && !badPoule && seasonReady;
   // Without a usable list the server decides (it answers with the default poule).
   const pouleParam = poulesFailed ? undefined : selected;
 
@@ -88,20 +91,20 @@ const Leaderboard = () => {
     setLoading(true);
     setHistoryLoading(true);
     setStatsLoading(true);
-    getLeaderboard(pouleParam)
+    getLeaderboard(pouleParam, season)
       .then((res) => { if (!cancelled) setLeaderboard(res.data); })
       .catch((error) => { if (!cancelled) { setLeaderboard([]); console.error('Failed to fetch leaderboard:', error); } })
       .finally(() => { if (!cancelled) setLoading(false); });
-    getSeasonHistory(pouleParam)
+    getSeasonHistory(pouleParam, season)
       .then((res) => { if (!cancelled) { setSeasonRaces(res.data.races); setSeasonUsers(res.data.users); } })
       .catch((error) => { if (!cancelled) { setSeasonRaces([]); setSeasonUsers([]); console.error('Failed to fetch season history:', error); } })
       .finally(() => { if (!cancelled) setHistoryLoading(false); });
-    getPlayerStats(pouleParam)
+    getPlayerStats(pouleParam, season)
       .then((res) => { if (!cancelled) setPlayerStats(res.data); })
       .catch((error) => { if (!cancelled) { setPlayerStats([]); console.error('Failed to fetch player stats:', error); } })
       .finally(() => { if (!cancelled) setStatsLoading(false); });
     return () => { cancelled = true; };
-  }, [ready, pouleParam]);
+  }, [ready, pouleParam, season]);
 
   if (poules === null) {
     return (
@@ -117,6 +120,7 @@ const Leaderboard = () => {
   return (
     <div>
       <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-f1-yellow-500">{t('lb.title')}</h1>
+      <SeasonPicker />
       <div className="flex justify-center mb-8">
         <ShareButton />
       </div>

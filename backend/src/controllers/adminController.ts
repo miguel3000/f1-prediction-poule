@@ -8,6 +8,8 @@ import * as openF1Service from '../services/openF1Service';
 import { calculateRacePoints } from './leaderboardController';
 import { sendBroadcastEmail, sendPersonalRaceResults, sendPitwallApproved } from '../services/emailService';
 import { f1Cache } from '../utils/cache';
+import { activeSeason, seasonFromQuery } from '../services/season';
+import { seasonPointsCte, getSeasonTotals } from '../services/seasonPoints';
 
 const SALT_ROUNDS = 10;
 
@@ -29,10 +31,15 @@ const cronJobStatus: {
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
+    const season = await seasonFromQuery(req.query.season);
     const result = await query(
-      `SELECT id, nickname, email, avatar_url, total_points, is_admin, pitwall_access, can_start_groups, plays_in_main, created_at
-       FROM users
-       ORDER BY created_at DESC`
+      `WITH ${seasonPointsCte('$1')}
+       SELECT u.id, u.nickname, u.email, u.avatar_url, COALESCE(spt.points, 0) AS total_points, u.is_admin, u.pitwall_access,
+              u.can_start_groups, u.plays_in_main, u.created_at
+       FROM users u
+       LEFT JOIN season_points spt ON spt.user_id = u.id
+       ORDER BY u.created_at DESC`,
+      [season]
     );
 
     res.json(result.rows);
@@ -195,12 +202,16 @@ export const deleteUser = async (req: Request, res: Response) => {
 // Get cronjob status and configuration
 export const getCronJobs = async (req: Request, res: Response) => {
   try {
+    const season = await activeSeason();
+
     // Get last sync times from database
     const driverLastUpdate = await query(
-      'SELECT MAX(updated_at) as last_updated FROM drivers WHERE season = 2026'
+      'SELECT MAX(updated_at) as last_updated FROM drivers WHERE season = $1',
+      [season]
     );
     const raceLastUpdate = await query(
-      'SELECT MAX(updated_at) as last_updated FROM races WHERE season = 2026'
+      'SELECT MAX(updated_at) as last_updated FROM races WHERE season = $1',
+      [season]
     );
 
     // Get count of completed races and pending races
@@ -210,35 +221,39 @@ export const getCronJobs = async (req: Request, res: Response) => {
         COUNT(*) FILTER (WHERE status = 'provisional') as provisional_races,
         COUNT(*) FILTER (WHERE status = 'upcoming' AND race_date < NOW()) as pending_races,
         COUNT(*) FILTER (WHERE status = 'upcoming' AND race_date > NOW()) as upcoming_races
-       FROM races WHERE season = 2026`
+       FROM races WHERE season = $1`,
+      [season]
     );
 
     // Get races needing provisional results (finished 5min-3hrs ago, not sent yet)
     const provisionalPending = await query(
       `SELECT COUNT(*) as count FROM races
-       WHERE season = 2026
+       WHERE season = $1
          AND race_date < NOW() - INTERVAL '5 minutes'
          AND race_date > NOW() - INTERVAL '3 hours'
          AND provisional_results_sent = FALSE
-         AND status = 'upcoming'`
+         AND status = 'upcoming'`,
+      [season]
     );
 
     // Get races needing final results (24+ hours old, provisional status)
     const finalPending = await query(
       `SELECT COUNT(*) as count FROM races
-       WHERE season = 2026
+       WHERE season = $1
          AND race_date < NOW() - INTERVAL '24 hours'
          AND final_results_processed = FALSE
-         AND status = 'provisional'`
+         AND status = 'provisional'`,
+      [season]
     );
 
     // Get races that just locked (for copy missing predictions)
     const copyPredictionsPending = await query(
       `SELECT COUNT(*) as count FROM races
-       WHERE season = 2026
+       WHERE season = $1
          AND race_date - INTERVAL '1 minute' < NOW()
          AND race_date - INTERVAL '1 minute' > NOW() - INTERVAL '10 minutes'
-         AND status = 'upcoming'`
+         AND status = 'upcoming'`,
+      [season]
     );
 
     const cronJobs = [
@@ -326,7 +341,7 @@ export const triggerDriverStandingsSync = async (req: Request, res: Response) =>
   res.json({ message: 'Driver standings sync started', status: 'running' });
 
   try {
-    const season = 2026;
+    const season = await seasonFromQuery(req.query.season);
     const standings = await jolpiService.getDriverStandings(season);
 
     // Fetch all existing drivers for this season
@@ -398,7 +413,7 @@ export const getSyncStatus = async (req: Request, res: Response) => {
 // Diagnostic endpoint: shows races needing sync and tests Jolpi API connectivity
 export const getSyncDiagnosis = async (req: Request, res: Response) => {
   try {
-    const season = 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     // Races that have passed and have NO results yet
     const pendingResult = await query(
@@ -494,7 +509,7 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
   res.json({ message: 'Race results sync started', status: 'running', force, raceId });
 
   try {
-    const season = 2026;
+    const season = await seasonFromQuery(req.query.season);
 
     let racesResult;
     if (raceId) {
@@ -675,19 +690,15 @@ export const sendBroadcastToAllUsers = async (req: Request, res: Response) => {
 // Send personal prediction results email for the last completed race to all players
 export const sendLastRaceResults = async (req: Request, res: Response) => {
   try {
-    const season = new Date().getFullYear();
-
-    // Find the most recently completed race
+    // Find the most recently completed race (in January that is still last season's final race)
     const raceResult = await query(
       `SELECT * FROM races
        WHERE status IN ('completed', 'provisional')
-         AND season = $1
-       ORDER BY race_date DESC LIMIT 1`,
-      [season]
+       ORDER BY race_date DESC LIMIT 1`
     );
 
     if (raceResult.rows.length === 0) {
-      return res.status(404).json({ error: 'No completed races found for this season' });
+      return res.status(404).json({ error: 'No completed races found' });
     }
 
     const race = raceResult.rows[0];
@@ -710,12 +721,13 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
     // Get all users with predictions for this race
     const posColumns = Array.from({ length: maxPositions }, (_, i) => `p.position_${i + 1}`).join(', ');
     const predictionsResult = await query(
-      `SELECT u.email, u.nickname, u.language, u.total_points, p.points_earned, ${posColumns}
+      `SELECT p.user_id, u.email, u.nickname, u.language, p.points_earned, ${posColumns}
        FROM ${predictionsTable} p
        JOIN users u ON p.user_id = u.id
        WHERE p.race_id = $1`,
       [race.id]
     );
+    const seasonTotals = await getSeasonTotals(predictionsResult.rows.map((r: any) => r.user_id), race.season);
 
     if (predictionsResult.rows.length === 0) {
       return res.status(404).json({ error: `No predictions found for ${race.race_name}` });
@@ -762,7 +774,7 @@ export const sendLastRaceResults = async (req: Request, res: Response) => {
         predictions,
         actuals,
         pred.points_earned || 0,
-        pred.total_points,
+        seasonTotals.get(pred.user_id) ?? 0,
         pred.language
       );
 
@@ -865,7 +877,7 @@ export const setUserPassword = async (req: Request, res: Response) => {
 
 export const triggerQualifyingSync = async (req: Request, res: Response) => {
   const force = req.query.force === 'true';
-  const season = 2026;
+  const season = await seasonFromQuery(req.query.season);
 
   try {
     // qualifying_date is not populated — use race_date - 1 day as proxy
@@ -1028,8 +1040,9 @@ export const listResultCheckRaces = async (_req: Request, res: Response) => {
               rc.verdict AS last_verdict
        FROM races r
        LEFT JOIN result_checks rc ON rc.race_id = r.id
-       WHERE r.season = 2026 AND r.race_date < NOW()
-       ORDER BY r.race_date DESC`
+       WHERE r.season = $1 AND r.race_date < NOW()
+       ORDER BY r.race_date DESC`,
+      [await seasonFromQuery(_req.query.season)]
     );
     res.json(result.rows);
   } catch (error: any) {

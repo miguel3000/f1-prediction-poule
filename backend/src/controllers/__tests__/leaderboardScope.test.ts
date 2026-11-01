@@ -27,10 +27,11 @@ before(async () => {
   groupId = g.id;
   await joinGroup(D.id, g.inviteCode, false);
 
-  // Whole-season points, and one race everybody predicted (Dave scored the most that race).
+  // Whole-season points (a season's total is summed from its predictions), and one race everybody
+  // predicted (Dave scored the most in that race); the rest of each total came from the sprint.
   for (const [u, total, race] of [[A, 100, 40], [B, 80, 30], [C, 60, 20], [D, 90, 50]] as Array<[U, number, number]>) {
-    await query('UPDATE users SET total_points = $1 WHERE id = $2', [total, u.id]);
     await addPrediction(u.id, season.pastRaceId, season.driverIds, race);
+    await addPrediction(u.id, season.pastSprintId, season.driverIds, total - race);
   }
 
   const app = express();

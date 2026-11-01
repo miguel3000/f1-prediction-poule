@@ -77,7 +77,7 @@ export interface JolpiResult {
   status: string;
 }
 
-export const getRaces = async (season: number = 2026): Promise<JolpiRace[]> => {
+export const getRaces = async (season: number): Promise<JolpiRace[]> => {
   const key = cacheKey.races(season);
   const cached = f1Cache.get<JolpiRace[]>(key);
   if (cached) return cached;
@@ -93,7 +93,7 @@ export const getRaces = async (season: number = 2026): Promise<JolpiRace[]> => {
   }
 };
 
-export const getDriverStandings = async (season: number = 2026): Promise<JolpiStanding[]> => {
+export const getDriverStandings = async (season: number): Promise<JolpiStanding[]> => {
   const key = cacheKey.driverStandings(season);
   const cached = f1Cache.get<JolpiStanding[]>(key);
   if (cached) return cached;
@@ -119,7 +119,7 @@ export interface JolpiConstructorStanding {
   };
 }
 
-export const getConstructorStandings = async (season: number = 2026): Promise<JolpiConstructorStanding[]> => {
+export const getConstructorStandings = async (season: number): Promise<JolpiConstructorStanding[]> => {
   const key = cacheKey.constructorStandings(season);
   const cached = f1Cache.get<JolpiConstructorStanding[]>(key);
   if (cached) return cached;
@@ -153,7 +153,7 @@ export const getRaceResults = async (season: number, round: number): Promise<Jol
   }
 };
 
-export const getDrivers = async (season: number = 2026): Promise<JolpiDriver[]> => {
+export const getDrivers = async (season: number): Promise<JolpiDriver[]> => {
   const key = cacheKey.drivers(season);
   const cached = f1Cache.get<JolpiDriver[]>(key);
   if (cached) return cached;

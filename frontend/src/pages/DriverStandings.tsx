@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getDriverStandings } from '../services/api';
 import { useLang } from '../i18n/LanguageContext';
+import { useSeason } from '../context/SeasonContext';
+import SeasonPicker from '../components/SeasonPicker';
 
 interface Driver {
   id: number;
@@ -15,17 +17,19 @@ interface Driver {
 
 const DriverStandings = () => {
   const { t, locale } = useLang();
+  const { season, ready } = useSeason();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDriverStandings();
-  }, []);
+    if (ready) fetchDriverStandings();
+  }, [ready, season]);
 
   const fetchDriverStandings = async () => {
+    setLoading(true);
     try {
-      const response = await getDriverStandings(2026);
+      const response = await getDriverStandings(season);
       setDrivers(response.data.drivers || response.data);
       setLastUpdated(response.data.lastUpdated || null);
     } catch (error) {
@@ -133,8 +137,9 @@ const DriverStandings = () => {
   return (
     <div>
       <h1 className="text-4xl md:text-display-xl font-bold mb-4 text-center text-f1-yellow-500">
-        {t('ds.title', { year: 2026 })}
+        {t('ds.title', { year: season })}
       </h1>
+      <SeasonPicker />
 
       {/* Update Information - Compact */}
       <div className="max-w-4xl mx-auto mb-4">

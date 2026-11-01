@@ -3,6 +3,7 @@ import api from '../services/api';
 import { getRaces, getNextRace } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import ResultsCheckPanel from '../components/ResultsCheckPanel';
+import { useSeason } from '../context/SeasonContext';
 
 interface User {
   id: number;
@@ -108,7 +109,6 @@ interface DiagnosisResult {
 
 // The system reference lists. Cron times are UTC and copied from /crontab: change both together.
 const CRON_JOBS = [
-  { name: 'Yearly points reset', cron: '0 0 1 1 *', when: 'Every 1 January at 00:00. Sets every player\'s points back to zero for the new season.' },
   { name: 'Driver standings sync', cron: '0 9 * * 1,4', when: 'Monday and Thursday at 09:00. Covers Sunday races and Saturday sprints.' },
   { name: 'Race results sync', cron: '0 3 * * 1', when: 'Monday at 03:00. Syncs the race results.' },
   { name: 'Qualifying results sync', cron: '*/10 * * * 5,6,0', when: 'Friday to Sunday, every 10 minutes. Does nothing once a session is stored; emails you if one is still missing hours later.' },
@@ -219,6 +219,9 @@ const EMAIL_TYPES = [
 
 const Admin = () => {
   const { user } = useContext(AuthContext);
+  const { active: activeSeason, ready: seasonReady } = useSeason();
+  // The season the calendar and driver syncs load: this year unless a new season is loaded early.
+  const [loadSeason, setLoadSeason] = useState(String(new Date().getFullYear()));
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -277,10 +280,14 @@ const Admin = () => {
   const [reassignTo, setReassignTo] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    if (!user?.is_admin) return;
-    getRaces(2026)
+    if (!user?.is_admin || !seasonReady) return;
+    getRaces(activeSeason)
       .then(res => setPredictionRaces(res.data))
       .catch(() => { /* race list is a nice-to-have; ignore failures */ });
+  }, [user?.is_admin, seasonReady, activeSeason]);
+
+  useEffect(() => {
+    if (!user?.is_admin) return;
     getNextRace()
       .then(res => {
         setSelectedPredictionRaceId(res.data.id);
@@ -613,9 +620,9 @@ const Admin = () => {
     const endpoint = type === 'standings'
       ? '/api/admin/cronjobs/sync-driver-standings'
       : type === 'drivers'
-      ? '/api/admin/cronjobs/sync-drivers'
+      ? `/api/admin/cronjobs/sync-drivers?season=${loadSeason}`
       : type === 'calendar'
-      ? '/api/admin/cronjobs/sync-calendar'
+      ? `/api/admin/cronjobs/sync-calendar?season=${loadSeason}`
       : type === 'qualifying'
       ? `/api/admin/cronjobs/sync-qualifying${forceResync ? '?force=true' : ''}`
       : resyncRace
@@ -1029,6 +1036,19 @@ const Admin = () => {
       {/* Admin Actions */}
       <div className="card-f1 mb-8">
         <h2 className="text-2xl font-bold mb-6">Admin Actions</h2>
+
+        <div className="flex flex-wrap items-center gap-3 mb-4 text-sm text-white">
+          <label htmlFor="load-season">Season for Sync Drivers and Sync Race Calendar</label>
+          <input
+            id="load-season"
+            type="number"
+            min={2020}
+            max={new Date().getFullYear() + 1}
+            value={loadSeason}
+            onChange={(e) => setLoadSeason(e.target.value)}
+            className="w-24 bg-f1-neutral-800 border border-f1-neutral-700 px-3 py-2 text-white focus:border-f1-yellow-500 focus:outline-none"
+          />
+        </div>
 
         {syncMessage && (
           <div className={`mb-4 px-4 py-3 whitespace-pre-line text-sm ${
@@ -2014,22 +2034,19 @@ const Admin = () => {
                 </p>
               </div>
 
-              {/* Yearly Points Reset */}
+              {/* Seasons */}
               <div className="bg-f1-neutral-800 p-5 mb-6">
-                <h4 className="font-bold text-purple-400 mb-3">Yearly Points Reset</h4>
+                <h4 className="font-bold text-purple-400 mb-3">Seasons</h4>
                 <p className="text-sm text-white mb-3">
-                  Sets every player's total points to 0 at the start of each new F1 season.
+                  A player's points are summed from the predictions of one season, so there is no reset job.
+                  On 1 January the active season becomes the new year (once its calendar is loaded) and everybody
+                  starts on zero. Earlier seasons stay viewable with the season picker on Standings, Races, Drivers and Stats.
                 </p>
                 <div className="text-xs space-y-1">
-                  <p><span className="text-white">Schedule:</span> <span className="font-mono">0 0 1 1 *</span></p>
-                  <p><span className="text-white">Trigger:</span> January 1st at 00:00 UTC</p>
-                  <p><span className="text-white">Action:</span> UPDATE users SET total_points = 0</p>
-                  <p><span className="text-white">Email:</span> None</p>
+                  <p><span className="text-white">Active season:</span> the calendar year, but never newer than the newest season in the calendar</p>
+                  <p><span className="text-white">Loading a new season:</span> set the season in Admin Actions, then Sync Race Calendar and Sync Drivers</p>
+                  <p><span className="text-white">Every year:</span> update the hand-written line-ups on the Teams page</p>
                 </div>
-                <p className="text-xs text-orange-300 mt-3">
-                  Known gap: the next points calculation adds up every prediction ever made, so the reset does not hold yet.
-                  The jobs also look only at the 2026 season.
-                </p>
               </div>
 
               {/* Race Status Flow */}

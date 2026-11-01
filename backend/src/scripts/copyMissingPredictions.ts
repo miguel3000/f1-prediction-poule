@@ -10,19 +10,16 @@ import { getExcludedDriverIds, usesExcludedDriver } from '../services/driverExcl
 async function copyMissingPredictions() {
   try {
     console.log('[CRON] Starting missing predictions copy...');
-    const season = 2026;
 
     // Find races that just locked (1-10 minutes after lock time)
     // Lock time is 1 minute before race_date
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
        FROM races r
-       WHERE r.season = $1
-         AND r.race_date - INTERVAL '1 minute' < NOW()
+       WHERE r.race_date - INTERVAL '1 minute' < NOW()
          AND r.race_date - INTERVAL '1 minute' > NOW() - INTERVAL '10 minutes'
          AND r.status = 'upcoming'
-       ORDER BY r.race_date ASC`,
-      [season]
+       ORDER BY r.race_date ASC`
     );
 
     const races = racesResult.rows;

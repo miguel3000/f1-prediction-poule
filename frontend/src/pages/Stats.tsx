@@ -13,6 +13,8 @@ import {
 import { getTeamColor } from '../utils/teamColors';
 import SegmentedTabs from '../components/SegmentedTabs';
 import { useLang } from '../i18n/LanguageContext';
+import { useSeason } from '../context/SeasonContext';
+import SeasonPicker from '../components/SeasonPicker';
 
 interface Race {
   id: number;
@@ -138,6 +140,7 @@ const StatCard = ({ emoji, title, children, isEmpty }: {
 
 const Stats = () => {
   const { t } = useLang();
+  const { season, ready } = useSeason();
   const [searchParams] = useSearchParams();
   const [races, setRaces] = useState<Race[]>([]);
   const [seasonStats, setSeasonStats] = useState<SeasonStats | null>(null);
@@ -150,15 +153,17 @@ const Stats = () => {
   const [loadingFun, setLoadingFun] = useState(true);
 
   useEffect(() => {
+    if (!ready) return;
     fetchData();
     fetchFunStats();
-  }, []);
+  }, [ready, season]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [racesRes, statsRes] = await Promise.all([
-        getCompletedRaces(2026),
-        getSeasonStats(2026),
+        getCompletedRaces(season),
+        getSeasonStats(season),
       ]);
       setRaces(racesRes.data);
       setSeasonStats(statsRes.data);
@@ -178,7 +183,7 @@ const Stats = () => {
           let session: SessionType = 'fp1';
           const checks = await Promise.all(
             ([3, 2, 1] as const).map((n) =>
-              getPracticeResults(target.round, n, 2026)
+              getPracticeResults(target.round, n, season)
                 .then((res) => res.data.length > 0)
                 .catch(() => false)
             )
@@ -196,8 +201,9 @@ const Stats = () => {
   };
 
   const fetchFunStats = async () => {
+    setLoadingFun(true);
     try {
-      const res = await getFunStats(2026);
+      const res = await getFunStats(season);
       setFunStats(res.data);
     } catch (error) {
       console.error('Failed to fetch fun stats:', error);
@@ -227,13 +233,13 @@ const Stats = () => {
     try {
       let response;
       switch (selectedSession) {
-        case 'fp1': response = await getPracticeResults(selectedRound, 1, 2026); break;
-        case 'fp2': response = await getPracticeResults(selectedRound, 2, 2026); break;
-        case 'fp3': response = await getPracticeResults(selectedRound, 3, 2026); break;
-        case 'qualifying': response = await getQualifyingResultsStats(selectedRound, 2026); break;
-        case 'sprint_qualifying': response = await getSprintQualifyingResultsStats(selectedRound, 2026); break;
-        case 'sprint': response = await getSprintResultsStats(selectedRound, 2026); break;
-        case 'race': default: response = await getRaceResultsStats(selectedRound, 2026); break;
+        case 'fp1': response = await getPracticeResults(selectedRound, 1, season); break;
+        case 'fp2': response = await getPracticeResults(selectedRound, 2, season); break;
+        case 'fp3': response = await getPracticeResults(selectedRound, 3, season); break;
+        case 'qualifying': response = await getQualifyingResultsStats(selectedRound, season); break;
+        case 'sprint_qualifying': response = await getSprintQualifyingResultsStats(selectedRound, season); break;
+        case 'sprint': response = await getSprintResultsStats(selectedRound, season); break;
+        case 'race': default: response = await getRaceResultsStats(selectedRound, season); break;
       }
       // A silent refresh must never blank a table that already has rows.
       if (!silent || response.data.length > 0) setSessionResults(response.data);
@@ -285,8 +291,9 @@ const Stats = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-4xl md:text-display-xl font-bold mb-8 text-center text-f1-yellow-500">
-        {t('stats.title', { year: 2026 })}
+        {t('stats.title', { year: season })}
       </h1>
+      <SeasonPicker />
 
       {/* Season Summary */}
       {seasonStats && (
@@ -315,7 +322,7 @@ const Stats = () => {
         <div className="w-1 h-6 bg-f1-yellow-500 flex-shrink-0" />
         <div>
           <h2 className="text-xl font-bold text-white uppercase tracking-wide">{t('stats.highlights')}</h2>
-          <p className="text-white text-xs">{t('stats.highlightsSub', { year: 2026 })}</p>
+          <p className="text-white text-xs">{t('stats.highlightsSub', { year: season })}</p>
         </div>
       </div>
       {loadingFun ? (

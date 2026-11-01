@@ -2,13 +2,16 @@ import { query } from '../config/database';
 import * as jolpiService from '../services/jolpiService';
 import * as openF1Service from '../services/openF1Service';
 
+// The season this seeds: the current calendar year (the first seed of a new database)
+const SEED_SEASON = new Date().getUTCFullYear();
+
 const seedDatabase = async () => {
   try {
     console.log('🌱 Starting database seed...');
 
     // Seed races
     console.log('📅 Seeding races from Jolpi API...');
-    const jolpiRaces = await jolpiService.getRaces(2026);
+    const jolpiRaces = await jolpiService.getRaces(SEED_SEASON);
 
     for (const race of jolpiRaces) {
       const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`);
@@ -44,7 +47,7 @@ const seedDatabase = async () => {
 
     try {
       // Try OpenF1 first
-      const openF1Drivers = await openF1Service.getLatestDrivers();
+      const openF1Drivers = await openF1Service.getLatestDrivers(SEED_SEASON);
       drivers = openF1Drivers.map(d => ({
         number: d.driver_number,
         name: d.full_name,
@@ -54,7 +57,7 @@ const seedDatabase = async () => {
     } catch {
       // Fallback to Jolpi
       console.log('⚠️  OpenF1 failed, using Jolpi API for drivers...');
-      const jolpiDrivers = await jolpiService.getDrivers(2026);
+      const jolpiDrivers = await jolpiService.getDrivers(SEED_SEASON);
       drivers = jolpiDrivers.map(d => ({
         number: parseInt(d.permanentNumber),
         name: `${d.givenName} ${d.familyName}`,
@@ -71,7 +74,7 @@ const seedDatabase = async () => {
            name = EXCLUDED.name,
            team = EXCLUDED.team,
            nationality = EXCLUDED.nationality`,
-        [driver.number, driver.name, driver.team, driver.nationality, 2026]
+        [driver.number, driver.name, driver.team, driver.nationality, SEED_SEASON]
       );
     }
 

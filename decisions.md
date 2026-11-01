@@ -134,7 +134,18 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   qualifying already driven, give the ordered list (top 10 plus a first-retirement pick for a
   main race, top 8 for a sprint) and cite what you found. The user enters it themselves and says
   "Done, form filled". If it is unclear whether they want the sprint or the main race, ask that one thing.
-- Season points reset on 1 January (cron). Season predictions are a future pre-season event.
+- **Seasons**: a player's points are never stored as a running total. A season's total is summed from
+  `points_earned` of that season's predictions and sprint predictions (`services/seasonPoints.ts`), so
+  scoring a race can never mix seasons and nothing has to be reset. `services/season.ts` says which
+  season the app is in: the calendar year (UTC), but never newer than the newest season in `races`, so
+  on 1 January everybody starts on zero once the new calendar is loaded and nothing breaks before it is.
+  Older seasons stay viewable: every season-bound endpoint takes `?season=` (unknown values fall back to
+  the active season) and Standings, Races, Drivers and Stats have a season picker (`SeasonContext`).
+  The cron scripts have no season in them: they work on whichever race is in their time window; the
+  Monday results sync looks at the last 60 days. `users.total_points` is no longer read or written.
+  **Starting a new season** (yearly): in the Pitlane set the season in Admin Actions, run Sync Race
+  Calendar and Sync Drivers, then update the hand-written line-ups on the Teams page (`LINEUP_SEASON`).
+  Season predictions are a future pre-season event.
 
 ### Groups (private poules)
 
@@ -516,3 +527,4 @@ Why: <two or three lines, sources named>
 | 2026-10-31 | A weekend watcher reads the FIA decision documents and emails the owner what probably changes predictions (driver changes, grid drops, pit-lane starts) | The Hirakawa swap and Bottas' 50-place drop were found by chance; general news search proved unreliable |
 | 2026-11-01 | The starting grid is read from formula1.com's results page as soon as qualifying is over, ahead of the live feed and OpenF1 | The prediction list only switched to the real grid an hour before the start; the page has it (penalties applied) all day and matched Jolpi for all 18 races |
 | 2026-11-01 | Pitlane: Who's Predicted first and on the upcoming race, User Management second; cron jobs, scheduling logic and the APIs and sources sit in one closed "System reference" dropdown | The owner wanted the Pitlane cleaned up; the cron list shown there had drifted from the crontab (it missed five jobs and had wrong hours) |
+| 2026-11-01 | Points are summed per season from predictions, the season is no longer hard-coded, the yearly reset job is gone, and 2026 stays viewable with a season picker | The totals were rebuilt from every prediction ever made (a 1 January reset would have been undone by the first 2027 race) and every cron script looked only at 2026, so 2027 would have run silently on nothing |

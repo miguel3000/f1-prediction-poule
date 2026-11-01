@@ -9,20 +9,17 @@ import { sendMissedPredictionReminder } from '../services/emailService';
 async function sendMissedPredictionReminders() {
   try {
     console.log('[CRON] Starting missed-prediction reminder check...');
-    const season = 2026;
 
     // Find races starting in 55-65 minutes that haven't had a reminder sent yet.
     // The 10-minute window absorbs the cron's own polling interval.
     const racesResult = await query(
       `SELECT r.id, r.season, r.round, r.race_name, r.race_date, r.race_type
        FROM races r
-       WHERE r.season = $1
-         AND r.race_date - INTERVAL '65 minutes' < NOW()
+       WHERE r.race_date - INTERVAL '65 minutes' < NOW()
          AND r.race_date - INTERVAL '55 minutes' > NOW()
          AND r.status = 'upcoming'
          AND r.reminder_sent = FALSE
-       ORDER BY r.race_date ASC`,
-      [season]
+       ORDER BY r.race_date ASC`
     );
 
     const races = racesResult.rows;

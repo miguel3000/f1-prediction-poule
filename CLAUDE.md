@@ -171,6 +171,7 @@ PostgreSQL with these main tables:
 - `driver_exclusions` - Drivers not racing a weekend (season, round, driver_id, optional stand-in); see `decisions.md` "Drivers not racing a weekend"
 - `fia_documents` / `fia_checks` - Weekend flags: every FIA decision document seen on a race weekend (and live-feed driver-list differences), what was read from it and whether the owner was emailed; one row per watcher run. See `decisions.md` "Weekend flags"
 - `users.can_start_groups` (may start groups, Pitlane switch) and `users.plays_in_main` (appears in the main poule); see `decisions.md` "Groups"
+- Player points are summed per season from `predictions.points_earned` and `sprint_predictions.points_earned` (`services/seasonPoints.ts`); `users.total_points` is unused. Which season the app is in: `services/season.ts`. See `decisions.md` "Seasons"
 
 ## API Endpoints
 

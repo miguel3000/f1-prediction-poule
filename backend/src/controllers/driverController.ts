@@ -2,11 +2,11 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import * as openF1Service from '../services/openF1Service';
 import * as jolpiService from '../services/jolpiService';
+import { seasonFromQuery, seasonToLoad } from '../services/season';
 
 export const getDrivers = async (req: Request, res: Response) => {
   try {
-    const { season } = req.query;
-    const seasonYear = season ? parseInt(season as string) : 2026;
+    const seasonYear = await seasonFromQuery(req.query.season);
 
     const result = await query(
       'SELECT * FROM drivers WHERE season = $1 ORDER BY total_points DESC',
@@ -39,8 +39,7 @@ export const getDriver = async (req: Request, res: Response) => {
 
 export const getDriverStandings = async (req: Request, res: Response) => {
   try {
-    const { season } = req.query;
-    const seasonYear = season ? parseInt(season as string) : 2026;
+    const seasonYear = await seasonFromQuery(req.query.season);
 
     // Wins and podiums come from our own stored grand prix results (sprints
     // don't count), which matches the official counts.
@@ -85,8 +84,7 @@ export const getDriverStandings = async (req: Request, res: Response) => {
 // mid-season driver swaps are counted for the team that actually scored.
 export const getTeamStandings = async (req: Request, res: Response) => {
   try {
-    const { season } = req.query;
-    const seasonYear = season ? parseInt(season as string) : 2026;
+    const seasonYear = await seasonFromQuery(req.query.season);
     const standings = await jolpiService.getConstructorStandings(seasonYear);
 
     res.json(
@@ -105,12 +103,12 @@ export const getTeamStandings = async (req: Request, res: Response) => {
 
 export const syncDrivers = async (req: Request, res: Response) => {
   try {
-    const season = 2026;
+    const season = seasonToLoad(req.query.season);
 
     // Try OpenF1 first, fallback to Jolpi
     let drivers;
     try {
-      const openF1Drivers = await openF1Service.getLatestDrivers();
+      const openF1Drivers = await openF1Service.getLatestDrivers(season);
       drivers = openF1Drivers.map(d => ({
         number: d.driver_number,
         name: d.full_name,
@@ -190,7 +188,7 @@ export const syncDrivers = async (req: Request, res: Response) => {
 
 export const syncDriverStandings = async (req: Request, res: Response) => {
   try {
-    const season = 2026;
+    const season = await seasonFromQuery(req.query.season);
     const standings = await jolpiService.getDriverStandings(season);
 
     // Fetch all existing drivers for this season (single query)

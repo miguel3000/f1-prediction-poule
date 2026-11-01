@@ -64,11 +64,10 @@ COPY process-final-results.sh /app/process-final-results.sh
 COPY copy-missing-predictions.sh /app/copy-missing-predictions.sh
 COPY send-missed-prediction-reminders.sh /app/send-missed-prediction-reminders.sh
 COPY check-fia-documents.sh /app/check-fia-documents.sh
-COPY reset-yearly-points.sh /app/reset-yearly-points.sh
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
 # Make scripts executable
-RUN chmod +x /app/sync-driver-standings.sh /app/sync-race-results.sh /app/sync-qualifying-results.sh /app/sync-starting-grid.sh /app/send-provisional-results.sh /app/process-final-results.sh /app/copy-missing-predictions.sh /app/send-missed-prediction-reminders.sh /app/check-fia-documents.sh /app/reset-yearly-points.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/sync-driver-standings.sh /app/sync-race-results.sh /app/sync-qualifying-results.sh /app/sync-starting-grid.sh /app/send-provisional-results.sh /app/process-final-results.sh /app/copy-missing-predictions.sh /app/send-missed-prediction-reminders.sh /app/check-fia-documents.sh /app/docker-entrypoint.sh
 
 # Create log directory for cron
 RUN mkdir -p /var/log && touch /var/log/cron.log
