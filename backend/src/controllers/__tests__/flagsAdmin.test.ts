@@ -31,7 +31,8 @@ const textFor = (url: string): string => {
 };
 
 const INSIDE = new Date('2026-10-31T19:00:00Z');
-const OUTSIDE = new Date('2026-10-20T12:00:00Z');
+const OUTSIDE = new Date('2026-10-20T12:00:00Z'); // before the first window: there is no race to read yet
+const WINTER = new Date('2026-12-15T12:00:00Z'); // long after the last window closed
 let now = INSIDE;
 let release: (() => void) | null = null;
 let hold = false;
@@ -93,7 +94,7 @@ test('a_player_who_is_not_an_admin_is_refused', async () => {
   assert.equal((await call('POST', '/flags/check', player)).status, 403);
 });
 
-test('check_now_outside_the_window_says_it_did_not_run', async () => {
+test('check_now_before_the_first_window_says_it_did_not_run', async () => {
   now = OUTSIDE;
   const res = await call('POST', '/flags/check', admin);
   assert.equal(res.status, 200);
@@ -123,6 +124,13 @@ test('the_list_shows_the_window_flags_first_and_the_last_check', async () => {
   assert.match(haas.summary, /Ryo Hirakawa/);
   assert.equal(haas.emailed, true);
   assert.ok(haas.url.startsWith('https://www.fia.com/'));
+});
+
+test('check_now_works_long_after_the_window_has_closed', async () => {
+  now = WINTER;
+  const res = await call('POST', '/flags/check', admin);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.json, { ran: true, ok: true, added: 0, flagged: 0, emailed: 0 }, 'it reads the page; everything on it is already known');
 });
 
 test('outside_the_window_the_list_has_no_window', async () => {

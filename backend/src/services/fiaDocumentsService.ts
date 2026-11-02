@@ -1,5 +1,4 @@
 import { query } from '../config/database';
-import { predictionLockTime } from '../utils/predictionLock';
 import { sendFlagsDigest, sendWatcherFailureNotice } from './emailService';
 import { parseListing, classifyTitle, parseDocumentText, type ListedDocument, type DocKind } from './fiaDocumentsParser';
 
@@ -25,23 +24,38 @@ export interface FlagRow {
   source: 'fia' | 'feed';
 }
 
-const WINDOW_DAYS = 6;
+const DAY = 24 * 60 * 60 * 1000;
+const DAYS_BEFORE_RACE = 6;
+const DAYS_AFTER_RACE = 7;
 
-// The watcher works from six days before the next main race until its prediction lock: papers
-// published later cannot change a prediction any more. Sprint rows do not open a window.
-export const getWatchWindow = async (now: Date): Promise<WatchWindow | null> => {
-  const next = await query(
-    `SELECT id, race_name, race_date FROM races
-     WHERE race_type = 'main' AND race_date >= $1
-     ORDER BY race_date LIMIT 1`,
-    [now]
-  );
-  const race = next.rows[0];
-  if (!race) return null;
-  const start = new Date(new Date(race.race_date).getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const end = predictionLockTime(race.race_date);
-  if (now.getTime() < start.getTime() || now.getTime() >= end.getTime()) return null;
-  return { raceId: race.id, raceName: race.race_name, start, end };
+// The watcher works from six days before a main race until seven days after it. The prediction lock
+// does not close it: the papers that come after the lock (a time penalty, a disqualification, a grid
+// drop for the next event) change the results and the next race. While two races overlap the window is
+// about the weekend that has not been raced yet and starts where the earlier race's week started, so a
+// paper published in between is not lost when the next window opens. Sprint rows do not open a window.
+//
+// With `anytime` (a check by hand) outside every window the latest race that has been run is used,
+// read up to now, so the owner can always ask.
+export const getWatchWindow = async (now: Date, options: { anytime?: boolean } = {}): Promise<WatchWindow | null> => {
+  const races = (await query(`SELECT id, race_name, race_date FROM races WHERE race_type = 'main' ORDER BY race_date`)).rows;
+  const t = now.getTime();
+  const at = (race: any) => new Date(race.race_date).getTime();
+  const toWindow = (race: any, start: number, end: number): WatchWindow => ({
+    raceId: race.id,
+    raceName: race.race_name,
+    start: new Date(start),
+    end: new Date(end),
+  });
+
+  const open = races.filter((r) => t >= at(r) - DAYS_BEFORE_RACE * DAY && t < at(r) + DAYS_AFTER_RACE * DAY);
+  if (open.length > 0) {
+    const about = open.find((r) => at(r) >= t) ?? open[open.length - 1];
+    return toWindow(about, at(open[0]) - DAYS_BEFORE_RACE * DAY, at(about) + DAYS_AFTER_RACE * DAY);
+  }
+
+  const lastRun = races.filter((r) => at(r) < t).pop();
+  if (options.anytime && lastRun) return toWindow(lastRun, at(lastRun) - DAYS_BEFORE_RACE * DAY, t);
+  return null;
 };
 
 // Stores documents published inside the window that are not known yet; returns how many were new.
@@ -164,6 +178,8 @@ export interface CheckDeps {
   fetchListing: () => Promise<string>;
   fetchPdfText: (url: string) => Promise<string>;
   now?: () => Date;
+  // A check by hand (the Pitlane button) works outside the watch window too.
+  anytime?: boolean;
 }
 
 export interface CheckResult {
@@ -258,11 +274,11 @@ const readPending = async (deps: CheckDeps, window: WatchWindow): Promise<number
   return flagged;
 };
 
-// One pass of the watcher: inside the window, fetch the listing, store what is new, open what is worth
-// opening. Never throws; a failure is recorded as a failed run.
+// One pass of the watcher: inside the window (or any time, for a check by hand), fetch the listing, store
+// what is new, open what is worth opening. Never throws; a failure is recorded as a failed run.
 export const runCheck = async (deps: CheckDeps): Promise<CheckResult> => {
   const now = deps.now ? deps.now() : new Date();
-  const window = await getWatchWindow(now);
+  const window = await getWatchWindow(now, { anytime: deps.anytime });
   if (!window) return { ran: false, ok: true, found: 0, added: 0, flagged: 0 };
 
   try {

@@ -210,7 +210,7 @@ Automated via crontab in Docker:
 - **Provisional results**: Every 5 min on Sundays 12:00-20:00 UTC
 - **Final results**: Mon 12:00-20:00 UTC
 - **Starting grid**: every 5 min; every 15th minute it reads formula1.com's starting-grid page for a start 75 min to 30 h away, and OpenF1 as a fallback within 3 h of the start (the live feed fills it in the last hour)
-- **Weekend flags**: every 10 min; works only from 6 days before a main race until its prediction lock (reads the FIA decision documents, emails the owner what probably changes predictions)
+- **Weekend flags**: every 10 min; works from 6 days before a main race until 7 days after it, Check now in the Pitlane at any time (reads the FIA decision documents, emails the owner what probably changes predictions)
 
 ## Common Tasks
 

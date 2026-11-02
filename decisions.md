@@ -230,7 +230,12 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   probably changes predictions. Players are told nothing, and nothing is changed automatically.
   Design: `docs/superpowers/specs/2026-10-31-weekend-flags-design.md`.
 - It runs every 10 minutes (`check-fia-documents.sh`, cron) but only works from **6 days before a main
-  race until its prediction lock**. Papers published before the window opens are ignored.
+  race until 7 days after it**. The prediction lock does not close it: what is published after the lock
+  (time penalties, disqualifications, a grid drop for the next event) changes the results and the next
+  race. While two races overlap the window starts where the earlier race's week started, so a paper
+  published in between is not lost. Papers published before the window opens are ignored.
+- **Check now** in the Pitlane works at any time: outside the window it reads from the start of the
+  latest race's window up to now (nothing to read before the first window of the data).
 - Source: the first, expanded event block of `fia.com/documents/championships/fia-formula-one-world-championship-14`
   (title, PDF link, CET publication time). PDFs are read with `pdftotext` (`poppler-utils` in the image);
   only URLs on `www.fia.com` are fetched. Every document is stored in `fia_documents` (URL is the key),
@@ -527,4 +532,5 @@ Why: <two or three lines, sources named>
 | 2026-10-31 | A weekend watcher reads the FIA decision documents and emails the owner what probably changes predictions (driver changes, grid drops, pit-lane starts) | The Hirakawa swap and Bottas' 50-place drop were found by chance; general news search proved unreliable |
 | 2026-11-01 | The starting grid is read from formula1.com's results page as soon as qualifying is over, ahead of the live feed and OpenF1 | The prediction list only switched to the real grid an hour before the start; the page has it (penalties applied) all day and matched Jolpi for all 18 races |
 | 2026-11-01 | Pitlane: Who's Predicted first and on the upcoming race, User Management second; cron jobs, scheduling logic and the APIs and sources sit in one closed "System reference" dropdown | The owner wanted the Pitlane cleaned up; the cron list shown there had drifted from the crontab (it missed five jobs and had wrong hours) |
+| 2026-11-02 | Weekend flags: the watcher no longer stops at the prediction lock (6 days before a main race until 7 days after it), and Check now works at any time | After the Mexico race 18 papers with penalties came out and the watcher, closed since the lock, never stored them |
 | 2026-11-01 | Points are summed per season from predictions, the season is no longer hard-coded, the yearly reset job is gone, and 2026 stays viewable with a season picker | The totals were rebuilt from every prediction ever made (a 1 January reset would have been undone by the first 2027 race) and every cron script looked only at 2026, so 2027 would have run silently on nothing |

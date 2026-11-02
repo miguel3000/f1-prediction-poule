@@ -16,6 +16,7 @@ export const createFlagsHandlers = (deps: Partial<CheckDeps> = {}) => {
     fetchListing: deps.fetchListing ?? fetchFiaListing,
     fetchPdfText: deps.fetchPdfText ?? fetchFiaPdfText,
     now: deps.now,
+    anytime: true, // the button works whenever the owner presses it
   };
   const clock = () => (io.now ? io.now() : new Date());
   let running = false; // a check can take a minute; two at once would read the same documents twice

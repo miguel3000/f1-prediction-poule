@@ -117,7 +117,7 @@ const CRON_JOBS = [
   { name: 'Copy missing predictions', cron: '*/2 2-20 * * 0,6', when: 'Saturday and Sunday, every 2 minutes from 02:00 to 20:59. Copies the last prediction of players who forgot, just after the lock.' },
   { name: 'Provisional results', cron: '*/5 2-22 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 02:00 to 22:59. From 5 minutes after the start it looks for confirmed results, then scores predictions and mails players.' },
   { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours past the start, penalties included.' },
-  { name: 'Weekend flags', cron: '*/10 * * * *', when: 'Every 10 minutes, all week; works only from 6 days before a main race until its prediction lock. Reads the FIA decision documents and emails you what probably changes predictions.' },
+  { name: 'Weekend flags', cron: '*/10 * * * *', when: 'Every 10 minutes, all week; works from 6 days before a main race until 7 days after it, so the papers that come after the race are read too. Reads the FIA decision documents and emails you what probably changes predictions. The Check now button in the Pitlane works at any time.' },
   { name: 'Log rotation', cron: '0 3 * * 2', when: 'Tuesday at 03:00. Empties /var/log/cron.log.' },
 ];
 
@@ -143,7 +143,7 @@ const DATA_SOURCES = [
 // The scheduling documentation. Checked against backend/src/scripts and /crontab on 1 Nov 2026: when
 // a job's trigger, window or mail changes, change it here too.
 const RACE_TIMELINE = [
-  { when: 'T −6 days → lock', what: 'Weekend flags, main race only: every 10 minutes it reads the FIA decision documents and emails you what probably changes predictions.' },
+  { when: 'T −6 days → T +7 days', what: 'Weekend flags, main race only: every 10 minutes it reads the FIA decision documents (also the ones after the race) and emails you what probably changes predictions.' },
   { when: 'After qualifying', what: 'Qualifying results: every 10 minutes from Friday to Sunday until stored (Jolpi, then OpenF1). You get an email if one is still missing hours later.' },
   { when: 'T −30 h → T −75 min', what: 'Starting grid from formula1.com, read every 15th minute and refreshed when a penalty changes it.' },
   { when: 'T −3 h → T', what: "OpenF1 is the fallback for the grid. F1 live timing fills it in during the last hour and overwrites the page's grid." },
@@ -370,7 +370,7 @@ const Admin = () => {
       const r = response.data;
       setFlagsResult(
         !r.ran
-          ? 'No race weekend right now, so nothing was checked.'
+          ? 'No race has started its weekend yet, so there is nothing to check.'
           : r.ok
           ? `Checked: ${r.added} new document${r.added === 1 ? '' : 's'}, ${r.flagged} new flag${r.flagged === 1 ? '' : 's'}, ${r.emailed} flag${r.emailed === 1 ? '' : 's'} emailed.`
           : `The check failed: ${r.error ?? 'unknown error'}`
@@ -1600,8 +1600,9 @@ const Admin = () => {
           <div>
             <h2 className="text-2xl font-bold">Race weekend flags</h2>
             <p className="text-xs text-white/60 mt-1">
-              Reads the FIA decision documents every 10 minutes from 6 days before a race until predictions lock, and
-              emails you what probably changes predictions: driver changes, grid drops, pit-lane starts. Players are not told.
+              Reads the FIA decision documents every 10 minutes from 6 days before a race until 7 days after it, and
+              emails you what probably changes predictions: driver changes, grid drops, pit-lane starts, disqualifications.
+              Check now works at any time. Players are not told.
             </p>
           </div>
           <button onClick={handleCheckFlags} disabled={flagsBusy} className="btn-f1-secondary text-sm py-2 px-4 flex-shrink-0 disabled:opacity-50">
@@ -1613,8 +1614,8 @@ const Admin = () => {
           <div className="mb-4 space-y-2">
             <p className="text-sm text-white">
               {flags.window
-                ? `Watching until the prediction lock of the ${flags.window.raceName} (${new Date(flags.window.end).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}).`
-                : 'No race weekend right now.'}
+                ? `Watching the ${flags.window.raceName} weekend, until ${new Date(flags.window.end).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.`
+                : 'Not watching on its own right now. Check now still reads the latest FIA papers.'}
             </p>
             {flags.lastCheck && (
               <p className={`text-sm px-3 py-2 ${flags.lastCheck.ok ? 'text-white/80' : 'bg-red-900/40 border border-red-500 text-red-300'}`}>

@@ -59,6 +59,22 @@ test('outside_the_window_nothing_is_fetched', async () => {
   assert.equal((await query('SELECT 1 FROM fia_checks')).rows.length, 0, 'a skipped run is not recorded');
 });
 
+test('a_check_by_hand_outside_the_window_still_reads_the_papers', async () => {
+  const winter = () => new Date('2026-12-15T12:00:00Z');
+  let fetched = 0;
+  const countingListing = async () => { fetched++; return LISTING; };
+
+  const byCron = await runCheck(deps({ fetchListing: countingListing, now: winter }));
+  assert.equal(byCron.ran, false, 'the cron stays quiet');
+  assert.equal(fetched, 0);
+
+  const byHand = await runCheck(deps({ fetchListing: countingListing, now: winter, anytime: true }));
+  assert.equal(byHand.ran, true);
+  assert.equal(byHand.ok, true);
+  assert.equal(byHand.added, 40);
+  assert.equal(fetched, 1);
+});
+
 test('a_new_weekend_listing_is_read_and_classified', async () => {
   const reads: string[] = [];
   const result = await runCheck(deps({}, reads));

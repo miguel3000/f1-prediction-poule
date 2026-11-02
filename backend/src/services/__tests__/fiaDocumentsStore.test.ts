@@ -42,7 +42,7 @@ const doc = (n: number, iso: string, title = `Infringement - Car ${n}`): ListedD
   publishedAt: new Date(iso),
 });
 
-test('window_runs_from_six_days_before_a_main_race_until_its_lock', async () => {
+test('window_runs_from_six_days_before_a_main_race_until_seven_days_after_it', async () => {
   const at = (iso: string) => getWatchWindow(new Date(iso));
   assert.equal(await at('2026-10-26T19:59:59Z'), null, 'just before six days');
   const open = await at('2026-10-26T20:00:00Z');
@@ -50,9 +50,10 @@ test('window_runs_from_six_days_before_a_main_race_until_its_lock', async () => 
   assert.equal(open!.raceName, 'Mexico City Grand Prix');
   assert.equal(open!.raceId, raceId);
   assert.equal(open!.start.toISOString(), '2026-10-26T20:00:00.000Z');
-  assert.equal(open!.end.toISOString(), '2026-11-01T19:59:00.000Z', 'one minute before the start');
-  assert.ok(await at('2026-11-01T19:58:59Z'), 'just before the lock');
-  assert.equal(await at('2026-11-01T19:59:00Z'), null, 'at the lock');
+  assert.equal(open!.end.toISOString(), '2026-11-08T20:00:00.000Z', 'seven days after the start');
+  assert.ok(await at('2026-11-01T19:59:00Z'), 'the prediction lock does not close it: papers go on after the race');
+  assert.ok(await at('2026-11-08T19:59:59Z'), 'just before seven days after');
+  assert.equal(await at('2026-11-08T20:00:00Z'), null, 'seven days after');
   assert.equal(await at('2026-11-18T12:00:00Z'), null, 'a sprint-only weekend has no window');
 });
 

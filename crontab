@@ -37,8 +37,9 @@
 0 2-22 * * 0,1 /app/process-final-results.sh
 
 # WEEKEND FLAGS: every 10 minutes, all week. The script does nothing outside the window (6 days before a
-# main race until its prediction lock). Reads the FIA decision documents, emails the owner what probably
-# changes predictions (driver changes, grid drops, pit-lane starts).
+# main race until 7 days after it; papers after the race count too). Reads the FIA decision documents,
+# emails the owner what probably changes predictions (driver changes, grid drops, pit-lane starts,
+# disqualifications). The Pitlane's Check now works at any time.
 */10 * * * * /app/check-fia-documents.sh
 
 # Log rotation to prevent log file from growing too large. Tuesday, so a race weekend's
