@@ -171,6 +171,14 @@ const numericPosition = (value: unknown): number | null =>
       ? parseInt(value, 10)
       : null;
 
+// OpenF1 answers a query with no rows (a session that has not run yet, or has no data yet) with
+// HTTP 404 {"detail":"No results found."}. That is "nothing yet", so it stays quiet; any other
+// failure is logged as one line, not as the whole request and response object.
+const logUnlessNoData = (what: string, error: any): void => {
+  if (error?.response?.status === 404) return;
+  console.error(`Error fetching ${what} from OpenF1:`, error?.message || error);
+};
+
 export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1QualifyingResult[]> => {
   try {
     const response = await axios.get(`${OPENF1_API_URL}/session_result`, {
@@ -196,7 +204,7 @@ export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1Qu
         session_key:   r.session_key,
       }));
   } catch (error) {
-    console.error('Error fetching qualifying results from OpenF1:', error);
+    logUnlessNoData('qualifying results', error);
     return [];
   }
 };
@@ -244,7 +252,7 @@ export const getRaceResults = async (sessionKey: number): Promise<OpenF1RaceResu
     }
     return results;
   } catch (error) {
-    console.error('Error fetching race results from OpenF1:', error);
+    logUnlessNoData('race results', error);
     return [];
   }
 };

@@ -106,7 +106,9 @@ const notifyAdminOfDeparture = (user: any, predictionCount: number) => {
 
 export const registerWithPassword = async (req: Request, res: Response) => {
   try {
-    const { nickname, email, password } = req.body;
+    const { email, password } = req.body;
+    // Trimmed like a rename is, so "Roelonso " cannot sit next to "Roelonso" and an all-space name is empty
+    const nickname = typeof req.body.nickname === 'string' ? req.body.nickname.trim() : req.body.nickname;
     // Whatever language the visitor was using when they signed up
     const language = req.body.language === 'en' || req.body.language === 'nl' ? req.body.language : null;
     // Signing up through a group's invite link (see group play)

@@ -215,7 +215,9 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   what was checked.
 - **Sources**: Jolpi/Ergast (schedule, results; no sprint-qualifying or practice endpoint; can
   lag), OpenF1 (sessions, results; positions can be text like "RT"; `dnf` flag is set for
-  drivers with no final-segment time, so do not filter on it), the F1 live-timing feed.
+  drivers with no final-segment time, so do not filter on it; a query with no rows, such as a
+  session without data yet, answers HTTP 404 "No results found.", which is "nothing yet" and
+  not logged as an error), the F1 live-timing feed.
 - **Results cross-check** (`services/resultCheckService.ts`): apply when 2+ sources agree on the
   scored positions and the first retirement; hold and email the admin when they disagree; a
   single source waits (race 2.5 h, sprint 1.5 h) and then applies with a warning; the final run
@@ -352,6 +354,7 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   server errors have addresses masked (`services/emailLog.ts`). New logs, alerts and admin cards
   follow the same rule: nickname yes, address no.
 - No account enumeration in login, reset or sign-up responses.
+- Nicknames are trimmed when someone signs up, as they are on a rename, so `Roelonso ` cannot exist next to `Roelonso`.
 - Group member lists, the Pitlane Groups card and the predictions list show nickname and avatar
   only, never an email address; a group's invite code is visible to its owner and nobody else.
 - The privacy page already promises deletion of an account and its data; account deletion must
@@ -540,3 +543,4 @@ Why: <two or three lines, sources named>
 | 2026-11-02 | Weekend flags: the watcher no longer stops at the prediction lock (6 days before a main race until 7 days after it), and Check now works at any time | After the Mexico race 18 papers with penalties came out and the watcher, closed since the lock, never stored them |
 | 2026-11-01 | Points are summed per season from predictions, the season is no longer hard-coded, the yearly reset job is gone, and 2026 stays viewable with a season picker | The totals were rebuilt from every prediction ever made (a 1 January reset would have been undone by the first 2027 race) and every cron script looked only at 2026, so 2027 would have run silently on nothing |
 | 2026-11-03 | A sync by hand no longer closes a race that is waiting for its final run, and the Pitlane can run a race's final results on any day | After Mexico the owner re-synced by hand on Monday afternoon: the race became `completed`, the final job skipped it, and the post-race penalties (Piastri, Colapinto, Gasly) never reached the points |
+| 2026-11-03 | OpenF1's 404 for "no rows" is no longer logged as an error, and sign-up trims the nickname | After the Mexico final run the log showed a full OpenF1 stack trace for a plain "no data yet", and one player had been registered as `JamMasterJ ` with a trailing space |
