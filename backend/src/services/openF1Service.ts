@@ -8,6 +8,14 @@ const OPENF1_API_URL = process.env.OPENF1_API_URL || 'https://api.openf1.org/v1'
 
 const sessionKeyCache: Record<string, number | null> = {};
 
+// OpenF1 answers a query with no rows (a session that has not run yet, or has no data yet) with
+// HTTP 404 {"detail":"No results found."}. That is "nothing yet", so it stays quiet; any other
+// failure is logged as one line, not as the whole request and response object.
+const logUnlessNoData = (what: string, error: any): void => {
+  if (error?.response?.status === 404) return;
+  console.error(`Error fetching ${what} from OpenF1:`, error?.message || error);
+};
+
 export interface OpenF1Meeting {
   meeting_key: number;
   meeting_name: string;
@@ -51,7 +59,7 @@ export const getMeetings = async (year: number): Promise<OpenF1Meeting[]> => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching meetings from OpenF1:', error);
+    logUnlessNoData('meetings', error);
     throw error;
   }
 };
@@ -63,7 +71,7 @@ export const getSessions = async (meetingKey: number): Promise<OpenF1Session[]> 
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching sessions from OpenF1:', error);
+    logUnlessNoData('sessions', error);
     throw error;
   }
 };
@@ -75,7 +83,7 @@ export const getDrivers = async (sessionKey: number): Promise<OpenF1Driver[]> =>
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching drivers from OpenF1:', error);
+    logUnlessNoData('drivers', error);
     throw error;
   }
 };
@@ -87,7 +95,7 @@ export const getSessionResults = async (sessionKey: number): Promise<OpenF1Sessi
     });
     return response.data;
   } catch (error) {
-    console.error('Error fetching session results from OpenF1:', error);
+    logUnlessNoData('session results', error);
     throw error;
   }
 };
@@ -139,7 +147,7 @@ export const findSessionKey = async (
     sessionKeyCache[cacheKey] = key;
     return key;
   } catch (error) {
-    console.error(`Error finding OpenF1 session key for ${sessionName}:`, error);
+    logUnlessNoData(`session key for ${sessionName}`, error);
     return null;
   }
 };
@@ -170,14 +178,6 @@ const numericPosition = (value: unknown): number | null =>
     : typeof value === 'string' && /^\d+$/.test(value)
       ? parseInt(value, 10)
       : null;
-
-// OpenF1 answers a query with no rows (a session that has not run yet, or has no data yet) with
-// HTTP 404 {"detail":"No results found."}. That is "nothing yet", so it stays quiet; any other
-// failure is logged as one line, not as the whole request and response object.
-const logUnlessNoData = (what: string, error: any): void => {
-  if (error?.response?.status === 404) return;
-  console.error(`Error fetching ${what} from OpenF1:`, error?.message || error);
-};
 
 export const getQualifyingResults = async (sessionKey: number): Promise<OpenF1QualifyingResult[]> => {
   try {
@@ -317,7 +317,7 @@ export const getLatestDrivers = async (year: number): Promise<OpenF1Driver[]> =>
     const latestSession = sessions[sessions.length - 1];
     return await getDrivers(latestSession.session_key);
   } catch (error) {
-    console.error('Error fetching latest drivers:', error);
+    logUnlessNoData('latest drivers', error);
     return [];
   }
 };
@@ -406,7 +406,7 @@ export const getPracticeResults = async (
 
   const request = fetchPracticeResults(year, sessionNumber, raceDate)
     .catch((error) => {
-      console.error(`Error fetching FP${sessionNumber} results from OpenF1:`, error?.message || error);
+      logUnlessNoData(`FP${sessionNumber} results`, error);
       return { rows: [], over: false } as OpenF1PracticeResult;
     })
     .then((result) => {

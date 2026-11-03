@@ -217,7 +217,8 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   lag), OpenF1 (sessions, results; positions can be text like "RT"; `dnf` flag is set for
   drivers with no final-segment time, so do not filter on it; a query with no rows, such as a
   session without data yet, answers HTTP 404 "No results found.", which is "nothing yet" and
-  not logged as an error), the F1 live-timing feed.
+  not logged as an error; any other OpenF1 failure is logged as one line, never as the whole
+  request object), the F1 live-timing feed.
 - **Results cross-check** (`services/resultCheckService.ts`): apply when 2+ sources agree on the
   scored positions and the first retirement; hold and email the admin when they disagree; a
   single source waits (race 2.5 h, sprint 1.5 h) and then applies with a warning; the final run
@@ -544,3 +545,4 @@ Why: <two or three lines, sources named>
 | 2026-11-01 | Points are summed per season from predictions, the season is no longer hard-coded, the yearly reset job is gone, and 2026 stays viewable with a season picker | The totals were rebuilt from every prediction ever made (a 1 January reset would have been undone by the first 2027 race) and every cron script looked only at 2026, so 2027 would have run silently on nothing |
 | 2026-11-03 | A sync by hand no longer closes a race that is waiting for its final run, and the Pitlane can run a race's final results on any day | After Mexico the owner re-synced by hand on Monday afternoon: the race became `completed`, the final job skipped it, and the post-race penalties (Piastri, Colapinto, Gasly) never reached the points |
 | 2026-11-03 | OpenF1's 404 for "no rows" is no longer logged as an error, and sign-up trims the nickname | After the Mexico final run the log showed a full OpenF1 stack trace for a plain "no data yet", and one player had been registered as `JamMasterJ ` with a trailing space |
+| 2026-11-03 | Every OpenF1 call logs a failure as one line (and a 404 "no rows" not at all); the calls that hand the error to their caller still throw it | The other OpenF1 calls still printed a full AxiosError dump, and getLatestDrivers printed it twice |
