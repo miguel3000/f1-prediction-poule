@@ -26,6 +26,7 @@ import { authenticateAdmin } from '../middleware/adminAuth';
 import { adminListGroups, adminDeleteGroup, adminRemoveMember, adminReassignOwner } from '../controllers/groupController';
 import { listDriverExclusions, addDriverExclusion, removeDriverExclusion } from '../controllers/driverExclusionController';
 import { listFlags, checkNow } from '../controllers/flagsController';
+import { runFinalResults, getFinalResultsStatus } from '../controllers/finalResultsController';
 
 const router = express.Router();
 
@@ -76,6 +77,10 @@ router.get('/sync-diagnosis', authenticateAdmin, getSyncDiagnosis);
 // Results cross-check: compare the sources for a race (read-only)
 router.get('/results-check', authenticateAdmin, listResultCheckRaces);
 router.get('/results-check/:raceId', authenticateAdmin, getResultCheck);
+
+// Final standings for one race now, on any day (the scheduled job only runs Sundays and Mondays)
+router.post('/races/:raceId/final-results', authenticateAdmin, runFinalResults);
+router.get('/final-results/status', authenticateAdmin, getFinalResultsStatus);
 
 // Broadcast email
 router.post('/broadcast', authenticateAdmin, sendBroadcastToAllUsers);

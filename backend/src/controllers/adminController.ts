@@ -1,4 +1,5 @@
 import { decideRace, applyDecision, notifyAdminOfDecision, compareRace } from '../services/resultCheckService';
+import { markResultsSynced } from '../services/raceStatus';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -303,9 +304,9 @@ export const getCronJobs = async (req: Request, res: Response) => {
       {
         id: 'processFinalResults',
         name: 'Process Final Results',
-        description: 'Recalculates points 24h after race (accounts for DQs/penalties), sends final email',
-        schedule: '0 12-20 * * 1',
-        scheduleHuman: 'Mondays 12:00-20:00 UTC (hourly)',
+        description: 'Recalculates points 24h after race (accounts for DQs/penalties), sends final email. Results Check can run it for one race on any day',
+        schedule: '0 2-22 * * 0,1',
+        scheduleHuman: 'Sundays and Mondays 02:00-22:00 UTC (hourly)',
         lastDataUpdate: null,
         pendingRaces: parseInt(finalPending.rows[0]?.count || '0'),
         canTrigger: false,
@@ -592,11 +593,8 @@ export const triggerRaceResultsSync = async (req: Request, res: Response) => {
         totalInserted += insertedCount;
         if (decision.warning) raceLog.push(`⚠ ${race.race_name}: ${decision.warning}`);
 
-        // Update race status
-        await query(
-          'UPDATE races SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-          ['completed', race.id]
-        );
+        // Update race status (a race still waiting for its final run stays provisional)
+        await markResultsSynced(race.id);
 
         // Calculate points using the unified function (handles both main and sprint)
         await calculateRacePoints(race.id);

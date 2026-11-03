@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react';
-import { getResultCheckRaces, getResultCheck, ResultCheckRace, ResultCheckComparison } from '../services/api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  getResultCheckRaces,
+  getResultCheck,
+  runFinalResults,
+  getFinalResultsStatus,
+  ResultCheckRace,
+  ResultCheckComparison,
+} from '../services/api';
 
 const VERDICT_TEXT: Record<ResultCheckComparison['verdict'], string> = {
   confirmed: 'Confirmed',
@@ -18,22 +25,70 @@ const commonValue = (values: Array<string | null>): string | null | undefined =>
 };
 
 // Pitlane card: fetches Jolpi, OpenF1 and the F1 live feed for one race and shows
-// them side by side with the stored result. Read-only — nothing here changes data.
+// them side by side with the stored result. Comparing changes nothing; the one thing that does
+// change data is "Run final results" for a race that is still waiting for its final run.
 const ResultsCheckPanel = () => {
   const [races, setRaces] = useState<ResultCheckRace[]>([]);
   const [raceId, setRaceId] = useState<number | ''>('');
   const [comparison, setComparison] = useState<ResultCheckComparison | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [finalRunning, setFinalRunning] = useState(false);
+  const [finalMessage, setFinalMessage] = useState('');
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const loadRaces = useCallback(async (keepSelected = false) => {
+    try {
+      const res = await getResultCheckRaces();
+      setRaces(res.data);
+      if (!keepSelected && res.data.length > 0) setRaceId(res.data[0].id);
+    } catch {
+      setError('Could not load the races.');
+    }
+  }, []);
 
   useEffect(() => {
-    getResultCheckRaces()
-      .then((res) => {
-        setRaces(res.data);
-        if (res.data.length > 0) setRaceId(res.data[0].id);
-      })
-      .catch(() => setError('Could not load the races.'));
-  }, []);
+    loadRaces();
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [loadRaces]);
+
+  const selectedRace = races.find((r) => r.id === raceId);
+  const awaitingFinal = selectedRace?.status === 'provisional';
+
+  // The run mails every player, so it goes on after the answer: ask for its status until it is over.
+  const runFinal = async () => {
+    if (!selectedRace) return;
+    const ok = window.confirm(
+      `Run the final results for ${selectedRace.race_name}?\n\nThis fetches the sources again, recalculates every player's points from what they agree on and emails the players. It can only be done once per race.`
+    );
+    if (!ok) return;
+    setFinalRunning(true);
+    setFinalMessage('Running the final results… this emails every player, so it can take a minute.');
+    try {
+      await runFinalResults(selectedRace.id);
+    } catch (err: any) {
+      setFinalRunning(false);
+      setFinalMessage(err.response?.data?.error || 'Could not start the final results.');
+      return;
+    }
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data: job } = await getFinalResultsStatus();
+        if (job.running) return;
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = null;
+        setFinalRunning(false);
+        setFinalMessage(job.lastMessage || 'The final run is over.');
+        setComparison(null);
+        loadRaces(true);
+      } catch {
+        // a missed poll is fine, the next one asks again
+      }
+    }, 2000);
+  };
 
   const compare = async () => {
     if (raceId === '') return;
@@ -112,6 +167,7 @@ const ResultsCheckPanel = () => {
             <option key={r.id} value={r.id}>
               Round {r.round}: {r.race_name}
               {r.race_type === 'sprint' ? ' (Sprint)' : ''} — {Number(r.stored_results) > 0 ? `${r.stored_results} stored` : 'no results stored'}
+              {r.status === 'provisional' ? ' · waiting for final run' : ''}
             </option>
           ))}
         </select>
@@ -193,6 +249,25 @@ const ResultsCheckPanel = () => {
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {(awaitingFinal || finalMessage) && (
+        <div className="mt-6 pt-4 border-t border-white/20">
+          <h3 className="text-lg font-bold mb-1">Final results</h3>
+          {awaitingFinal && selectedRace && (
+            <>
+              <p className="text-white text-sm mb-3">
+                {selectedRace.race_name} is waiting for its final run, which recalculates the points once the post-race penalties are
+                in. The scheduled run only happens on Sundays and Mondays; this runs it now. Compare the sources above first: the run
+                applies what they agree on, and if they do not agree it changes nothing.
+              </p>
+              <button onClick={runFinal} disabled={finalRunning} className="btn-f1-primary">
+                {finalRunning ? 'Running…' : 'Run final results'}
+              </button>
+            </>
+          )}
+          {finalMessage && <p className="text-white text-sm mt-3">{finalMessage}</p>}
         </div>
       )}
     </div>

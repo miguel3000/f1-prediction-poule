@@ -116,7 +116,7 @@ const CRON_JOBS = [
   { name: 'Missed-prediction reminder', cron: '*/5 1-20 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 01:00 to 20:59. Mails players who have not predicted, about an hour before the start.' },
   { name: 'Copy missing predictions', cron: '*/2 2-20 * * 0,6', when: 'Saturday and Sunday, every 2 minutes from 02:00 to 20:59. Copies the last prediction of players who forgot, just after the lock.' },
   { name: 'Provisional results', cron: '*/5 2-22 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 02:00 to 22:59. From 5 minutes after the start it looks for confirmed results, then scores predictions and mails players.' },
-  { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours past the start, penalties included.' },
+  { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours past the start, penalties included. Results Check can run it for one race on any other day.' },
   { name: 'Weekend flags', cron: '*/10 * * * *', when: 'Every 10 minutes, all week; works from 6 days before a main race until 7 days after it, so the papers that come after the race are read too. Reads the FIA decision documents and emails you what probably changes predictions. The Check now button in the Pitlane works at any time.' },
   { name: 'Log rotation', cron: '0 3 * * 2', when: 'Tuesday at 03:00. Empties /var/log/cron.log.' },
 ];

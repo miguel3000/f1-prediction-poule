@@ -270,6 +270,21 @@ export const getResultCheckRaces = () =>
 export const getResultCheck = (raceId: number) =>
   api.get<ResultCheckComparison>(`/api/admin/results-check/${raceId}`);
 
+// Final standings for one race now. The run goes on after the answer: poll the status.
+export interface FinalResultsJob {
+  running: boolean;
+  raceId: number | null;
+  lastRun: string | null;
+  lastStatus: 'done' | 'held' | 'error' | null;
+  lastMessage: string | null;
+}
+
+export const runFinalResults = (raceId: number) =>
+  api.post(`/api/admin/races/${raceId}/final-results`);
+
+export const getFinalResultsStatus = () =>
+  api.get<FinalResultsJob>('/api/admin/final-results/status');
+
 export const sendBroadcastEmail = (subject: string, message: string) =>
   api.post('/api/admin/broadcast', { subject, message });
 

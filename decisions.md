@@ -108,6 +108,11 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   copied in and they are told exactly what was copied. The copy also takes their last first-retirement pick.
 - Results are **provisional** first (points calculated and emailed after the race), **final**
   24 hours later (penalties). The final run never changes stored results on unconfirmed data.
+  A race stays `provisional` until its final run has processed it (`services/raceStatus.ts`); a
+  sync by hand from the Pitlane stores results but never closes such a race, because the final job
+  skips anything that is not `provisional`. The scheduled final job runs Sundays and Mondays only;
+  **Run final results** (Pitlane, Results Check) runs the same code
+  (`services/finalResultsService.ts`) for one race on any day, once per race.
 - The prediction list is in **qualifying order**, labelled Sprint Quali or Qualifying; no
   position numbers or three-letter codes (tried, removed). Any driver missing from the data is
   appended so every driver is always pickable. Once qualifying is over the **real starting grid,
@@ -534,3 +539,4 @@ Why: <two or three lines, sources named>
 | 2026-11-01 | Pitlane: Who's Predicted first and on the upcoming race, User Management second; cron jobs, scheduling logic and the APIs and sources sit in one closed "System reference" dropdown | The owner wanted the Pitlane cleaned up; the cron list shown there had drifted from the crontab (it missed five jobs and had wrong hours) |
 | 2026-11-02 | Weekend flags: the watcher no longer stops at the prediction lock (6 days before a main race until 7 days after it), and Check now works at any time | After the Mexico race 18 papers with penalties came out and the watcher, closed since the lock, never stored them |
 | 2026-11-01 | Points are summed per season from predictions, the season is no longer hard-coded, the yearly reset job is gone, and 2026 stays viewable with a season picker | The totals were rebuilt from every prediction ever made (a 1 January reset would have been undone by the first 2027 race) and every cron script looked only at 2026, so 2027 would have run silently on nothing |
+| 2026-11-03 | A sync by hand no longer closes a race that is waiting for its final run, and the Pitlane can run a race's final results on any day | After Mexico the owner re-synced by hand on Monday afternoon: the race became `completed`, the final job skipped it, and the post-race penalties (Piastri, Colapinto, Gasly) never reached the points |
