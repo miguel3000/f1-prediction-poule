@@ -980,8 +980,9 @@ export const sendPitwallApproved = async (idea: {
 };
 
 // Sent to the admin the moment a player submits something on the Pit Wall, so
-// new ideas don't sit unseen until someone opens the Pitlane. Player-written
+// new ideas and messages don't sit unseen until someone opens the Pitlane. Player-written
 // text throughout, so it is escaped and kept out of the subject's control characters.
+// A message is read, not decided on: its text is the body, with no separate title.
 export const sendPitwallSubmitted = async (idea: {
   nickname: string;
   kind: string;
@@ -995,20 +996,30 @@ export const sendPitwallSubmitted = async (idea: {
   }
 
   const oneLine = (text: string) => text.replace(/[\r\n]+/g, ' ').trim();
+  const isMessage = idea.kind === 'message';
   const pitlaneUrl = `${process.env.FRONTEND_URL}/pitlane`;
+  const content = isMessage
+    ? `
+      <p><strong>${escapeHtml(idea.nickname)}</strong> sent a <strong>message</strong>:</p>
+      <p style="white-space: pre-wrap;">${escapeHtml(idea.description || idea.title)}</p>
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        Read it in the Pitlane (Pit Wall Ideas). Mark it handled there to answer: your note shows in the player's list.
+      </p>`
+    : `
+      <p><strong>${escapeHtml(idea.nickname)}</strong> submitted an <strong>${escapeHtml(idea.kind)}</strong>:</p>
+      <h2 style="color: ${BRAND_NAVY}; margin-bottom: 8px;">${escapeHtml(idea.title)}</h2>
+      ${idea.description ? `<p style="white-space: pre-wrap;">${escapeHtml(idea.description)}</p>` : ''}
+      <p style="color: #666; font-size: 12px; margin-top: 30px;">
+        It is waiting for your decision in the Pitlane (Pit Wall Ideas).
+      </p>`;
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: adminEmail,
     subject: `Pit Wall: new ${oneLine(idea.kind)} from ${oneLine(idea.nickname)}`.slice(0, 200),
     html: emailDocument(`
       ${emailHeader}
-      ${emailBanner('New Pit Wall Suggestion', { url: pitlaneUrl, bg: BRAND_BLUE, color: '#ffffff' })}
-      <p><strong>${escapeHtml(idea.nickname)}</strong> submitted an <strong>${escapeHtml(idea.kind)}</strong>:</p>
-      <h2 style="color: ${BRAND_NAVY}; margin-bottom: 8px;">${escapeHtml(idea.title)}</h2>
-      ${idea.description ? `<p style="white-space: pre-wrap;">${escapeHtml(idea.description)}</p>` : ''}
-      <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        It is waiting for your decision in the Pitlane (Pit Wall Ideas).
-      </p>
+      ${emailBanner(isMessage ? 'New Pit Wall Message' : 'New Pit Wall Suggestion', { url: pitlaneUrl, bg: BRAND_BLUE, color: '#ffffff' })}
+      ${content}
     `, 'en', { signature: false }),
   };
 

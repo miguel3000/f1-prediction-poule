@@ -181,7 +181,7 @@ export const getNews = () =>
 export const getMyPitwallIdeas = () =>
   api.get('/api/pitwall/ideas');
 
-export const createPitwallIdea = (kind: 'idea' | 'implementation', title: string, description: string) =>
+export const createPitwallIdea = (kind: 'idea' | 'implementation' | 'message', title: string, description: string) =>
   api.post('/api/pitwall/ideas', { kind, title, description });
 
 export const deleteMyPitwallIdea = (id: number) =>

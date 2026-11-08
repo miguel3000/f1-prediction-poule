@@ -115,9 +115,9 @@ export const listPitwallIdeas = async (req: Request, res: Response) => {
   }
 };
 
-// Approve or decline a pending idea. The WHERE status = 'pending' makes the
-// decision happen exactly once, so a double click can't send two emails or
-// flip a decline into an approval.
+// Approve or decline a pending idea, or mark a pending message handled. The WHERE status = 'pending'
+// makes the decision happen exactly once, so a double click can't send two emails or flip a decline
+// into an approval. A message is only ever handled, an idea only approved or declined.
 export const decidePitwallIdea = async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -127,18 +127,28 @@ export const decidePitwallIdea = async (req: Request, res: Response) => {
         ? req.body.adminNote.trim().slice(0, 1000)
         : null;
 
-    if (Number.isNaN(id) || !['approved', 'declined'].includes(status)) {
-      return res.status(400).json({ error: 'status must be approved or declined' });
+    if (Number.isNaN(id) || !['approved', 'declined', 'handled'].includes(status)) {
+      return res.status(400).json({ error: 'status must be approved, declined or handled' });
     }
 
     const result = await query(
       `UPDATE pitwall_ideas
        SET status = $1, admin_note = $2, decided_at = NOW()
-       WHERE id = $3 AND status = 'pending'
+       WHERE id = $3 AND status = 'pending' AND (kind = 'message') = $4
        RETURNING id, user_id, kind, title, description, status, admin_note, created_at, decided_at`,
-      [status, adminNote, id]
+      [status, adminNote, id, status === 'handled']
     );
     if (result.rows.length === 0) {
+      // Still waiting means the status did not fit its kind; anything else was decided before or is gone.
+      const current = await query('SELECT kind, status FROM pitwall_ideas WHERE id = $1', [id]);
+      if (current.rows[0]?.status === 'pending') {
+        return res.status(400).json({
+          error:
+            current.rows[0].kind === 'message'
+              ? 'A message can only be marked handled'
+              : 'An idea can only be approved or declined',
+        });
+      }
       return res.status(409).json({ error: 'That idea was already reviewed, or no longer exists' });
     }
     const idea = result.rows[0];

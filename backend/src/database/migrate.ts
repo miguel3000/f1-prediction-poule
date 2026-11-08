@@ -171,16 +171,29 @@ const runMigration = async () => {
       CREATE TABLE IF NOT EXISTS pitwall_ideas (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        kind VARCHAR(20) NOT NULL CHECK (kind IN ('idea', 'implementation')),
+        kind VARCHAR(20) NOT NULL CHECK (kind IN ('idea', 'implementation', 'message')),
         title VARCHAR(200) NOT NULL,
         description TEXT NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
-        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined', 'handled')),
         admin_note TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         decided_at TIMESTAMPTZ
       )
     `);
     await query(`CREATE INDEX IF NOT EXISTS idx_pitwall_ideas_user ON pitwall_ideas(user_id, created_at DESC)`);
+    // A player can also just send the admin a message (something wrong, something to report). It
+    // lives in the same table: kind 'message', and the admin marks it 'handled' instead of
+    // approving or declining it. Tables made before that carry the old CHECKs, so widen them.
+    await query(`ALTER TABLE pitwall_ideas DROP CONSTRAINT IF EXISTS pitwall_ideas_kind_check`);
+    await query(`
+      ALTER TABLE pitwall_ideas
+        ADD CONSTRAINT pitwall_ideas_kind_check CHECK (kind IN ('idea', 'implementation', 'message'))
+    `);
+    await query(`ALTER TABLE pitwall_ideas DROP CONSTRAINT IF EXISTS pitwall_ideas_status_check`);
+    await query(`
+      ALTER TABLE pitwall_ideas
+        ADD CONSTRAINT pitwall_ideas_status_check CHECK (status IN ('pending', 'approved', 'declined', 'handled'))
+    `);
     console.log('pitwall_access and pitwall_ideas ensured.');
 
     // Sign-up / departure emails are logged so a failed send is retried and visible in the Pitlane

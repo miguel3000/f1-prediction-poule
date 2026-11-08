@@ -27,10 +27,10 @@ interface AdminGroup {
 
 interface PitwallIdea {
   id: number;
-  kind: 'idea' | 'implementation';
+  kind: 'idea' | 'implementation' | 'message';
   title: string;
   description: string;
-  status: 'pending' | 'approved' | 'declined';
+  status: 'pending' | 'approved' | 'declined' | 'handled';
   admin_note: string | null;
   created_at: string;
   decided_at: string | null;
@@ -488,7 +488,7 @@ const Admin = () => {
     }
   };
 
-  const handleDecideIdea = async (id: number, status: 'approved' | 'declined') => {
+  const handleDecideIdea = async (id: number, status: 'approved' | 'declined' | 'handled') => {
     setIdeaBusyId(id);
     try {
       await api.put(`/api/admin/pitwall-ideas/${id}`, { status, adminNote: ideaNotes[id] || '' });
@@ -1518,7 +1518,8 @@ const Admin = () => {
           <div>
             <h2 className="text-2xl font-bold">Pit Wall Ideas</h2>
             <p className="text-xs text-white/60 mt-1">
-              Submitted by players with Pit Wall access. Approving one emails it to you.
+              Ideas and messages from players with Pit Wall access. Every one is emailed to you when it arrives. Approving
+              an idea emails it to you again; marking a message handled shows your note to the player.
             </p>
           </div>
           <button onClick={fetchPitwallIdeas} className="btn-f1-secondary text-sm py-2 px-4">
@@ -1533,12 +1534,15 @@ const Admin = () => {
             {pitwallIdeas.map((idea, i) => (
               <div key={idea.id} className="flex items-stretch">
                 <span className="w-12 shrink-0 flex items-center justify-center bg-f1-yellow-500 text-black font-f1-badge font-bold text-lg">
-                  {idea.status === 'approved' ? '\u2713' : idea.status === 'declined' ? '\u2715' : pitwallIdeas.filter((x) => x.status === 'pending').indexOf(idea) + 1}
+                  {idea.status === 'approved' || idea.status === 'handled' ? '\u2713' : idea.status === 'declined' ? '\u2715' : pitwallIdeas.filter((x) => x.status === 'pending').indexOf(idea) + 1}
                 </span>
                 <div className={`flex-1 min-w-0 px-4 py-3 text-white ${i % 2 === 0 ? 'bg-f1-blue' : 'bg-f1-blue-dark'}`}>
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <p className="font-f1 font-bold uppercase tracking-wide text-lg leading-tight break-words">{idea.title}</p>
+                      {/* A message is just its text: its title is only the first line of it, so it is not repeated here */}
+                      {idea.kind !== 'message' && (
+                        <p className="font-f1 font-bold uppercase tracking-wide text-lg leading-tight break-words">{idea.title}</p>
+                      )}
                       <p className="text-[10px] text-white/70 uppercase tracking-wide">
                         {idea.nickname} &middot; {idea.kind} &middot; {new Date(idea.created_at).toLocaleDateString()}
                       </p>
@@ -1547,7 +1551,7 @@ const Admin = () => {
                       className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider flex-shrink-0 ${
                         idea.status === 'pending'
                           ? 'bg-f1-yellow-500 text-black'
-                          : idea.status === 'approved'
+                          : idea.status === 'approved' || idea.status === 'handled'
                           ? 'bg-white text-f1-blue-dark'
                           : 'bg-black/30 text-white/70'
                       }`}
@@ -1555,8 +1559,10 @@ const Admin = () => {
                       {idea.status}
                     </span>
                   </div>
-                  {idea.description && (
-                    <p className="text-sm text-white/90 mt-2 whitespace-pre-wrap break-words">{idea.description}</p>
+                  {(idea.kind === 'message' ? idea.description || idea.title : idea.description) && (
+                    <p className="text-sm text-white/90 mt-2 whitespace-pre-wrap break-words">
+                      {idea.kind === 'message' ? idea.description || idea.title : idea.description}
+                    </p>
                   )}
                   {idea.status !== 'pending' && idea.admin_note && (
                     <p className="text-xs text-white/70 mt-2 italic">Note: {idea.admin_note}</p>
@@ -1567,24 +1573,36 @@ const Admin = () => {
                         type="text"
                         value={ideaNotes[idea.id] || ''}
                         onChange={(e) => setIdeaNotes((prev) => ({ ...prev, [idea.id]: e.target.value }))}
-                        placeholder="Optional note"
+                        placeholder={idea.kind === 'message' ? 'Note to the player' : 'Optional note'}
                         maxLength={1000}
                         className="flex-1 bg-f1-neutral-900 border border-f1-neutral-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-f1-yellow-500"
                       />
-                      <button
-                        onClick={() => handleDecideIdea(idea.id, 'approved')}
-                        disabled={ideaBusyId === idea.id}
-                        className="bg-f1-yellow-500 text-black font-bold px-4 py-2 text-sm hover:brightness-110 disabled:opacity-50"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleDecideIdea(idea.id, 'declined')}
-                        disabled={ideaBusyId === idea.id}
-                        className="bg-black/30 text-white font-bold px-4 py-2 text-sm hover:bg-black/50 disabled:opacity-50"
-                      >
-                        Decline
-                      </button>
+                      {idea.kind === 'message' ? (
+                        <button
+                          onClick={() => handleDecideIdea(idea.id, 'handled')}
+                          disabled={ideaBusyId === idea.id}
+                          className="bg-f1-yellow-500 text-black font-bold px-4 py-2 text-sm hover:brightness-110 disabled:opacity-50"
+                        >
+                          Mark handled
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleDecideIdea(idea.id, 'approved')}
+                            disabled={ideaBusyId === idea.id}
+                            className="bg-f1-yellow-500 text-black font-bold px-4 py-2 text-sm hover:brightness-110 disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleDecideIdea(idea.id, 'declined')}
+                            disabled={ideaBusyId === idea.id}
+                            className="bg-black/30 text-white font-bold px-4 py-2 text-sm hover:bg-black/50 disabled:opacity-50"
+                          >
+                            Decline
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

@@ -25,7 +25,13 @@ is wrong, change it and note why in the log at the bottom.
   - When something ships, set `done: true` and rewrite `note` to say what is live, from when,
     and what is not covered. Notes describe the result, not the plan.
 - There is also a player-facing Pit Wall inside the app (`/pitwall`); it is separate and only
-  for players the admin gave access.
+  for players the admin gave access. A player can send an idea, an implementation, or a plain
+  **message** (something wrong, something to report). All three are rows in `pitwall_ideas`, are
+  mailed to the owner the moment they arrive and show in the Pitlane card "Pit Wall Ideas". An idea
+  is approved or declined; a message is only **marked handled**, and the optional note the owner
+  adds is shown to the player under it. A message is one text: its title is its first line cut to
+  80 characters, and the full text is kept when the title is not already all of it. Ideas and
+  messages have separate limits of 10 waiting each; 20 submissions a day in total.
 
 ### Before you start
 1. `git fetch && git log HEAD..origin/main --oneline` (or `git pull`) in the Mac clone. The Pi
@@ -509,6 +515,9 @@ Why: <two or three lines, sources named>
 - `f1.miguelm.nl` redirects to `pouleposition.nl`; the user removes the DNS record and the tunnel
   entry when its traffic is gone.
 - Sign-up emails to `moeders` and `SpaceAnanas` before 12 Oct were not logged; later ones are.
+- A message to the owner through the Pit Wall needs Pit Wall access, so a player without it has no
+  way to report something inside the app (they can still mail kimi@pouleposition.nl). The owner
+  decides whether the message form should open to every player.
 - Group play: a group-only player who loses their last group (leaves, is removed, or the group is
   deleted) is in no poule until they switch the main poule back on in the Profile; the server does
   not do that for them, and `PUT /api/auth/plays-in-main` still accepts "off" for a player with no group.
@@ -546,3 +555,4 @@ Why: <two or three lines, sources named>
 | 2026-11-03 | A sync by hand no longer closes a race that is waiting for its final run, and the Pitlane can run a race's final results on any day | After Mexico the owner re-synced by hand on Monday afternoon: the race became `completed`, the final job skipped it, and the post-race penalties (Piastri, Colapinto, Gasly) never reached the points |
 | 2026-11-03 | OpenF1's 404 for "no rows" is no longer logged as an error, and sign-up trims the nickname | After the Mexico final run the log showed a full OpenF1 stack trace for a plain "no data yet", and one player had been registered as `JamMasterJ ` with a trailing space |
 | 2026-11-03 | Every OpenF1 call logs a failure as one line (and a 404 "no rows" not at all); the calls that hand the error to their caller still throw it | The other OpenF1 calls still printed a full AxiosError dump, and getLatestDrivers printed it twice |
+| 2026-11-08 | Players with Pit Wall access can just send the owner a message; the owner marks it handled, with an optional note the player sees | Players had no way to say that something was wrong or to report something, only to suggest ideas |
