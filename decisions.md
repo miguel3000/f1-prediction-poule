@@ -108,7 +108,10 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   - Anything else: 0.
 - **First retirement**: main races only, **mandatory** (the server rejects a main prediction
   without it), +25 if right. First out is the DNF classified last. DNS and disqualified do not
-  count as retirements (`utils/resultStatus.ts` is the one place that decides this).
+  count as retirements (`utils/resultStatus.ts` is the one place that decides this). A pick on a
+  driver who does not start therefore scores nothing and is not replaced; if nobody retires, nobody
+  gets the bonus. The Rules page ("DNF and DNS: what they mean") and the FAQ say so in both
+  languages: change them together with `resultStatus.ts`.
 - Predictions lock `PREDICTION_LOCK_MINUTES` before the start (default 1). A missed-prediction
   reminder goes out about 1 hour before; if a player still has nothing, their last prediction is
   copied in and they are told exactly what was copied. The copy also takes their last first-retirement pick.
@@ -331,6 +334,9 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - **Menu**: How to Play and FAQ are in the main menu for everyone; Rules, About, Privacy in the
   footer list; the Pitlane for admins only. The menu button is blue with yellow stripes at the far
   left of the header (word MENU on desktop only) and the menu opens from the left.
+  **On phones and tablets (below the `xl` breakpoint) that button is the only navigation**: there
+  is no tab bar along the bottom of the screen (removed 2026-11-09), and the page links in the
+  header exist from `xl` up. A new page therefore goes in the menu (`Navigation.tsx`).
 - **Header layout**: menu button, logo, then language / share / login or avatar. On desktop the
   logo is exactly in the middle and the page links are on a second row; on phones the logo is
   centred in the space between the menu button and the right-hand buttons (they are too wide for
@@ -493,6 +499,12 @@ Co-Authored-By: <the attribution line the session gives>
 - Goes through the admin broadcast (`/api/admin/broadcast`), which already adds the banner,
   signature and unsubscribe link. Send nothing without the user reading the final text first.
 - English and Dutch, each player gets their own language.
+- Content lives in `backend/src/newsletters/` and is registered by name in `index.ts`; copy that
+  names a menu item or a page uses the site's own label in each language (a test checks the menu
+  names). Render both languages with `renderNewsletter` into a preview file and let the user read
+  them first. Sending is `scripts/sendNewsletter.ts --newsletter <name>`: the name is required (no
+  default, so an old newsletter is never re-sent by accident), and without `--send` it only lists
+  who would get it.
 - Structure: one-line hook, "What's new" as 4–6 short items in player terms (what you can now
   do, not what we built), one short section on anything that needs explaining (for example the
   Pit Wall: what it is, who has access, how to submit an idea), a button to the site, sign-off.
@@ -556,3 +568,6 @@ Why: <two or three lines, sources named>
 | 2026-11-03 | OpenF1's 404 for "no rows" is no longer logged as an error, and sign-up trims the nickname | After the Mexico final run the log showed a full OpenF1 stack trace for a plain "no data yet", and one player had been registered as `JamMasterJ ` with a trailing space |
 | 2026-11-03 | Every OpenF1 call logs a failure as one line (and a 404 "no rows" not at all); the calls that hand the error to their caller still throw it | The other OpenF1 calls still printed a full AxiosError dump, and getLatestDrivers printed it twice |
 | 2026-11-08 | Players with Pit Wall access can just send the owner a message; the owner marks it handled, with an optional note the player sees | Players had no way to say that something was wrong or to report something, only to suggest ideas |
+| 2026-11-09 | The tab bar along the bottom of the screen on phones and tablets is gone; the menu button at the top left is the only navigation there | The owner wanted the bottom row of menu items removed on mobile |
+| 2026-11-09 | A driver who does not start (DNS) is not a retirement: confirmed for the Brazilian GP, and the Rules page and FAQ now explain DNF and DNS | Bottas did not start and Stroll was the only retirement; a player had picked Bottas as first retirement and the rules never said what a DNS counts as |
+| 2026-11-09 | Newsletters are registered by name and the send script requires `--newsletter <name>`; a "Did you know?" tour of the phone menu is the first new one | The script was hard-wired to the October newsletter, so running it again would have re-sent that one |

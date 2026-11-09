@@ -1,15 +1,16 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database';
 import { sendNewsletterEmail } from '../services/emailService';
-import { whatsNewOct2026 } from '../newsletters/whatsNewOct2026';
+import { getNewsletter } from '../newsletters';
 
-// Sends the newsletter to every player who has not unsubscribed from announcements, each in
-// their own language. Nothing is sent unless --send is given.
+// Sends a newsletter (src/newsletters/index.ts) to every player who has not unsubscribed from
+// announcements, each in their own language. --newsletter <name> is always required, and nothing
+// is sent unless --send (or --preview) is given.
 //
-//   node dist/scripts/sendNewsletter.js                       list who would get it (nicknames only)
-//   node dist/scripts/sendNewsletter.js --send                send to everyone subscribed
-//   node dist/scripts/sendNewsletter.js --send --only a,b     send only to these nicknames (retry)
-//   node dist/scripts/sendNewsletter.js --preview <nickname>  send only to that player's own address
+//   node dist/scripts/sendNewsletter.js --newsletter <name>                       list who would get it (nicknames only)
+//   node dist/scripts/sendNewsletter.js --newsletter <name> --send                send to everyone subscribed
+//   node dist/scripts/sendNewsletter.js --newsletter <name> --send --only a,b     send only to these nicknames (retry)
+//   node dist/scripts/sendNewsletter.js --newsletter <name> --preview <nickname>  send only to that player's own address
 
 const arg = (name: string) => {
   const i = process.argv.indexOf(name);
@@ -17,6 +18,7 @@ const arg = (name: string) => {
 };
 
 async function main() {
+  const newsletter = getNewsletter(arg('--newsletter'));
   const send = process.argv.includes('--send');
   const only = arg('--only')?.split(',').map((n) => n.trim().toLowerCase());
   const preview = arg('--preview')?.trim().toLowerCase();
@@ -39,7 +41,7 @@ async function main() {
   for (const user of users) {
     const token = jwt.sign({ userId: user.id, purpose: 'unsubscribe' }, process.env.JWT_SECRET!);
     const unsubscribeUrl = `${process.env.FRONTEND_URL}/api/auth/unsubscribe?token=${token}`;
-    const sent = await sendNewsletterEmail(user.email, user.nickname, user.language, whatsNewOct2026, unsubscribeUrl);
+    const sent = await sendNewsletterEmail(user.email, user.nickname, user.language, newsletter, unsubscribeUrl);
     if (sent) ok++;
     else failed.push(user.nickname);
   }
