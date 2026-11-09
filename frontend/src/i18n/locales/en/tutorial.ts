@@ -109,7 +109,7 @@ export const tutorial = {
     'You get a reminder email 1 hour before the start. If the race locks and you still have no prediction, your most recent one is copied in, first-retirement pick included, and we email you what was entered. A new player with no earlier prediction simply scores nothing for that race.',
   'tutorial.faq.q4': 'Which driver counts as the first retirement?',
   'tutorial.faq.a4':
-    'Of the drivers who did not finish, the one who completed the fewest laps (classified last among the retirements) counts as first out. If nobody retires, nobody earns the bonus. A driver who finishes a lap down, or is disqualified after finishing, is not a retirement.',
+    'Of the drivers who did not finish, the one who completed the fewest laps (classified last among the retirements) counts as first out. If nobody retires, nobody earns the bonus. A driver who finishes a lap down, or is disqualified after finishing, is not a retirement. Neither is a driver who did not start (DNS).',
   'tutorial.faq.q5': 'Why does the order of the driver list change?',
   'tutorial.faq.a5':
     'The list follows the qualifying result. About an hour before the start the real starting grid is known, grid penalties included, and the list switches to it; the label above the list then reads "Starting grid". An open page switches by itself within a couple of minutes. You predict where drivers finish, so a penalty never changes how your points are counted, only perhaps what you expect.',

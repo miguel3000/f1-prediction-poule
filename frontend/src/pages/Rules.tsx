@@ -124,6 +124,15 @@ const Rules = () => {
             <h3 className="text-lg font-bold text-f1-blue mb-2">{t('rules.dnf.title')}</h3>
             <p className="text-sm"><Rich text={t('rules.dnf.text')} /></p>
           </div>
+
+          <div className="bg-gray-900/60 border border-gray-600/50 p-4 mt-4">
+            <h3 className="text-lg font-bold text-gray-300 mb-2">{t('rules.dnfdns.title')}</h3>
+            <ul className="list-disc list-inside space-y-2 text-sm">
+              <li><Rich text={t('rules.dnfdns.dnf')} /></li>
+              <li><Rich text={t('rules.dnfdns.dns')} /></li>
+              <li><Rich text={t('rules.dnfdns.other')} /></li>
+            </ul>
+          </div>
         </section>
 
         <section className="bg-gray-800 p-6">

@@ -111,7 +111,7 @@ export const tutorial: Record<keyof typeof en_tutorial, string> = {
     'Je krijgt een herinneringsmail 1 uur voor de start. Als de race sluit en je nog geen voorspelling hebt, wordt je meest recente voorspelling overgenomen, inclusief de keuze voor de eerste uitvaller, en we mailen je wat er is ingevuld. Een nieuwe speler zonder eerdere voorspelling scoort voor die race niets.',
   'tutorial.faq.q4': 'Welke coureur telt als eerste uitvaller?',
   'tutorial.faq.a4':
-    'Van de coureurs die niet finishen telt degene met de minste afgelegde ronden (als laatste geklasseerd onder de uitvallers) als eerste uit. Valt niemand uit, dan krijgt niemand de bonus. Een coureur die een ronde achter finisht, of na de finish wordt gediskwalificeerd, is geen uitvaller.',
+    'Van de coureurs die niet finishen telt degene met de minste afgelegde ronden (als laatste geklasseerd onder de uitvallers) als eerste uit. Valt niemand uit, dan krijgt niemand de bonus. Een coureur die een ronde achter finisht, of na de finish wordt gediskwalificeerd, is geen uitvaller. Een coureur die niet is gestart (DNS) ook niet.',
   'tutorial.faq.q5': 'Waarom verandert de volgorde van de coureurslijst?',
   'tutorial.faq.a5':
     'De lijst volgt de kwalificatie-uitslag. Ongeveer een uur voor de start is de echte startopstelling bekend, inclusief gridstraffen, en schakelt de lijst daarnaar over; het label boven de lijst staat dan op "Startopstelling". Een pagina die al openstaat schakelt binnen een paar minuten zelf over. Jij voorspelt waar coureurs finishen, dus een straf verandert nooit hoe je punten worden geteld, hooguit wat je verwacht.',
