@@ -1,4 +1,4 @@
-// Shared nav icon set — used by BottomTabBar, DesktopNav and the More drawer.
+// Shared nav icon set — used by the header and the menu drawer.
 export const RacingFlagIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
@@ -86,14 +86,6 @@ export const PitWallIcon = ({ className = 'w-5 h-5' }: { className?: string }) =
     <line x1="10" y1="6" x2="21" y2="6"/>
     <line x1="10" y1="12" x2="21" y2="12"/>
     <line x1="10" y1="18" x2="21" y2="18"/>
-  </svg>
-);
-export const MoreIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="4" y="4" width="7" height="7" rx="0"/>
-    <rect x="13" y="4" width="7" height="7" rx="0"/>
-    <rect x="4" y="13" width="7" height="7" rx="0"/>
-    <rect x="13" y="13" width="7" height="7" rx="0"/>
   </svg>
 );
 export const BookIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (

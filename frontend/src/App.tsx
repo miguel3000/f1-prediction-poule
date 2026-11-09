@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
-import BottomTabBar from './components/BottomTabBar';
 import Footer from './components/Footer';
 import Homepage from './pages/Homepage';
 import RaceOverview from './pages/RaceOverview';
@@ -112,7 +111,7 @@ function App() {
             <Header onMoreToggle={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
             <Navigation isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} />
 
-            <main className="container mx-auto px-4 py-6 md:py-8 pb-tabbar xl:pb-8 relative z-10 flex-grow">
+            <main className="container mx-auto px-4 py-6 md:py-8 pb-8 relative z-10 flex-grow">
               {/* The same pages answer at /nl/... too: the Dutch addresses search engines index. */}
               <Routes>
                 <Route path="/nl/*" element={<AppRoutes />} />
@@ -121,7 +120,6 @@ function App() {
             </main>
 
             <Footer />
-            <BottomTabBar onMoreClick={() => setIsMoreOpen(!isMoreOpen)} moreActive={isMoreOpen} />
           </div>
         </Router>
       </SeasonProvider>

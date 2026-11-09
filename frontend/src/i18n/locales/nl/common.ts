@@ -37,7 +37,6 @@ export const common: Record<keyof typeof enCommon, string> = {
   'nav.pitlane': 'Pitlane',
   'nav.menu': 'Menu',
   'nav.closeMenu': 'Menu sluiten',
-  'nav.more': 'Meer',
   'nav.out': 'Uit',
   'nav.login': 'Inloggen',
 

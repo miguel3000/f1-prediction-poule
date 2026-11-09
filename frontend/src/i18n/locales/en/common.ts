@@ -35,7 +35,6 @@ export const common = {
   'nav.pitlane': 'Pitlane',
   'nav.menu': 'Menu',
   'nav.closeMenu': 'Close menu',
-  'nav.more': 'More',
   'nav.out': 'Out',
   'nav.login': 'Login',
 
