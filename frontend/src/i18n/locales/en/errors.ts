@@ -65,6 +65,8 @@ export const errors = {
   'err.Failed to remove the idea': 'Failed to remove the idea',
   'err.Idea not found or already reviewed': 'Idea not found or already reviewed',
   'err.Invalid idea id': 'Invalid idea id',
+  'err.Player not found': 'Player not found',
+  'err.Failed to get the player': 'Failed to load this player',
   'err.Language must be en or nl': 'Language must be en or nl',
   'err.Failed to save language': 'Failed to save language',
   'err.A driver in your prediction is not racing this weekend. Reload the page and pick again.': 'A driver in your prediction is not racing this weekend. Reload the page and pick again.',

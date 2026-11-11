@@ -19,3 +19,13 @@ export const dbStatusFor = (status: NormalizedStatus): string =>
   ({ finished: 'Finished', dnf: 'Retired', dns: 'Did not start', dsq: 'Disqualified' })[status];
 
 export const isDnfStatus = (status: string | null | undefined): boolean => normalizeStatus(status) === 'dnf';
+
+// The driver who retired first: of the retirements, the one classified last (fewest laps). DNS and
+// disqualified are not retirements. Null when nobody retired, and then nobody earns the bonus.
+export const firstOutDriverId = (
+  results: Array<{ driver_id: number; position: number; status: string | null }>
+): number | null => {
+  const retirements = results.filter((r) => isDnfStatus(r.status));
+  if (retirements.length === 0) return null;
+  return retirements.reduce((last, r) => (r.position > last.position ? r : last), retirements[0]).driver_id;
+};

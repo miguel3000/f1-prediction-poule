@@ -189,6 +189,16 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - **Visibility**: standings and points are always visible inside a poule; other players'
   **predictions only once the race has started** (`utils/predictionLock.ts`, the same moment
   predictions lock), also in the main poule. Nobody outside a group can learn it exists (404).
+- **The player page** (`/players/:id?poule=`, `GET /api/players/:id/predictions`): tapping a name in
+  the standings, the player stats or the Predictions table opens one player's predictions against the
+  results, newest race first (the newest open, the others a row of coloured squares to tap open),
+  optionally next to your own picks or another player's. It follows the same rules as the rest of
+  group play: only started races, only races the player predicted, only players in the poule being
+  looked at (anyone else is a 404), nothing but nickname, avatar and picks. The server marks every pick
+  exact / near / miss with `utils/scoring.ts` (`judgePick`), the one place that decides it; a test adds
+  the marks up and demands the stored points, so a colour can never disagree with a score. Sprints are
+  their own card (8 picks, no first retirement). Not shown yet: which predictions were auto-copied,
+  because the database does not record that.
 - The owner cannot leave (they delete the group; an admin can reassign it); members can leave.
   Deleting a user removes their memberships and leaves the group ownerless, which the Pitlane shows
   as "No owner" with a reassign control. Deleting a group removes memberships only; points and
@@ -321,6 +331,8 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - **Type**: Bebas Neue (`font-brand`) for banners and page titles, Big Shoulders Display
   (`font-f1`) for headings and names, Saira (`font-sans`) for body text, Michroma
   (`font-f1-badge`) for numbers and badges.
+- **Prediction marks** (Rules page and player page): exact = green, one place off = our yellow with
+  black text, miss = dark grey; the real result is dark blue.
 - **Patterns to reuse**: yellow number square + blue name bar; alternating blue/dark-blue rows;
   yellow table header (black text); the skewed signature bars; `card-f1`, `btn-f1-primary`,
   `btn-f1-secondary`, `input-f1`. Status chips: yellow = needs attention or pending, white on
@@ -571,3 +583,4 @@ Why: <two or three lines, sources named>
 | 2026-11-09 | The tab bar along the bottom of the screen on phones and tablets is gone; the menu button at the top left is the only navigation there | The owner wanted the bottom row of menu items removed on mobile |
 | 2026-11-09 | A driver who does not start (DNS) is not a retirement: confirmed for the Brazilian GP, and the Rules page and FAQ now explain DNF and DNS | Bottas did not start and Stroll was the only retirement; a player had picked Bottas as first retirement and the rules never said what a DNS counts as |
 | 2026-11-09 | Newsletters are registered by name and the send script requires `--newsletter <name>`; a "Did you know?" tour of the phone menu is the first new one | The script was hard-wired to the October newsletter, so running it again would have re-sent that one |
+| 2026-11-11 | Tapping a player's name opens a player page: their predictions against the results, every pick marked exact / one place off / miss, optionally next to yours; built for a phone first | The owner wanted a better overview of what each player predicted, with scores and correctness, so players can compare |

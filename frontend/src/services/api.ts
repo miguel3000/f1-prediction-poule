@@ -338,3 +338,28 @@ export interface PoulePredictionsResponse {
 // Everyone's picks for a race inside one poule; the server answers 403 until the race has started.
 export const getPoulePredictions = (raceId: number, poule?: string) =>
   api.get<PoulePredictionsResponse>(`/api/races/${raceId}/predictions`, { params: poule ? { poule } : undefined });
+
+// The player page: one player's predictions against the real results, inside one poule and season.
+// The server marks every pick exact / near / miss with the rule that scores it, so the page only draws.
+export type PickHit = 'exact' | 'near' | 'miss';
+export interface PlayerDriver { id: number; name: string; name_acronym: string | null; team: string }
+export interface PlayerFinished { position: number; status: 'finished' | 'dnf' | 'dns' | 'dsq' }
+export interface PlayerPick { position: number; driver: PlayerDriver | null; hit: PickHit | null; finished: PlayerFinished | null }
+export interface PlayerRace {
+  race: { id: number; round: number; race_name: string; race_type: 'main' | 'sprint'; race_date: string };
+  slots: number;
+  result: null | { top: Array<{ position: number; driver: PlayerDriver | null }>; first_out: PlayerDriver | null };
+  prediction: {
+    picks: PlayerPick[];
+    dnf_pick: null | { driver: PlayerDriver; hit: boolean | null; finished: PlayerFinished | null };
+    points: number | null; // null until the race has a result
+  };
+}
+export interface PlayerPageData {
+  player: { id: number; nickname: string; avatar_url: string | null; rank: number; total_points: number };
+  poule_size: number;
+  stats: { exact: number; near: number; first_retirement_right: number; first_retirement_races: number };
+  races: PlayerRace[]; // started races the player predicted, newest first
+}
+export const getPlayerPredictions = (id: number, poule?: string, season?: number) =>
+  api.get<PlayerPageData>(`/api/players/${id}/predictions`, { params: { poule, season } });

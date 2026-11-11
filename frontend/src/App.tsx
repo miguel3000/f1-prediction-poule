@@ -23,6 +23,7 @@ import ResetPassword from './pages/ResetPassword';
 import PageMeta from './components/PageMeta';
 import Tutorial from './pages/Tutorial';
 import PitWall from './pages/PitWall';
+import Player from './pages/Player';
 import Groups from './pages/Groups';
 import JoinGroup from './pages/JoinGroup';
 import { AuthContext } from './context/AuthContext';
@@ -49,6 +50,7 @@ const AppRoutes = () => (
     <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
     <Route path="/live" element={<ProtectedRoute><LiveTiming /></ProtectedRoute>} />
     <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+    <Route path="/players/:id" element={<ProtectedRoute><Player /></ProtectedRoute>} />
     <Route path="/pitwall" element={<ProtectedRoute requirePitwall><PitWall /></ProtectedRoute>} />
     <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route path="/about" element={<About />} />

@@ -1,0 +1,27 @@
+import type { player as en_player } from '../en/player';
+
+export const player: Record<keyof typeof en_player, string> = {
+  'pl.back': 'Kampioenschap',
+  'pl.rankOf': '{rank} van {n}',
+  'pl.statExact': 'Exact',
+  'pl.statNear': 'Eén plek ernaast',
+  'pl.statFirstOut': 'Eerste uitvaller goed',
+  'pl.compare': 'Vergelijk met',
+  'pl.compareMe': 'Mij',
+  'pl.compareNobody': 'Niemand',
+  'pl.comparePlayer': 'Speler',
+  'pl.choosePlayer': 'Kies een speler',
+  'pl.you': 'Jij',
+  'pl.result': 'Uitslag',
+  'pl.firstOut': '1e uit',
+  'pl.pts': 'Ptn',
+  'pl.legendExact': 'Exact',
+  'pl.legendNear': 'Eén plek ernaast',
+  'pl.legendMiss': 'Gemist',
+  'pl.earlier': 'Eerdere races · tik op een race om hem te openen',
+  'pl.waiting': 'Wachten op de uitslag',
+  'pl.sprint': 'Sprint',
+  'pl.noRaces': '{name} heeft nog niets te tonen. Keuzes verschijnen zodra een race is gestart.',
+  'pl.loadFailed': 'Deze speler laden is mislukt',
+  'pl.noCompare': 'Geen voorspelling',
+};

@@ -65,6 +65,8 @@ export const errors: Record<keyof typeof enErrors, string> = {
   'err.Failed to remove the idea': 'Het idee verwijderen mislukt',
   'err.Idea not found or already reviewed': 'Idee niet gevonden of al beoordeeld',
   'err.Invalid idea id': 'Ongeldig idee',
+  'err.Player not found': 'Speler niet gevonden',
+  'err.Failed to get the player': 'Deze speler laden is mislukt',
   'err.Language must be en or nl': 'De taal moet en of nl zijn',
   'err.Failed to save language': 'Taal opslaan mislukt',
   'err.A driver in your prediction is not racing this weekend. Reload the page and pick again.': 'Een coureur in je voorspelling doet dit weekend niet mee. Laad de pagina opnieuw en kies opnieuw.',

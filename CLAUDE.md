@@ -113,6 +113,7 @@ npm run predictions:remind-missed # Email users who haven't predicted, 1h before
 │   │   │   ├── RaceOverview.tsx     # Race calendar
 │   │   │   ├── DriverStandings.tsx  # Driver standings
 │   │   │   ├── Leaderboard.tsx      # User rankings
+│   │   │   ├── Player.tsx           # One player's predictions against the results
 │   │   │   ├── MyPredictions.tsx    # User's prediction history
 │   │   │   ├── Stats.tsx            # Session results (FP, Quali, Race)
 │   │   │   ├── Auth.tsx             # Login/register
@@ -182,6 +183,7 @@ All routes prefixed with `/api`:
 - `/predictions` - Main race predictions (authenticated)
 - `/sprint-predictions` - Sprint predictions (authenticated)
 - `/leaderboard` - Rankings
+- `/players/:id/predictions` - One player's predictions against the results, per poule and season (authenticated)
 - `/stats` - Practice, qualifying, race results
 - `/upload` - Avatar uploads
 - `/admin` - Admin functions

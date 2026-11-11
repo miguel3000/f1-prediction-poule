@@ -18,6 +18,7 @@ import { privacy } from './privacy';
 import { meta } from './meta';
 import { tutorial } from './tutorial';
 import { groups } from './groups';
+import { player } from './player';
 
 export const nl: Record<keyof typeof en, string> = {
   ...common,
@@ -39,4 +40,5 @@ export const nl: Record<keyof typeof en, string> = {
   ...meta,
   ...tutorial,
   ...groups,
+  ...player,
 };

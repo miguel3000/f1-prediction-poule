@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext';
 import { getRaces, getPoulePredictions, PoulePrediction, PoulePredictionsResponse } from '../services/api';
 
@@ -143,7 +144,12 @@ const PoulePredictions = ({ poule, meId }: PoulePredictionsProps) => {
                             }`}
                             title={row.user.nickname}
                           >
-                            {row.user.nickname}
+                            <Link
+                              to={`/players/${row.user.id}${poule ? `?poule=${encodeURIComponent(poule)}` : ''}`}
+                              className="underline decoration-white/40 underline-offset-2 hover:decoration-white"
+                            >
+                              {row.user.nickname}
+                            </Link>
                           </th>
                           {row.picks.map((pick) => (
                             <td

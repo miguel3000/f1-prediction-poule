@@ -84,6 +84,9 @@ const Leaderboard = () => {
   const ready = poules !== null && !noPoule && !badPoule && seasonReady;
   // Without a usable list the server decides (it answers with the default poule).
   const pouleParam = poulesFailed ? undefined : selected;
+  // A player's page is looked at inside the poule being shown, so a group member is found there too
+  const playerLink = (playerId: number) =>
+    `/players/${playerId}${pouleParam ? `?poule=${encodeURIComponent(pouleParam)}` : ''}`;
 
   useEffect(() => {
     if (!ready) return;
@@ -203,8 +206,11 @@ const Leaderboard = () => {
                   {entry.rank}
                 </div>
 
-                {/* Name bar — big blue block, nickname as large as possible */}
-                <div className="flex-1 min-w-0 bg-f1-blue flex items-center justify-between gap-3 px-4 py-3">
+                {/* Name bar — big blue block, nickname as large as possible. Opens the player page. */}
+                <Link
+                  to={playerLink(entry.id)}
+                  className="flex-1 min-w-0 bg-f1-blue hover:brightness-110 transition flex items-center justify-between gap-3 px-4 py-3"
+                >
                   <div className="min-w-0 flex items-center gap-3">
                     {entry.avatar_url ? (
                       <img
@@ -241,7 +247,7 @@ const Leaderboard = () => {
                       {Number(entry.rank) === 1 ? t('lb.leader') : `-${entry.diff_to_leader}`}
                     </p>
                   </div>
-                </div>
+                </Link>
               </div>
             ))}
           </div>
@@ -266,7 +272,7 @@ const Leaderboard = () => {
           <div className="grid gap-3 sm:grid-cols-2">
             {playerStats.map((stat) => (
               <div key={stat.id} className="card-f1">
-                <div className="-mx-6 -mt-6 mb-4 bg-f1-blue px-4 py-3">
+                <Link to={playerLink(stat.id)} className="block -mx-6 -mt-6 mb-4 bg-f1-blue hover:brightness-110 transition px-4 py-3">
                   <h3 className="font-f1 font-bold text-white text-lg uppercase tracking-wide truncate">
                     {stat.nickname}
                   </h3>
@@ -275,7 +281,7 @@ const Leaderboard = () => {
                       {t('lb.bestRacePre')} <span className="font-bold text-white">{stat.best_race.points} {t('races.pts')}</span> ({stat.best_race.name})
                     </p>
                   )}
-                </div>
+                </Link>
 
                 {stat.predictions_made === 0 ? (
                   <p className="text-white text-sm">{t('lb.noPredictions')}</p>
