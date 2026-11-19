@@ -330,7 +330,7 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   from announcements, for the next main race that starts within 4 days. **Layout** (chosen by the owner
   from five mockups, "Lights out"): a yellow banner with the race name, a yellow and dark blue checkered
   flag strip under it (`frontend/public/email-checkers.png`, an image so the squares stay square at any
-  width), then the start of the race as the hero (big time, day, "Dutch time"); under that the player's
+  width; 33 squares, an odd number, so the left end and the right end are the same), then the start of the race as the hero (big time, day, "Dutch time"); under that the player's
   own prediction chips (race, and sprint on sprint weekends) and the button; then the rest of the weekend
   as a plain list, the localised-times note, and the circuit as a square layout thumbnail next to the lap
   length in km and miles, laps and race distance; the signature and unsubscribe link close it. All times are
@@ -622,3 +622,4 @@ Why: <two or three lines, sources named>
 | 2026-11-11 | Tapping a player's name opens a player page: their predictions against the results, every pick marked exact / one place off / miss, optionally next to yours; built for a phone first | The owner wanted a better overview of what each player predicted, with scores and correctness, so players can compare |
 | 2026-11-19 | A Thursday race weekend preview mail: schedule in Dutch time, your missing predictions, the circuit with layout and lap length in km and miles; it sends nothing until the owner switches it on in the Pitlane | The owner wanted a weekend overview like the one shared in the group chat, in our branding, sent every Thursday before the race |
 | 2026-11-19 | The race weekend preview uses the "Lights out" layout (start time as the hero, button right under it, the rest of the weekend as a plain list) with a yellow checkered flag strip under the banner; circuit layouts became square thumbnails | The owner looked at five different layouts and chose the first; asked for racing flag blocks in yellow under the race weekend banner |
+| 2026-11-19 | The checkered flag strip has an odd number of squares (33) so its left end and right end are the same | The owner saw the left end start with a gap while the right end finished on a full square, and wanted both ends even with whole square blocks |

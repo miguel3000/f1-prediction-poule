@@ -96,11 +96,11 @@ test('circuit_block_shows_the_layout_thumbnail_with_lap_length_in_km_and_miles_l
 
 test('a_yellow_and_dark_blue_checkered_strip_sits_between_the_banner_and_the_start_time', () => {
   const html = renderRacePreview(data(vegas), 'Kimi', 'en').html;
-  const strip = `${process.env.FRONTEND_URL}/email-checkers.png?v=1`;
+  const strip = `${process.env.FRONTEND_URL}/email-checkers.png?v=2`;
   assert.ok(html.includes(strip), 'no checkered strip');
   assert.ok(html.indexOf('Race weekend · Las Vegas Grand Prix') < html.indexOf(strip) && html.indexOf(strip) < html.indexOf('Lights out'));
   // decoration only: nothing for a screen reader to read out, and it fills the width of the mail
-  assert.match(html, /<img src="[^"]*email-checkers\.png\?v=1"[^>]*alt=""[^>]*width: 100%/);
+  assert.match(html, /<img src="[^"]*email-checkers\.png\?v=2"[^>]*alt=""[^>]*width: 100%/);
   assert.equal(html.split('email-checkers.png').length - 1, 1, 'the strip should appear once');
 });
 

@@ -959,7 +959,7 @@ const yellowCell = (style: string) =>
   `bgcolor="${BRAND_YELLOW}" background="${EMAIL_YELLOW_BG_URL}" style="background-color: ${BRAND_YELLOW}; background-image: url('${EMAIL_YELLOW_BG_URL}'); ${style}"`;
 
 const MAP_VERSION = 2; // bump when the circuit images are redrawn (Cloudflare caches them); 2 = the square tiles
-const CHECKERS_VERSION = 1; // the same for email-checkers.png
+const CHECKERS_VERSION = 2; // the same for email-checkers.png; 2 = 33 squares, both ends the same
 
 // A number and its unit stay on one line
 const noBreak = (text: string): string => escapeHtml(text).replace(/ /g, '&nbsp;');
