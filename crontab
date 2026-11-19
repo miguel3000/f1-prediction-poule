@@ -42,6 +42,12 @@
 # disqualifications). The Pitlane's Check now works at any time.
 */10 * * * * /app/check-fia-documents.sh
 
+# RACE WEEKEND PREVIEW: hourly on Thursdays, 08:00-20:00 UTC. Mails the schedule (Dutch time), which
+# predictions are still missing and the circuit to every player who has not unsubscribed, for the main race
+# that starts within 4 days. Every run mails only the players who have not had it (a stopped run is simply
+# continued), and it does nothing while the Pitlane switch "Race weekend preview" is off.
+0 8-20 * * 4 /app/send-race-previews.sh
+
 # Log rotation to prevent log file from growing too large. Tuesday, so a race weekend's
 # job output is still readable on Monday (it used to be wiped at Sunday midnight).
 0 3 * * 2 echo "" > /var/log/cron.log

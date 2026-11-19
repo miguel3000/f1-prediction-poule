@@ -27,6 +27,7 @@ import { adminListGroups, adminDeleteGroup, adminRemoveMember, adminReassignOwne
 import { listDriverExclusions, addDriverExclusion, removeDriverExclusion } from '../controllers/driverExclusionController';
 import { listFlags, checkNow } from '../controllers/flagsController';
 import { runFinalResults, getFinalResultsStatus } from '../controllers/finalResultsController';
+import { getRacePreview, setRacePreviewSwitch, testRacePreview } from '../controllers/racePreviewController';
 
 const router = express.Router();
 
@@ -50,6 +51,11 @@ router.delete('/driver-exclusions/:round/:driverId', authenticateAdmin, removeDr
 // Weekend flags: what the FIA documents watcher has seen, and a manual check
 router.get('/flags', authenticateAdmin, listFlags);
 router.post('/flags/check', authenticateAdmin, checkNow);
+
+// Thursday race weekend preview: the on/off switch, what is due, and a test mail to the owner's own account
+router.get('/race-preview', authenticateAdmin, getRacePreview);
+router.put('/race-preview', authenticateAdmin, setRacePreviewSwitch);
+router.post('/race-preview/test', authenticateAdmin, testRacePreview);
 
 // Player Pit Wall: who has access, and reviewing what they submit
 router.put('/users/:id/pitwall-access', authenticateAdmin, setPitwallAccess);

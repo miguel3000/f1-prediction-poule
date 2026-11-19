@@ -251,6 +251,14 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - Cron jobs: see the template in section 8. Qualifying: every 10 minutes Fri–Sun, Jolpi then
   OpenF1, one admin email if still missing 3 hours after the session.
 
+- **Circuit data** (`backend/src/data/circuits.ts`, `frontend/public/circuits/<circuitId>.png`, keyed by
+  Jolpi's `circuitId`): lap length, laps and race distance come from the 2026 race pages on
+  formula1.com; the layouts are drawn by us from OpenF1's GPS positions of one fast qualifying lap, so the
+  mail carries no third-party artwork. `tools/circuit-maps/build_circuits.py` makes both and refuses to
+  write anything unless every traced lap is within 3 % of the official length and laps times length is
+  within 0.2 % of the race distance. A circuit that is missing from the file simply gets a mail without
+  the picture and numbers; run the script when one joins the calendar. Miles are computed from the km.
+
 ### Weekend flags
 
 - A watcher reads the FIA decision documents on race weekends and emails the **owner only** what
@@ -315,6 +323,21 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
 - **Sign-up and departure mails are logged** in `email_log` (`services/emailLog.ts`): welcome mail
   to the player, new-member and member-left notices to the admin. Failures are retried
   automatically (5 attempts) and visible in the Pitlane. New mails of this kind use `sendLogged`.
+- **Race weekend preview** (Thursdays; `services/racePreviewService.ts`, `scripts/sendRacePreviews.ts`,
+  `renderRacePreview` in `emailService.ts`): one mail per weekend to every player who has not unsubscribed
+  from announcements, for the next main race that starts within 4 days. It has the schedule in **Dutch
+  time** for everyone (the sessions come from the official calendar via `services/weekendSchedule.ts`,
+  the same source as the Races page, so a sprint weekend shows Sprint Qualifying and Sprint without a
+  special case; start times only, the calendar has no end times), a line saying whether the player's own
+  race and sprint predictions are saved, the circuit with its layout and the lap length in km and miles,
+  laps and race distance, and when predictions close. Under the Dutch-time remark it tells players they can
+  reply or use the Pit Wall (if they have access) to ask for start times in their own time zone; nothing
+  stores a time zone yet. The hourly job (Thursday 08:00-20:00 UTC) only mails players with no row in
+  `race_preview_log`, so it is safe to run again and a failed send is retried. **It does nothing until the
+  owner switches it on** (Pitlane card "Race weekend preview", stored in `app_settings`, off by default);
+  the card also has "Send me a test" (to the owner's own address, recorded nowhere). By hand:
+  `node dist/scripts/sendRacePreviews.js --dry-run | --preview <nickname> | --send-now [--only a,b]`.
+  The first send of a weekend by hand still needs an explicit yes in the chat (section 1).
 - Tokens: unsubscribe and reset tokens carry a `purpose` and are rejected as login sessions.
   Reset tokens last 1 hour and die when the password changes.
 
@@ -542,6 +565,11 @@ Why: <two or three lines, sources named>
 - A message to the owner through the Pit Wall needs Pit Wall access, so a player without it has no
   way to report something inside the app (they can still mail kimi@pouleposition.nl). The owner
   decides whether the message form should open to every player.
+- Race weekend preview: times are Dutch time for everyone; a player who wants their own time zone has to
+  ask (reply or Pit Wall). The Pit Wall needs access, so the mail says "if you have access". Circuit
+  facts are formula1.com's; they were not cross-checked against a second source (laps times length
+  against the race distance agrees for all 23). Las Vegas, Lusail and Yas Marina were drawn from 2025
+  sessions because they have not been raced in 2026; the layouts did not change.
 - Group play: a group-only player who loses their last group (leaves, is removed, or the group is
   deleted) is in no poule until they switch the main poule back on in the Profile; the server does
   not do that for them, and `PUT /api/auth/plays-in-main` still accepts "off" for a player with no group.
@@ -584,3 +612,4 @@ Why: <two or three lines, sources named>
 | 2026-11-09 | A driver who does not start (DNS) is not a retirement: confirmed for the Brazilian GP, and the Rules page and FAQ now explain DNF and DNS | Bottas did not start and Stroll was the only retirement; a player had picked Bottas as first retirement and the rules never said what a DNS counts as |
 | 2026-11-09 | Newsletters are registered by name and the send script requires `--newsletter <name>`; a "Did you know?" tour of the phone menu is the first new one | The script was hard-wired to the October newsletter, so running it again would have re-sent that one |
 | 2026-11-11 | Tapping a player's name opens a player page: their predictions against the results, every pick marked exact / one place off / miss, optionally next to yours; built for a phone first | The owner wanted a better overview of what each player predicted, with scores and correctness, so players can compare |
+| 2026-11-19 | A Thursday race weekend preview mail: schedule in Dutch time, your missing predictions, the circuit with layout and lap length in km and miles; it sends nothing until the owner switches it on in the Pitlane | The owner wanted a weekend overview like the one shared in the group chat, in our branding, sent every Thursday before the race |

@@ -62,6 +62,14 @@ interface FlagsData {
   documents: FlagDocument[];
 }
 
+interface RacePreviewStatus {
+  autoOn: boolean;
+  weekend: { raceName: string; raceStart: string; sprint: boolean } | null;
+  waiting: number;
+  alreadySent: number;
+  problem?: string;
+}
+
 interface EmailLogRow {
   id: number;
   kind: 'welcome' | 'member_joined' | 'member_left';
@@ -118,6 +126,7 @@ const CRON_JOBS = [
   { name: 'Provisional results', cron: '*/5 2-22 * * 0,6', when: 'Saturday and Sunday, every 5 minutes from 02:00 to 22:59. From 5 minutes after the start it looks for confirmed results, then scores predictions and mails players.' },
   { name: 'Final results', cron: '0 2-22 * * 0,1', when: 'Sunday and Monday, hourly from 02:00 to 22:00. Re-scores provisional races once they are 24 hours past the start, penalties included. Results Check can run it for one race on any other day.' },
   { name: 'Weekend flags', cron: '*/10 * * * *', when: 'Every 10 minutes, all week; works from 6 days before a main race until 7 days after it, so the papers that come after the race are read too. Reads the FIA decision documents and emails you what probably changes predictions. The Check now button in the Pitlane works at any time.' },
+  { name: 'Race weekend preview', cron: '0 8-20 * * 4', when: 'Thursday, hourly from 08:00 to 20:59. Mails every player who has not unsubscribed the schedule, their missing predictions and the circuit, for the main race that starts within 4 days. Only players who have not had it yet; does nothing while the Pitlane switch is off.' },
   { name: 'Log rotation', cron: '0 3 * * 2', when: 'Tuesday at 03:00. Empties /var/log/cron.log.' },
 ];
 
@@ -143,6 +152,7 @@ const DATA_SOURCES = [
 // The scheduling documentation. Checked against backend/src/scripts and /crontab on 1 Nov 2026: when
 // a job's trigger, window or mail changes, change it here too.
 const RACE_TIMELINE = [
+  { when: 'Thursday, T −4 days', what: 'Race weekend preview to every player who has not unsubscribed: schedule in Dutch time, their own missing predictions, the circuit. Once per player per weekend, only while the Pitlane switch is on.' },
   { when: 'T −6 days → T +7 days', what: 'Weekend flags, main race only: every 10 minutes it reads the FIA decision documents (also the ones after the race) and emails you what probably changes predictions.' },
   { when: 'After qualifying', what: 'Qualifying results: every 10 minutes from Friday to Sunday until stored (Jolpi, then OpenF1). You get an email if one is still missing hours later.' },
   { when: 'T −30 h → T −75 min', what: 'Starting grid from formula1.com, read every 15th minute and refreshed when a penalty changes it.' },
@@ -208,6 +218,7 @@ const JOB_DETAILS = [
 ];
 
 const EMAIL_TYPES = [
+  { name: 'Race Weekend Preview', color: 'text-white', trigger: 'Thursday before a race, once per player (Pitlane switch)', contents: 'Schedule in Dutch time, which of your predictions are still missing, the circuit with layout and lap length' },
   { name: 'Prediction Confirmation', color: 'text-white', trigger: 'Player saves a prediction', contents: 'The picks, and the first-retirement pick for a main race' },
   { name: 'Missed-prediction Reminder', color: 'text-white', trigger: '55-65 minutes before a start', contents: 'Reminder to predict; only players with no prediction' },
   { name: 'Auto-fill Notice', color: 'text-white', trigger: 'Just after the lock, when a prediction was copied', contents: 'Exactly which picks were copied' },
@@ -268,6 +279,10 @@ const Admin = () => {
   const [flagsBusy, setFlagsBusy] = useState(false);
   const [flagsResult, setFlagsResult] = useState<string | null>(null);
 
+  const [racePreview, setRacePreview] = useState<RacePreviewStatus | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewResult, setPreviewResult] = useState<string | null>(null);
+
   const [notRacing, setNotRacing] = useState<DriverExclusionOptions | null>(null);
   const [nrRound, setNrRound] = useState('');
   const [nrDriver, setNrDriver] = useState('');
@@ -300,6 +315,7 @@ const Admin = () => {
     fetchGroups();
     fetchNotRacing();
     fetchFlags();
+    fetchRacePreview();
   }, [user?.is_admin]);
 
   const handleFetchPredictionStatus = async (raceId: number) => {
@@ -380,6 +396,42 @@ const Admin = () => {
       setFlagsResult(err.response?.data?.error || 'Failed to check the FIA documents');
     } finally {
       setFlagsBusy(false);
+    }
+  };
+
+  const fetchRacePreview = async () => {
+    try {
+      const response = await api.get('/api/admin/race-preview');
+      setRacePreview(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch the race weekend preview');
+    }
+  };
+
+  const handlePreviewSwitch = async (enabled: boolean) => {
+    setPreviewBusy(true);
+    setPreviewResult(null);
+    try {
+      const response = await api.put('/api/admin/race-preview', { enabled });
+      setRacePreview(response.data);
+      setPreviewResult(enabled ? 'Switched on: the Thursday job now sends the preview by itself.' : 'Switched off: nothing is sent by itself.');
+    } catch (err: any) {
+      setPreviewResult(err.response?.data?.error || 'Failed to change the switch');
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  const handlePreviewTest = async () => {
+    setPreviewBusy(true);
+    setPreviewResult(null);
+    try {
+      const response = await api.post('/api/admin/race-preview/test');
+      setPreviewResult(`Test of the ${response.data.raceName} preview sent to your own address. Nobody else got it.`);
+    } catch (err: any) {
+      setPreviewResult(err.response?.data?.error || 'The test mail could not be sent');
+    } finally {
+      setPreviewBusy(false);
     }
   };
 
@@ -1679,6 +1731,60 @@ const Admin = () => {
             })}
           </div>
         )}
+      </div>
+
+      {/* Race weekend preview: the Thursday mail with schedule, missing predictions and circuit */}
+      <div className="card-f1 mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">Race weekend preview</h2>
+            <p className="text-xs text-white/60 mt-1">
+              On Thursdays, from 08:00 UTC, every player who has not unsubscribed gets one mail for the race that starts
+              within 4 days: the schedule in Dutch time, which of their predictions are still missing, and the circuit
+              with its layout and lap length in km and miles. Everyone gets it once per weekend; a run that stops half
+              way is continued by the next hourly run. Switch it on when the test mail looks right.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={handlePreviewTest} disabled={previewBusy || !racePreview?.weekend} className="btn-f1-secondary text-sm py-2 px-4 disabled:opacity-50">
+              Send me a test
+            </button>
+            <button
+              onClick={() => handlePreviewSwitch(!racePreview?.autoOn)}
+              disabled={previewBusy || !racePreview}
+              className="btn-f1-secondary text-sm py-2 px-4 disabled:opacity-50"
+            >
+              {racePreview?.autoOn ? 'Switch off' : 'Switch on'}
+            </button>
+          </div>
+        </div>
+
+        {racePreview && (
+          <div className="space-y-2">
+            <div className="flex items-stretch bg-f1-blue">
+              <span className={`w-20 shrink-0 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider ${racePreview.autoOn ? 'bg-f1-blue-dark text-white' : 'bg-f1-yellow-500 text-black'}`}>
+                {racePreview.autoOn ? 'On' : 'Off'}
+              </span>
+              <p className="flex-1 min-w-0 px-4 py-2 text-sm text-white">
+                {racePreview.autoOn
+                  ? 'The Thursday job sends the preview by itself.'
+                  : 'The Thursday job does nothing until you switch it on.'}
+              </p>
+            </div>
+            <div className="flex items-stretch bg-f1-blue-dark">
+              <span className="w-20 shrink-0 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider bg-black/30 text-white/70">Due</span>
+              <p className="flex-1 min-w-0 px-4 py-2 text-sm text-white">
+                {racePreview.problem
+                  ? `Could not work out the weekend: ${racePreview.problem}`
+                  : racePreview.weekend
+                  ? `${racePreview.weekend.raceName}${racePreview.weekend.sprint ? ' (sprint weekend)' : ''}, lights out ${new Date(racePreview.weekend.raceStart).toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. ${racePreview.waiting} player${racePreview.waiting === 1 ? '' : 's'} waiting, ${racePreview.alreadySent} already had it.`
+                  : 'No race starts within the next 4 days.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {previewResult && <div className="mt-4 px-4 py-3 bg-f1-blue-dark text-white text-sm" role="status">{previewResult}</div>}
       </div>
 
       {/* Drivers who are not racing a weekend: out of the picker, their predictions reset */}

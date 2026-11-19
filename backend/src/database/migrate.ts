@@ -304,6 +304,26 @@ const runMigration = async () => {
     `);
     console.log('fia_documents ensured.');
 
+    // Thursday race weekend preview: the per-recipient log (so a re-run mails only who is missing) and
+    // the owner's on/off switch for sending it automatically
+    console.log('Checking for race_preview_log and app_settings tables...');
+    await query(`
+      CREATE TABLE IF NOT EXISTS race_preview_log (
+        race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (race_id, user_id)
+      )
+    `);
+    await query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('race_preview_log and app_settings ensured.');
+
     // Drop magic_links table (no longer needed - password auth only)
     console.log('Dropping magic_links table if it exists...');
     await query(`DROP TABLE IF EXISTS magic_links`);

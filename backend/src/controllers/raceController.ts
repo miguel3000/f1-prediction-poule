@@ -5,6 +5,7 @@ import * as jolpiService from '../services/jolpiService';
 import { fetchQualifying, storeQualifying, withAllDrivers, previousRaceOrder } from '../services/qualifyingService';
 import { getExcludedDriverIds } from '../services/driverExclusionService';
 import { activeSeason, listSeasons, seasonFromQuery, seasonToLoad } from '../services/season';
+import { weekendSessions } from '../services/weekendSchedule';
 
 // Get qualifying order for a race (with fallback to previous race results)
 export const getQualifyingOrder = async (req: Request, res: Response) => {
@@ -344,31 +345,12 @@ export const getRaceWeekends = async (req: Request, res: Response) => {
   try {
     const season = await seasonFromQuery(req.query.season);
 
-    const toIso = (s?: { date: string; time?: string }) => {
-      if (!s?.date) return null;
-      const time = s.time ?? '00:00:00Z';
-      const iso = `${s.date}T${time.endsWith('Z') ? time : `${time}Z`}`;
-      return Number.isNaN(Date.parse(iso)) ? null : new Date(iso).toISOString();
-    };
-
     const weekends: Record<number, Array<{ key: string; startsAt: string }>> = {};
 
     try {
       const calendar = await jolpiService.getRaces(season);
       for (const race of calendar) {
-        const entries: Array<[string, string | null]> = [
-          ['fp1', toIso(race.FirstPractice)],
-          ['fp2', toIso(race.SecondPractice)],
-          ['fp3', toIso(race.ThirdPractice)],
-          ['sprint_qualifying', toIso(race.SprintQualifying ?? race.SprintShootout)],
-          ['sprint', toIso(race.Sprint)],
-          ['qualifying', toIso(race.Qualifying)],
-          ['race', toIso({ date: race.date, time: race.time })],
-        ];
-        weekends[parseInt(race.round, 10)] = entries
-          .filter((e): e is [string, string] => e[1] !== null)
-          .map(([key, startsAt]) => ({ key, startsAt }))
-          .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+        weekends[parseInt(race.round, 10)] = weekendSessions(race);
       }
     } catch (error) {
       console.error('Weekend schedules from Jolpi failed:', error);

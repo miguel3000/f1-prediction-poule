@@ -2,6 +2,9 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { NewsletterContent } from '../newsletters/types';
 import { EmailLang, normalizeLang, et } from './emailI18n';
+import { CIRCUITS } from '../data/circuits';
+import type { SessionKey } from './weekendSchedule';
+import { circuitFactsText, dayKeyOf, dayMonthOf, shortWhenOf, timeOf, weekdayShort, whenOf } from './racePreviewFormat';
 
 dotenv.config();
 
@@ -931,6 +934,157 @@ export const sendNewsletterEmail = async (
     return true;
   } catch (error) {
     console.error('Error sending newsletter to', nickname, ':', error);
+    return false;
+  }
+};
+
+// ---- Thursday race weekend preview ------------------------------------------------------------
+// One mail per race weekend: when everything starts (Dutch time), which of your predictions are
+// still missing, and the circuit with its layout and lap length in km and miles. The session times
+// come from the official calendar, so a sprint weekend has other rows without any special case.
+export interface RacePreviewData {
+  raceName: string;
+  circuitId: string;
+  circuitName: string;
+  locality: string;
+  country: string;
+  sessions: Array<{ key: SessionKey; startsAt: Date }>;
+  // What this player can still predict this weekend: the sprint (only on sprint weekends) and the race
+  predictions: Array<{ kind: 'sprint' | 'race'; saved: boolean }>;
+  lockMinutes: number;
+}
+
+// Yellow with the background-image trick, so Gmail's forced dark mode cannot turn it olive (see EMAIL_YELLOW_BG_URL)
+const yellowCell = (style: string) =>
+  `bgcolor="${BRAND_YELLOW}" background="${EMAIL_YELLOW_BG_URL}" style="background-color: ${BRAND_YELLOW}; background-image: url('${EMAIL_YELLOW_BG_URL}'); ${style}"`;
+
+const MAP_VERSION = 1; // bump when the circuit images are redrawn (Cloudflare caches them)
+
+export const renderRacePreview = (
+  data: RacePreviewData,
+  nickname: string,
+  language?: string | null,
+  unsubscribeUrl?: string
+) => {
+  const lang = normalizeLang(language);
+  const race = data.sessions.find((x) => x.key === 'race');
+  const label = (key: SessionKey) => et(lang, `racePreview.${key}` as const);
+
+  // Sessions grouped under their Dutch calendar day
+  const days = new Map<string, Array<{ key: SessionKey; startsAt: Date }>>();
+  for (const session of data.sessions) {
+    const day = dayKeyOf(session.startsAt);
+    days.set(day, [...(days.get(day) ?? []), session]);
+  }
+  const schedule = [...days.values()]
+    .map((items) => {
+      const first = items[0].startsAt;
+      const rows = items
+        .map((item, i) => {
+          const blue = i % 2 === 0;
+          const bg = blue ? BRAND_BLUE : BRAND_NAVY;
+          const cls = blue ? 'op-blue-bg op-white-text' : 'op-white-text';
+          const cell = `bgcolor="${bg}" class="${cls}" style="background-color: ${bg} !important; color: #ffffff !important; padding: 11px 14px; font-size: 15px;"`;
+          return `<tr>
+            <td ${cell}>${escapeHtml(label(item.key))}</td>
+            <td ${cell} width="84" align="right"><strong>${timeOf(item.startsAt)}</strong></td>
+          </tr>`;
+        })
+        .join('');
+      return `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 0;">
+          <tr>
+            <td ${yellowCell('padding: 10px 0; text-align: center;')} width="56" align="center" class="op-black-text">
+              <span class="op-black-text" style="color: #000000 !important; font-weight: 800; font-size: 15px; text-transform: uppercase;">${escapeHtml(weekdayShort(first, lang))}</span>
+            </td>
+            <td bgcolor="${BRAND_NAVY}" style="background-color: ${BRAND_NAVY}; padding: 10px 14px;">
+              <span class="op-white-text" style="color: #ffffff !important; font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(dayMonthOf(first, lang))}</span>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>`;
+    })
+    .join('');
+
+  // Yellow = still to do, white on dark blue = done (the same chips as on the site)
+  const chips = data.predictions
+    .map((p) => {
+      const key = `racePreview.${p.kind}${p.saved ? 'Saved' : 'Todo'}` as const;
+      const style = 'padding: 6px 10px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em;';
+      const cell = p.saved
+        ? `bgcolor="${BRAND_NAVY}" style="background-color: ${BRAND_NAVY}; color: #ffffff; ${style}"`
+        : yellowCell(`color: #000000; ${style}`);
+      return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 6px;"><tr><td ${cell}>${escapeHtml(et(lang, key))}</td></tr></table>`;
+    })
+    .join('');
+
+  // The layout and the lap in km and miles, only for circuits we have both for
+  const facts = CIRCUITS[data.circuitId];
+  const text = facts ? circuitFactsText(facts, lang) : null;
+  const where = [data.circuitName, data.locality, data.country].filter(Boolean).join(', ');
+  const factCell = (title: string, top: string, bottom: string) => `
+    <td width="33%" valign="top" style="padding: 12px 8px 12px 14px;">
+      <span style="display: block; color: ${BRAND_NAVY}; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(title)}</span>
+      <span style="display: block; color: #222222; font-size: 15px; font-weight: 800; padding-top: 3px;">${escapeHtml(top)}</span>
+      <span style="display: block; color: #555555; font-size: 13px;">${bottom ? escapeHtml(bottom) : '&nbsp;'}</span>
+    </td>`;
+  const circuit = `
+    <p style="margin: 22px 0 8px; line-height: 1.5; font-size: 14px; color: #222222;">
+      <strong style="color: ${BRAND_NAVY}; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(et(lang, 'racePreview.circuit'))}</strong><br>${escapeHtml(where)}
+    </p>
+    ${
+      text
+        ? `<img src="${process.env.FRONTEND_URL}/circuits/${encodeURIComponent(data.circuitId)}.png?v=${MAP_VERSION}" width="600" alt="${escapeHtml(et(lang, 'racePreview.mapAlt', { circuit: data.circuitName }))}" style="display: block; width: 100%; max-width: 100%; height: auto; border: 0;" />
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f5f5" style="background-color: #f5f5f5;"><tr>
+      ${factCell(et(lang, 'racePreview.lapLength'), text.lapKm, text.lapMi)}
+      ${factCell(et(lang, 'racePreview.laps'), text.laps, '')}
+      ${factCell(et(lang, 'racePreview.distance'), text.distanceKm, text.distanceMi)}
+    </tr></table>`
+        : ''
+    }`;
+
+  const when = race ? whenOf(race.startsAt, lang) : '';
+  const short = race ? shortWhenOf(race.startsAt, lang) : '';
+  const subject = et(lang, 'racePreview.subject', { race: data.raceName, when: short })
+    .replace(/[\r\n]+/g, ' ')
+    .slice(0, 200);
+
+  return {
+    from: process.env.EMAIL_FROM,
+    subject,
+    html: emailDocument(
+      `
+      ${emailHeader}
+      ${emailBanner(et(lang, 'racePreview.banner', { race: data.raceName }), { bg: BRAND_YELLOW })}
+      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+      <p style="line-height: 1.5;">${et(lang, 'racePreview.intro', { when: escapeHtml(when) })}</p>
+      <p style="line-height: 1.5; font-size: 14px; color: #555555;">${escapeHtml(et(lang, 'racePreview.localTimes'))}</p>
+      <div style="margin-top: 14px;">${chips}</div>
+      ${schedule}
+      ${circuit}
+      <div style="margin-top: 24px;">${emailBanner(et(lang, 'racePreview.cta'), { url: process.env.FRONTEND_URL!, bg: BRAND_BLUE, color: '#ffffff' })}</div>
+      <p style="line-height: 1.5; font-size: 14px; color: #222222; margin: -8px 0 0;">${escapeHtml(et(lang, 'racePreview.close', { n: data.lockMinutes }))}</p>
+    `,
+      lang,
+      { footer: emailFooter(unsubscribeUrl, lang) }
+    ),
+  };
+};
+
+export const sendRacePreviewEmail = async (
+  email: string,
+  nickname: string,
+  language: string | null | undefined,
+  data: RacePreviewData,
+  unsubscribeUrl?: string
+): Promise<boolean> => {
+  const mail = renderRacePreview(data, nickname, language, unsubscribeUrl);
+  try {
+    await transporter.sendMail({ ...mail, to: recipient(nickname, email) });
+    console.log('Race weekend preview sent to:', nickname, `[${normalizeLang(language)}]`);
+    return true;
+  } catch (error) {
+    console.error('Error sending race weekend preview to', nickname, ':', error);
     return false;
   }
 };

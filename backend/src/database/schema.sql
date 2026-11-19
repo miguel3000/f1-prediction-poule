@@ -232,6 +232,22 @@ CREATE INDEX IF NOT EXISTS idx_email_log_status ON email_log(status, updated_at)
 ALTER TABLE email_log DROP COLUMN IF EXISTS recipient;
 UPDATE email_log SET payload = payload - 'email' WHERE status IN ('sent', 'skipped');
 
+-- Thursday race weekend preview: who has had it for which race, so a re-run (the job runs hourly on
+-- Thursdays) only mails whoever is still missing and nobody ever gets it twice. No addresses here.
+CREATE TABLE IF NOT EXISTS race_preview_log (
+  race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (race_id, user_id)
+);
+
+-- Owner-controlled switches (Pitlane). 'race_preview_auto' = 'on' lets the Thursday job send by itself.
+CREATE TABLE IF NOT EXISTS app_settings (
+  key VARCHAR(100) PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- The real starting grid (penalties applied), filled in shortly before lights out. Until it
 -- exists the prediction list follows the qualifying order.
 CREATE TABLE IF NOT EXISTS starting_grid (

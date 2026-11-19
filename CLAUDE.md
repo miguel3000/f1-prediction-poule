@@ -127,6 +127,7 @@ npm run predictions:remind-missed # Email users who haven't predicted, 1h before
 │   │   ├── App.tsx                  # Routes and layout
 │   │   └── main.tsx                 # Entry point
 │   └── tailwind.config.js
+├── tools/circuit-maps/              # builds backend/src/data/circuits.ts and frontend/public/circuits/*.png (see decisions.md "Circuit data")
 ├── docker-compose.yml               # PostgreSQL + app services
 ├── Dockerfile                       # Multi-stage build
 ├── crontab                          # Scheduled tasks
@@ -171,6 +172,7 @@ PostgreSQL with these main tables:
 - `group_members` - Who is in which group (PK `group_id, user_id`)
 - `driver_exclusions` - Drivers not racing a weekend (season, round, driver_id, optional stand-in); see `decisions.md` "Drivers not racing a weekend"
 - `fia_documents` / `fia_checks` - Weekend flags: every FIA decision document seen on a race weekend (and live-feed driver-list differences), what was read from it and whether the owner was emailed; one row per watcher run. See `decisions.md` "Weekend flags"
+- `race_preview_log` (who has had the Thursday preview for which race) and `app_settings` (owner switches, e.g. `race_preview_auto`); see `decisions.md` "Email"
 - `users.can_start_groups` (may start groups, Pitlane switch) and `users.plays_in_main` (appears in the main poule); see `decisions.md` "Groups"
 - Player points are summed per season from `predictions.points_earned` and `sprint_predictions.points_earned` (`services/seasonPoints.ts`); `users.total_points` is unused. Which season the app is in: `services/season.ts`. See `decisions.md` "Seasons"
 
@@ -212,6 +214,7 @@ Automated via crontab in Docker:
 - **Provisional results**: Every 5 min on Sundays 12:00-20:00 UTC
 - **Final results**: hourly 02:00-22:00 UTC on Sundays and Mondays, for provisional races 24 h or more old; the Pitlane's Run final results does it for one race on any day
 - **Starting grid**: every 5 min; every 15th minute it reads formula1.com's starting-grid page for a start 75 min to 30 h away, and OpenF1 as a fallback within 3 h of the start (the live feed fills it in the last hour)
+- **Race weekend preview**: hourly on Thursdays 08:00-20:00 UTC; mails each player who has not had it yet the schedule (Dutch time), their missing predictions and the circuit, for the main race starting within 4 days; does nothing while the Pitlane switch is off
 - **Weekend flags**: every 10 min; works from 6 days before a main race until 7 days after it, Check now in the Pitlane at any time (reads the FIA decision documents, emails the owner what probably changes predictions)
 
 ## Common Tasks
