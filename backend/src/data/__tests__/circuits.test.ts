@@ -24,9 +24,9 @@ test('every_circuit_has_a_layout_image_of_the_agreed_size', () => {
     assert.ok(fs.existsSync(file), `${id}.png is missing`);
     const png = fs.readFileSync(file);
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${id}.png is not a PNG`);
-    assert.equal(png.readUInt32BE(16), 1200, `${id}.png width`);
-    assert.equal(png.readUInt32BE(20), 600, `${id}.png height`);
-    assert.ok(png.length < 60_000, `${id}.png is ${png.length} bytes: too heavy for an email`);
+    assert.equal(png.readUInt32BE(16), 400, `${id}.png width`);
+    assert.equal(png.readUInt32BE(20), 400, `${id}.png height`);
+    assert.ok(png.length < 30_000, `${id}.png is ${png.length} bytes: too heavy for an email`);
   }
 });
 

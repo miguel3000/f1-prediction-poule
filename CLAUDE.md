@@ -128,6 +128,7 @@ npm run predictions:remind-missed # Email users who haven't predicted, 1h before
 │   │   └── main.tsx                 # Entry point
 │   └── tailwind.config.js
 ├── tools/circuit-maps/              # builds backend/src/data/circuits.ts and frontend/public/circuits/*.png (see decisions.md "Circuit data")
+├── tools/email-images/              # builds frontend/public/email-checkers.png (the flag strip in the race weekend preview)
 ├── docker-compose.yml               # PostgreSQL + app services
 ├── Dockerfile                       # Multi-stage build
 ├── crontab                          # Scheduled tasks

@@ -258,6 +258,8 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   write anything unless every traced lap is within 3 % of the official length and laps times length is
   within 0.2 % of the race distance. A circuit that is missing from the file simply gets a mail without
   the picture and numbers; run the script when one joins the calendar. Miles are computed from the km.
+  The layouts are square 400 px tiles (shown at 116 px in the mail). Whenever an email image changes,
+  bump `MAP_VERSION` or `CHECKERS_VERSION` in `emailService.ts`: Cloudflare caches them under the URL.
 
 ### Weekend flags
 
@@ -325,14 +327,20 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   automatically (5 attempts) and visible in the Pitlane. New mails of this kind use `sendLogged`.
 - **Race weekend preview** (Thursdays; `services/racePreviewService.ts`, `scripts/sendRacePreviews.ts`,
   `renderRacePreview` in `emailService.ts`): one mail per weekend to every player who has not unsubscribed
-  from announcements, for the next main race that starts within 4 days. It has the schedule in **Dutch
-  time** for everyone (the sessions come from the official calendar via `services/weekendSchedule.ts`,
-  the same source as the Races page, so a sprint weekend shows Sprint Qualifying and Sprint without a
-  special case; start times only, the calendar has no end times), a line saying whether the player's own
-  race and sprint predictions are saved, the circuit with its layout and the lap length in km and miles,
-  laps and race distance, and when predictions close. Under the Dutch-time remark it tells players they can
-  reply or use the Pit Wall (if they have access) to ask for start times in their own time zone; nothing
-  stores a time zone yet. The hourly job (Thursday 08:00-20:00 UTC) only mails players with no row in
+  from announcements, for the next main race that starts within 4 days. **Layout** (chosen by the owner
+  from five mockups, "Lights out"): a yellow banner with the race name, a yellow and dark blue checkered
+  flag strip under it (`frontend/public/email-checkers.png`, an image so the squares stay square at any
+  width), then the start of the race as the hero (big time, day, "Dutch time"); under that the player's
+  own prediction chips (race, and sprint on sprint weekends) and the button; then the rest of the weekend
+  as a plain list, the localised-times note, and the circuit as a square layout thumbnail next to the lap
+  length in km and miles, laps and race distance; the signature and unsubscribe link close it. All times are
+  **Dutch time** for everyone (the sessions come from the official calendar via
+  `services/weekendSchedule.ts`, the same source as the Races page, so a sprint weekend shows Sprint
+  Qualifying and Sprint without a special case; start times only, the calendar has no end times). The note
+  under the schedule tells players they can reply or use the Pit Wall (if they have access) to ask for
+  start times in their own time zone; nothing stores a time zone yet. The signature sits inside the
+  padded part of this mail (it calls `emailDocument` with `signature: false`) so it lines up with the text.
+  The hourly job (Thursday 08:00-20:00 UTC) only mails players with no row in
   `race_preview_log`, so it is safe to run again and a failed send is retried. **It does nothing until the
   owner switches it on** (Pitlane card "Race weekend preview", stored in `app_settings`, off by default);
   the card also has "Send me a test" (to the owner's own address, recorded nowhere). By hand:
@@ -613,3 +621,4 @@ Why: <two or three lines, sources named>
 | 2026-11-09 | Newsletters are registered by name and the send script requires `--newsletter <name>`; a "Did you know?" tour of the phone menu is the first new one | The script was hard-wired to the October newsletter, so running it again would have re-sent that one |
 | 2026-11-11 | Tapping a player's name opens a player page: their predictions against the results, every pick marked exact / one place off / miss, optionally next to yours; built for a phone first | The owner wanted a better overview of what each player predicted, with scores and correctness, so players can compare |
 | 2026-11-19 | A Thursday race weekend preview mail: schedule in Dutch time, your missing predictions, the circuit with layout and lap length in km and miles; it sends nothing until the owner switches it on in the Pitlane | The owner wanted a weekend overview like the one shared in the group chat, in our branding, sent every Thursday before the race |
+| 2026-11-19 | The race weekend preview uses the "Lights out" layout (start time as the hero, button right under it, the rest of the weekend as a plain list) with a yellow checkered flag strip under the banner; circuit layouts became square thumbnails | The owner looked at five different layouts and chose the first; asked for racing flag blocks in yellow under the race weekend banner |

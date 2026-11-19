@@ -4,7 +4,7 @@ import { NewsletterContent } from '../newsletters/types';
 import { EmailLang, normalizeLang, et } from './emailI18n';
 import { CIRCUITS } from '../data/circuits';
 import type { SessionKey } from './weekendSchedule';
-import { circuitFactsText, dayKeyOf, dayMonthOf, shortWhenOf, timeOf, weekdayShort, whenOf } from './racePreviewFormat';
+import { circuitFactsText, dayKeyOf, dayLongOf, shortWhenOf, timeOf, weekdayShort } from './racePreviewFormat';
 
 dotenv.config();
 
@@ -958,8 +958,16 @@ export interface RacePreviewData {
 const yellowCell = (style: string) =>
   `bgcolor="${BRAND_YELLOW}" background="${EMAIL_YELLOW_BG_URL}" style="background-color: ${BRAND_YELLOW}; background-image: url('${EMAIL_YELLOW_BG_URL}'); ${style}"`;
 
-const MAP_VERSION = 1; // bump when the circuit images are redrawn (Cloudflare caches them)
+const MAP_VERSION = 2; // bump when the circuit images are redrawn (Cloudflare caches them); 2 = the square tiles
+const CHECKERS_VERSION = 1; // the same for email-checkers.png
 
+// A number and its unit stay on one line
+const noBreak = (text: string): string => escapeHtml(text).replace(/ /g, '&nbsp;');
+
+// The mail leads with the answer: a yellow banner, a checkered flag strip, then the start time of the
+// race as the hero. Your prediction status and the button come right under it, then the rest of the
+// weekend as a plain list and the circuit. The signature and footer sit inside the padded part (so
+// they line up with the text above), which is why this mail calls emailDocument with signature: false.
 export const renderRacePreview = (
   data: RacePreviewData,
   nickname: string,
@@ -969,48 +977,39 @@ export const renderRacePreview = (
   const lang = normalizeLang(language);
   const race = data.sessions.find((x) => x.key === 'race');
   const label = (key: SessionKey) => et(lang, `racePreview.${key}` as const);
+  const font = 'font-family: Arial, sans-serif;';
 
-  // Sessions grouped under their Dutch calendar day
-  const days = new Map<string, Array<{ key: SessionKey; startsAt: Date }>>();
-  for (const session of data.sessions) {
-    const day = dayKeyOf(session.startsAt);
-    days.set(day, [...(days.get(day) ?? []), session]);
-  }
-  const schedule = [...days.values()]
-    .map((items) => {
-      const first = items[0].startsAt;
-      const rows = items
-        .map((item, i) => {
-          const blue = i % 2 === 0;
-          const bg = blue ? BRAND_BLUE : BRAND_NAVY;
-          const cls = blue ? 'op-blue-bg op-white-text' : 'op-white-text';
-          const cell = `bgcolor="${bg}" class="${cls}" style="background-color: ${bg} !important; color: #ffffff !important; padding: 11px 14px; font-size: 15px;"`;
-          return `<tr>
-            <td ${cell}>${escapeHtml(label(item.key))}</td>
-            <td ${cell} width="84" align="right"><strong>${timeOf(item.startsAt)}</strong></td>
-          </tr>`;
-        })
-        .join('');
-      return `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 0;">
-          <tr>
-            <td ${yellowCell('padding: 10px 0; text-align: center;')} width="56" align="center" class="op-black-text">
-              <span class="op-black-text" style="color: #000000 !important; font-weight: 800; font-size: 15px; text-transform: uppercase;">${escapeHtml(weekdayShort(first, lang))}</span>
-            </td>
-            <td bgcolor="${BRAND_NAVY}" style="background-color: ${BRAND_NAVY}; padding: 10px 14px;">
-              <span class="op-white-text" style="color: #ffffff !important; font-weight: 800; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(dayMonthOf(first, lang))}</span>
-            </td>
-          </tr>
-        </table>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>`;
-    })
-    .join('');
+  // The banner, the checkered flag strip and the hero. Dark blue is a plain cell colour (like the schedule rows
+  // of the other mails); yellow goes through yellowCell so forced dark mode cannot turn it olive.
+  const hero = race
+    ? `
+      <tr>
+        <td bgcolor="${BRAND_NAVY}" style="background-color: ${BRAND_NAVY}; padding: 26px 22px 30px; ${font}">
+          <div style="color: ${BRAND_YELLOW}; font-size: 13px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;">${escapeHtml(et(lang, 'racePreview.lightsOut'))}</div>
+          <div class="op-white-text" style="color: #ffffff !important; font-size: 80px; line-height: 1; font-weight: 900; letter-spacing: -0.02em; padding: 6px 0 10px;">${timeOf(race.startsAt)}</div>
+          <div class="op-white-text" style="color: #ffffff !important; font-size: 17px;">${escapeHtml(dayLongOf(race.startsAt, lang))} &middot; ${escapeHtml(et(lang, 'racePreview.dutchTime'))}</div>
+        </td>
+      </tr>`
+    : '';
+  const top = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td ${yellowCell(`padding: 10px 22px; ${font}`)} class="op-black-text">
+          <span class="op-black-text" style="color: #000000 !important; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">${escapeHtml(et(lang, 'racePreview.banner', { race: data.raceName }))}</span>
+        </td>
+      </tr>
+      <tr>
+        <td bgcolor="${BRAND_NAVY}" style="background-color: ${BRAND_NAVY}; line-height: 0; font-size: 0;">
+          <img src="${process.env.FRONTEND_URL}/email-checkers.png?v=${CHECKERS_VERSION}" width="600" alt="" style="display: block; width: 100%; max-width: 100%; height: auto; border: 0;" />
+        </td>
+      </tr>${hero}
+    </table>`;
 
   // Yellow = still to do, white on dark blue = done (the same chips as on the site)
   const chips = data.predictions
     .map((p) => {
       const key = `racePreview.${p.kind}${p.saved ? 'Saved' : 'Todo'}` as const;
-      const style = 'padding: 6px 10px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em;';
+      const style = `padding: 6px 10px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; ${font}`;
       const cell = p.saved
         ? `bgcolor="${BRAND_NAVY}" style="background-color: ${BRAND_NAVY}; color: #ffffff; ${style}"`
         : yellowCell(`color: #000000; ${style}`);
@@ -1018,55 +1017,75 @@ export const renderRacePreview = (
     })
     .join('');
 
-  // The layout and the lap in km and miles, only for circuits we have both for
+  // The rest of the weekend (the race itself is the hero), the weekday only on the first row of each Dutch calendar day
+  const days = new Map<string, Array<{ key: SessionKey; startsAt: Date }>>();
+  for (const session of data.sessions.filter((x) => x.key !== 'race')) {
+    const day = dayKeyOf(session.startsAt);
+    days.set(day, [...(days.get(day) ?? []), session]);
+  }
+  const rowStyle = `border-top: 1px solid #e3e3e3; padding: 9px 0; color: #222222; ${font}`;
+  const rows = [...days.values()]
+    .flatMap((items) =>
+      items.map(
+        (item, i) => `
+        <tr>
+          <td width="46" style="${rowStyle} font-size: 14px;">${i === 0 ? `<strong style="color: ${BRAND_NAVY}; text-transform: uppercase; letter-spacing: 0.04em;">${escapeHtml(weekdayShort(item.startsAt, lang))}</strong>` : '&nbsp;'}</td>
+          <td width="56" style="${rowStyle} font-size: 15px;"><strong>${timeOf(item.startsAt)}</strong></td>
+          <td style="${rowStyle} font-size: 15px;">${escapeHtml(label(item.key))}</td>
+        </tr>`
+      )
+    )
+    .join('');
+
+  // The layout as a thumbnail with the facts next to it, only for circuits we have both for
   const facts = CIRCUITS[data.circuitId];
   const text = facts ? circuitFactsText(facts, lang) : null;
-  const where = [data.circuitName, data.locality, data.country].filter(Boolean).join(', ');
-  const factCell = (title: string, top: string, bottom: string) => `
-    <td width="33%" valign="top" style="padding: 12px 8px 12px 14px;">
-      <span style="display: block; color: ${BRAND_NAVY}; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(title)}</span>
-      <span style="display: block; color: #222222; font-size: 15px; font-weight: 800; padding-top: 3px;">${escapeHtml(top)}</span>
-      <span style="display: block; color: #555555; font-size: 13px;">${bottom ? escapeHtml(bottom) : '&nbsp;'}</span>
-    </td>`;
   const circuit = `
-    <p style="margin: 22px 0 8px; line-height: 1.5; font-size: 14px; color: #222222;">
-      <strong style="color: ${BRAND_NAVY}; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(et(lang, 'racePreview.circuit'))}</strong><br>${escapeHtml(where)}
-    </p>
-    ${
-      text
-        ? `<img src="${process.env.FRONTEND_URL}/circuits/${encodeURIComponent(data.circuitId)}.png?v=${MAP_VERSION}" width="600" alt="${escapeHtml(et(lang, 'racePreview.mapAlt', { circuit: data.circuitName }))}" style="display: block; width: 100%; max-width: 100%; height: auto; border: 0;" />
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f5f5" style="background-color: #f5f5f5;"><tr>
-      ${factCell(et(lang, 'racePreview.lapLength'), text.lapKm, text.lapMi)}
-      ${factCell(et(lang, 'racePreview.laps'), text.laps, '')}
-      ${factCell(et(lang, 'racePreview.distance'), text.distanceKm, text.distanceMi)}
-    </tr></table>`
-        : ''
-    }`;
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        ${
+          text
+            ? `<td width="116" valign="top"><img src="${process.env.FRONTEND_URL}/circuits/${encodeURIComponent(data.circuitId)}.png?v=${MAP_VERSION}" width="116" height="116" alt="${escapeHtml(et(lang, 'racePreview.mapAlt', { circuit: data.circuitName }))}" style="display: block; width: 116px; height: 116px; border: 0;" /></td>`
+            : ''
+        }
+        <td valign="top" style="${text ? 'padding-left: 16px; ' : ''}font-size: 14px; line-height: 1.5; color: #222222; ${font}">
+          <strong style="color: ${BRAND_NAVY}; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(et(lang, 'racePreview.circuit'))}</strong><br>
+          ${escapeHtml(data.circuitName)}<br>
+          <span style="color: #555555;">${escapeHtml([data.locality, data.country].filter(Boolean).join(', '))}</span>${
+            text
+              ? `<br>${et(lang, 'racePreview.lapFacts', { km: noBreak(text.lapKm), mi: noBreak(text.lapMi) })}<br><span style="color: #555555;">${et(lang, 'racePreview.raceFacts', { laps: text.laps, km: noBreak(text.distanceKm), mi: noBreak(text.distanceMi) })}</span>`
+              : ''
+          }
+        </td>
+      </tr>
+    </table>`;
 
-  const when = race ? whenOf(race.startsAt, lang) : '';
   const short = race ? shortWhenOf(race.startsAt, lang) : '';
   const subject = et(lang, 'racePreview.subject', { race: data.raceName, when: short })
     .replace(/[\r\n]+/g, ' ')
     .slice(0, 200);
 
+  const body = `
+    <p style="margin: 0 0 14px; font-size: 16px;">${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
+    <p style="margin: 0 0 18px; line-height: 1.5; font-size: 15px;">${escapeHtml(et(lang, 'racePreview.intro'))}</p>
+    <div style="margin: 0 0 10px;">${chips}</div>
+    ${emailBanner(et(lang, 'racePreview.cta'), { url: process.env.FRONTEND_URL!, bg: BRAND_BLUE, color: '#ffffff' })}
+    <p style="line-height: 1.5; font-size: 14px; color: #222222; margin: -8px 0 24px;">${escapeHtml(et(lang, 'racePreview.close', { n: data.lockMinutes }))}</p>
+    <p style="margin: 0 0 4px; color: ${BRAND_NAVY}; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;">${escapeHtml(et(lang, 'racePreview.alsoThisWeekend'))}</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>
+    <p style="margin: 16px 0 24px; line-height: 1.5; font-size: 14px; color: #555555;">${escapeHtml(et(lang, 'racePreview.localTimes'))}</p>
+    ${circuit}
+    ${emailSignature()}
+    ${emailFooter(unsubscribeUrl, lang)}`;
+
   return {
     from: process.env.EMAIL_FROM,
     subject,
     html: emailDocument(
-      `
-      ${emailHeader}
-      ${emailBanner(et(lang, 'racePreview.banner', { race: data.raceName }), { bg: BRAND_YELLOW })}
-      <p>${et(lang, 'common.hello', { name: escapeHtml(nickname) })}</p>
-      <p style="line-height: 1.5;">${et(lang, 'racePreview.intro', { when: escapeHtml(when) })}</p>
-      <p style="line-height: 1.5; font-size: 14px; color: #555555;">${escapeHtml(et(lang, 'racePreview.localTimes'))}</p>
-      <div style="margin-top: 14px;">${chips}</div>
-      ${schedule}
-      ${circuit}
-      <div style="margin-top: 24px;">${emailBanner(et(lang, 'racePreview.cta'), { url: process.env.FRONTEND_URL!, bg: BRAND_BLUE, color: '#ffffff' })}</div>
-      <p style="line-height: 1.5; font-size: 14px; color: #222222; margin: -8px 0 0;">${escapeHtml(et(lang, 'racePreview.close', { n: data.lockMinutes }))}</p>
-    `,
+      `${top}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding: 22px 22px 26px; ${font}">${body}</td></tr></table>`,
       lang,
-      { footer: emailFooter(unsubscribeUrl, lang) }
+      { signature: false }
     ),
   };
 };

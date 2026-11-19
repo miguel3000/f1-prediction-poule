@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { timeOf, dayKeyOf, whenOf, shortWhenOf, weekdayShort, dayMonthOf, kmToMiles, circuitFactsText } from '../racePreviewFormat';
+import { timeOf, dayKeyOf, shortWhenOf, weekdayShort, dayLongOf, kmToMiles, circuitFactsText } from '../racePreviewFormat';
 
 test('times_are_dutch_time_in_winter_and_summer', () => {
   assert.equal(timeOf(new Date('2026-11-20T00:30:00Z')), '01:30'); // CET, UTC+1
@@ -17,13 +17,11 @@ test('midnight_is_00_not_24_and_a_late_session_belongs_to_the_next_dutch_day', (
 
 test('the_race_start_reads_naturally_in_both_languages', () => {
   const race = new Date('2026-11-22T04:00:00Z');
-  assert.equal(whenOf(race, 'en'), 'Sunday 22 November 05:00');
-  assert.equal(whenOf(race, 'nl'), 'zondag 22 november 05:00');
   assert.equal(shortWhenOf(race, 'en'), 'Sun 05:00');
   assert.equal(shortWhenOf(race, 'nl'), 'zo 05:00');
   assert.equal(weekdayShort(race, 'nl'), 'zo');
-  assert.equal(dayMonthOf(race, 'en'), '22 November');
-  assert.equal(dayMonthOf(race, 'nl'), '22 november');
+  assert.equal(dayLongOf(race, 'en'), 'Sunday 22 November');
+  assert.equal(dayLongOf(race, 'nl'), 'zondag 22 november');
 });
 
 test('kilometres_become_miles', () => {

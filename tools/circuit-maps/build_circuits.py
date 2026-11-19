@@ -39,9 +39,10 @@ CIRCUITS = {
     'vegas': ('las-vegas', 1274), 'losail': ('qatar', 1275), 'yas_marina': ('united-arab-emirates', 1276),
 }
 
-W, H, SS = 1200, 600, 3
+# Square tiles: the mail shows the layout as a small thumbnail next to the circuit facts (about 116 px wide, so 400 px is plenty even on a phone)
+W, H, SS = 400, 400, 3
 NAVY, YELLOW, WHITE = (0, 82, 119), (255, 216, 26), (255, 255, 255)
-MARGIN, LINE, TICK = 96, 15, 46
+MARGIN, LINE, TICK = 50, 12, 36
 
 
 def fetch(url, wait=0.0, retries=6):

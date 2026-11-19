@@ -20,12 +20,9 @@ export const dayKeyOf = (date: Date): string => part(date, 'en-CA', { year: 'num
 
 export const weekdayShort = (date: Date, lang: EmailLang): string => part(date, LOCALES[lang], { weekday: 'short' });
 
-// "20 November" / "20 november"
-export const dayMonthOf = (date: Date, lang: EmailLang): string => part(date, LOCALES[lang], { day: 'numeric', month: 'long' });
-
-// "Sunday 22 November 05:00" / "zondag 22 november 05:00"
-export const whenOf = (date: Date, lang: EmailLang): string =>
-  `${part(date, LOCALES[lang], { weekday: 'long', day: 'numeric', month: 'long' })} ${timeOf(date)}`;
+// "Sunday 22 November" / "zondag 22 november"
+export const dayLongOf = (date: Date, lang: EmailLang): string =>
+  part(date, LOCALES[lang], { weekday: 'long', day: 'numeric', month: 'long' });
 
 // "Sun 05:00" / "zo 05:00", short enough for a subject line
 export const shortWhenOf = (date: Date, lang: EmailLang): string => `${weekdayShort(date, lang)} ${timeOf(date)}`;
