@@ -18,6 +18,7 @@ import { meta } from './meta';
 import { tutorial } from './tutorial';
 import { groups } from './groups';
 import { player } from './player';
+import { seo } from './seo';
 
 // One flat dictionary built from per-area files (common, auth, ...), so every
 // key is "area.name" and a missing Dutch key is a compile error.
@@ -42,4 +43,5 @@ export const en = {
   ...tutorial,
   ...groups,
   ...player,
+  ...seo,
 };

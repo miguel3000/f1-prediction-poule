@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { seoContent } from './vite.seo'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), seoContent()],
   server: {
     host: true,
     port: 3000,

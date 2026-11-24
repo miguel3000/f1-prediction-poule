@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../i18n/LanguageContext';
 import { ordinal } from '../i18n/format';
 import Rich from '../components/Rich';
+import { MAIN_POINTS, SPRINT_POINTS } from '../data/points';
 
 // Racing-themed SVG Icons
 const ClipboardIcon = () => (
@@ -60,8 +61,6 @@ const HelpCircleIcon = () => (
   </svg>
 );
 
-const MAIN_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-const SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1];
 
 const Rules = () => {
   const { t, lang } = useLang();

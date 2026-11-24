@@ -1,9 +1,12 @@
 import fs from 'fs';
+import { dirname } from 'path';
+import { loadSeoContent, renderBody, renderStructuredData, SEO_CONTENT_CSS, SITE } from './seoContent';
 
 // Per-page <head> values, applied to index.html on the server so crawlers and
 // link-preview bots (which often do not run JavaScript) see the right title,
 // description and language. Keep the wording in step with
 // frontend/src/i18n/locales/{en,nl}/meta.ts, which the app applies client-side.
+// The page text and structured data come from seo-content.json (seoContent.ts).
 
 export type SeoLang = 'en' | 'nl';
 
@@ -11,8 +14,6 @@ interface PageMeta {
   title: Record<SeoLang, string>;
   desc: Record<SeoLang, string>;
 }
-
-const SITE = 'https://pouleposition.nl';
 
 const PUBLIC_PAGES: Record<string, PageMeta> = {
   '/': {
@@ -72,11 +73,17 @@ export const pickLang = (queryLang: unknown, acceptLanguage: string | undefined)
 
 const normalizePath = (path: string) => (path.length > 1 ? path.replace(/\/+$/, '') : path);
 
-let template: string | null = null;
+const templates = new Map<string, string>();
 const loadTemplate = (indexPath: string) => {
-  if (template === null) template = fs.readFileSync(indexPath, 'utf8');
+  let template = templates.get(indexPath);
+  if (template === undefined) {
+    template = fs.readFileSync(indexPath, 'utf8');
+    templates.set(indexPath, template);
+  }
   return template;
 };
+
+const IMAGE_ALT_NL = 'Poule Position-logo – voorspel de F1-uitslag, versla je vrienden';
 
 // Dutch pages live under /nl (/nl, /nl/tutorial, ...) so that search engines, which crawl without
 // a language, can index the Dutch version separately. English stays at the plain paths.
@@ -116,6 +123,21 @@ export const renderIndex = (indexPath: string, rawPath: string, requestLang: Seo
     setAttr(/(<meta name="description" content=")[^"]*(")/, desc);
     setAttr(/(<meta property="og:description" content=")[^"]*(")/, desc);
     setAttr(/(<meta name="twitter:description" content=")[^"]*(")/, desc);
+
+    if (lang === 'nl') setAttr(/(<meta property="og:image:alt" content=")[^"]*(")/, IMAGE_ALT_NL);
+
+    // The text of the page for bots that do not run JavaScript (the app replaces it once it loads), and
+    // structured data in the page's own language instead of the one English block of the shell.
+    const content = loadSeoContent(dirname(indexPath));
+    if (content) {
+      const body = renderBody(content, path, lang);
+      if (body) {
+        html = html.replace('<div id="root"></div>', () => `<div id="root">${body}</div>`);
+        html = html.replace('</head>', () => `    <style id="seo-content-style">\n${SEO_CONTENT_CSS}\n    </style>\n  </head>`);
+      }
+      const structured = renderStructuredData(content, path, lang, prefixed.lang ?? 'en');
+      if (structured) html = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, () => structured);
+    }
 
     // Tell search engines the English and Dutch versions belong together.
     const alternates = [

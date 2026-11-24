@@ -4,13 +4,12 @@ import { AuthContext } from '../context/AuthContext';
 import { useLang } from '../i18n/LanguageContext';
 import Rich from '../components/Rich';
 import { getTutorialExample, TutorialExample } from '../services/api';
+import { MAIN_POINTS, SPRINT_POINTS } from '../data/points';
 
 // The game, step by step, with examples. The illustrations are built from the same
 // pieces as the real prediction screen (yellow car-number square + blue name bar), and
 // the "try it" calculator uses exactly the scoring rules the site scores with.
 
-const MAIN_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-const SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1];
 
 // ── building blocks ────────────────────────────────────────────────────────
 const StepHeader = ({ n, title }: { n: number; title: string }) => (

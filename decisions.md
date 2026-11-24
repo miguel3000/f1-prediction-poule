@@ -403,6 +403,17 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   that visitor; the language switch leaves a `/nl` address when English is chosen; Dutch share
   links use the `/nl` address. A new public page needs both addresses in `sitemap.xml`. `pouleposition.nl` is the one canonical address; `f1.miguelm.nl` only redirects (301)
   until the user removes it.
+- **Text for bots that do not run JavaScript** (most AI crawlers; the app is a React single-page app, so
+  the HTML shell alone is an empty `<div id="root">`): the server puts the real text of every public page
+  inside that div (React replaces it when the app loads), in the page's own language, with its own
+  structured data (`WebSite` and `WebApplication` on the home page; `WebPage` and `BreadcrumbList` on the
+  others; `FAQPage` where the page has questions and answers), and serves `/llms.txt` (index) and
+  `/llms-full.txt` (all the text, English then Dutch). Nothing is written twice: the text is the pages' own
+  locale strings, listed in `frontend/src/seo/outline.ts`, turned into `dist/seo-content.json` by the build
+  (`frontend/vite.seo.ts`, which **fails the build** on a missing key or a leftover `{placeholder}`) and
+  rendered by `backend/src/utils/seoContent.ts`. The `llms.txt` intro lines (free, English and Dutch,
+  independent, what is behind a login) are the only wording kept in the backend. Pages behind a login get
+  none of this and stay `noindex`. Not cloaking: a visitor sees the same text once the app has loaded.
 - **Copy**: write from the player's side ("Your prediction is saved"), say what happens, no
   jargon, no apologies in error messages.
 
@@ -482,8 +493,13 @@ export const sendThing = async (email: string, nickname: string, language?: stri
    `PUBLIC_PAGES` in `frontend/src/components/PageMeta.tsx`; `frontend/public/sitemap.xml`.
 4. Menu or footer entry in `components/Navigation.tsx` (and `Footer.tsx`).
 5. Add the path to `SHAREABLE` in `frontend/src/utils/share.ts` and both the English and the `/nl` address to `frontend/public/sitemap.xml` (with the hreflang alternates).
-6. Check at 375 and 320 px, both languages, and that a logged-out visit works.
-A page behind a login: wrap in `<ProtectedRoute>`, no sitemap or seoMeta entry.
+6. Add the page to `SEO_PAGES` in `frontend/src/seo/outline.ts`: its title and description keys, then
+   its headings, paragraphs and lists as **keys of the locale files** (not new wording), ending with `NAV`.
+   That is what bots without JavaScript read, and what `/llms.txt` lists. A typo in a key does not
+   compile; a key with a `{placeholder}` fails `npm run build`.
+7. Check at 375 and 320 px, both languages, and that a logged-out visit works. Then
+   `curl -A GPTBot https://pouleposition.nl/<page>` shows the text inside `<div id="root">`.
+A page behind a login: wrap in `<ProtectedRoute>`, no sitemap, seoMeta or outline entry.
 
 ### 8.3 A new database table
 Both places, idempotent:
@@ -641,3 +657,4 @@ Why: <two or three lines, sources named>
 | 2026-11-19 | The checkered flag strip has an odd number of squares (33) so its left end and right end are the same | The owner saw the left end start with a gap while the right end finished on a full square, and wanted both ends even with whole square blocks |
 | 2026-11-20 | The race weekend preview switch is on: the Thursday job sends by itself from 26 Nov | The owner asked for it to run for the Qatar weekend; Las Vegas had already been sent by hand to all 15 players |
 | 2026-11-24 | Every mail gets a plain-text part, and announcement mails get `List-Unsubscribe` one-click headers (the unsubscribe endpoint accepts POST) | Players reported the mails land in spam folders; an HTML-only mail without those headers is one of the things spam filters mark down |
+| 2026-11-24 | Public pages carry their real text in the HTML for bots that do not run JavaScript, with structured data per page in its own language, plus `/llms.txt` and `/llms-full.txt`; all of it comes from the pages' own locale strings | AI crawlers only saw an empty page (the app is client-rendered), so the rules and tutorial were invisible to them; the owner asked for better SEO and a clear, simple structure for AI bots |

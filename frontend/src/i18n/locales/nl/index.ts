@@ -19,6 +19,7 @@ import { meta } from './meta';
 import { tutorial } from './tutorial';
 import { groups } from './groups';
 import { player } from './player';
+import { seo } from './seo';
 
 export const nl: Record<keyof typeof en, string> = {
   ...common,
@@ -41,4 +42,5 @@ export const nl: Record<keyof typeof en, string> = {
   ...tutorial,
   ...groups,
   ...player,
+  ...seo,
 };

@@ -24,6 +24,7 @@ import groupRoutes from './routes/groups';
 import { startLiveTimingIngest } from './services/liveTimingService';
 import { startEmailRetries } from './services/emailLog';
 import { pickLang, renderIndex } from './utils/seoMeta';
+import { llmsRouter } from './routes/llms';
 
 dotenv.config();
 
@@ -146,6 +147,9 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// llms.txt and llms-full.txt: the public pages as plain text for language models
+app.use(llmsRouter(path.join(__dirname, '../frontend')));
 
 // Serve static files from React build (after API routes)
 // index: false so '/' goes through the per-page <head> rendering below instead.
