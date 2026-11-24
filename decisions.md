@@ -353,8 +353,10 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   `...unsubscribeOptions(url)` into its options: that adds `List-Unsubscribe` and
   `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, and `POST /api/auth/unsubscribe?token=` accepts
   what a mail app sends (same token and effect as the link). Mail you cannot opt out of gets neither.
-  What code cannot fix is DNS: mail leaves through `mail.antagonist.nl` (shared IP) and `pouleposition.nl`
-  has SPF and a `p=reject` DMARC but **no DKIM key** (checked 2026-11-20); see section 9.
+  Authentication is fine (verified 2026-11-24 from the headers of a received preview): the app hands the
+  mail to Antagonist over authenticated SMTP, Antagonist's outbound filter (`195.211.72.x`, inside the SPF
+  range, listed at dnswl.org) signs it with DKIM selector `whs1` (a CNAME in our DNS) and sends it on;
+  SPF, DKIM and DMARC all pass. So spam placement is not an authentication problem; see section 9.
 - Tokens: unsubscribe and reset tokens carry a `purpose` and are rejected as login sessions.
   Reset tokens last 1 hour and die when the password changes.
 
@@ -600,11 +602,14 @@ Why: <two or three lines, sources named>
 - A message to the owner through the Pit Wall needs Pit Wall access, so a player without it has no
   way to report something inside the app (they can still mail kimi@pouleposition.nl). The owner
   decides whether the message form should open to every player.
-- **DKIM is not set up** for `pouleposition.nl` (no key found at about 25 usual selectors, 2026-11-20), so
-  mail leaves unsigned from a shared hosting IP and lands in spam for some players. Fix is outside the
-  code: switch DKIM on at Antagonist and publish the TXT record in Cloudflare, or send through a
-  transactional provider (only `SMTP_*` change). Also worth adding `rua=mailto:` to the DMARC record to
-  get failure reports. The owner decides which route.
+- **Mail landing in spam for some players: cause not found yet.** SPF, DKIM (`whs1`, signed by Antagonist's
+  outbound filter) and DMARC pass, and a preview delivered to the owner's own mailbox scored -2.8 in
+  SpamAssassin (spam from 7.5). That mailbox is on the same provider, so it says nothing about Gmail,
+  Outlook or iCloud. What is needed is the "Show original" header of a spam-filed copy at the player's
+  own provider, plus which providers it concerns. Ideas, none verified: add `rua=mailto:` to the DMARC
+  record (Gmail then reports what it did with our mail), mail-tester.com for a content and blocklist
+  score, ask players to mark it "not spam". (Written wrongly on 2026-11-20: "no DKIM", because only
+  generic selector names were looked up; the real one is `whs1`.)
 - Race weekend preview: times are Dutch time for everyone; a player who wants their own time zone has to
   ask (reply or Pit Wall). The Pit Wall needs access, so the mail says "if you have access". Circuit
   facts are formula1.com's; they were not cross-checked against a second source (laps times length
@@ -656,5 +661,5 @@ Why: <two or three lines, sources named>
 | 2026-11-19 | The race weekend preview uses the "Lights out" layout (start time as the hero, button right under it, the rest of the weekend as a plain list) with a yellow checkered flag strip under the banner; circuit layouts became square thumbnails | The owner looked at five different layouts and chose the first; asked for racing flag blocks in yellow under the race weekend banner |
 | 2026-11-19 | The checkered flag strip has an odd number of squares (33) so its left end and right end are the same | The owner saw the left end start with a gap while the right end finished on a full square, and wanted both ends even with whole square blocks |
 | 2026-11-20 | The race weekend preview switch is on: the Thursday job sends by itself from 26 Nov | The owner asked for it to run for the Qatar weekend; Las Vegas had already been sent by hand to all 15 players |
-| 2026-11-24 | Every mail gets a plain-text part, and announcement mails get `List-Unsubscribe` one-click headers (the unsubscribe endpoint accepts POST) | Players reported the mails land in spam folders; an HTML-only mail without those headers is one of the things spam filters mark down |
+| 2026-11-24 | Every mail gets a plain-text part, and announcement mails get `List-Unsubscribe` one-click headers (the unsubscribe endpoint accepts POST) | Players reported the mails land in spam folders; an HTML-only mail without those headers is one of the things spam filters mark down (not confirmed as the cause; authentication already passed) |
 | 2026-11-24 | Public pages carry their real text in the HTML for bots that do not run JavaScript, with structured data per page in its own language, plus `/llms.txt` and `/llms-full.txt`; all of it comes from the pages' own locale strings | AI crawlers only saw an empty page (the app is client-rendered), so the rules and tutorial were invisible to them; the owner asked for better SEO and a clear, simple structure for AI bots |
