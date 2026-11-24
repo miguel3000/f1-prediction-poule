@@ -5,6 +5,7 @@ import nodemailer from 'nodemailer';
 // A fake mail transport, installed before anything imports the email service.
 const sent: any[] = [];
 (nodemailer as any).createTransport = () => ({
+  use: () => {}, // the real transporter gets its plain-text plugin through this (services/mailTransport.ts)
   sendMail: async (options: any) => {
     sent.push(options);
   },

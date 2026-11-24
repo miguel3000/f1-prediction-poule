@@ -9,6 +9,7 @@ import type { Server } from 'http';
 const sent: any[] = [];
 let failSends = false;
 (nodemailer as any).createTransport = () => ({
+  use: () => {}, // the real transporter gets its plain-text plugin through this (services/mailTransport.ts)
   sendMail: async (options: any) => {
     if (failSends) throw new Error('SMTP down');
     sent.push(options);

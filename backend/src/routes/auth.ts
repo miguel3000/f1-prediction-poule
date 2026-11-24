@@ -47,7 +47,10 @@ router.put('/language', authenticate, changeLanguage);
 router.put('/plays-in-main', authenticate, setPlaysInMain);
 router.delete('/account', authenticate, deleteAccount);
 
-// Public — reached directly from an email link, not the app
+// Public — reached directly from an email link, not the app. GET is the link in the mail body;
+// POST is the one-click unsubscribe of mail apps with their own Unsubscribe button (RFC 8058,
+// announced by the List-Unsubscribe headers on the mail). Same signed token, same effect.
 router.get('/unsubscribe', unsubscribe);
+router.post('/unsubscribe', unsubscribe);
 
 export default router;

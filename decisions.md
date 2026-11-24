@@ -346,6 +346,15 @@ curl -s -A "Mozilla/5.0 Chrome/120" -o /dev/null -w '%{http_code}\n' https://pou
   the card also has "Send me a test" (to the owner's own address, recorded nowhere). By hand:
   `node dist/scripts/sendRacePreviews.js --dry-run | --preview <nickname> | --send-now [--only a,b]`.
   The first send of a weekend by hand still needs an explicit yes in the chat (section 1).
+- **Deliverability** (mail landing in spam): every mail goes through the one `transporter` made by
+  `createMailTransporter` (`services/mailTransport.ts`), which adds a **plain-text part** made from the
+  HTML (`services/htmlToText.ts`; anything with an inline `display: none` is left out, so the spoiler
+  protection holds in the text part too). A mail with an unsubscribe link also spreads
+  `...unsubscribeOptions(url)` into its options: that adds `List-Unsubscribe` and
+  `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, and `POST /api/auth/unsubscribe?token=` accepts
+  what a mail app sends (same token and effect as the link). Mail you cannot opt out of gets neither.
+  What code cannot fix is DNS: mail leaves through `mail.antagonist.nl` (shared IP) and `pouleposition.nl`
+  has SPF and a `p=reject` DMARC but **no DKIM key** (checked 2026-11-20); see section 9.
 - Tokens: unsubscribe and reset tokens carry a `purpose` and are rejected as login sessions.
   Reset tokens last 1 hour and die when the password changes.
 
@@ -462,6 +471,8 @@ export const sendThing = async (email: string, nickname: string, language?: stri
 4. Results mails: subject starts `SPOILER ALERT - ` and the results go in `spoilerSection()` (section 4). Admin-only mails: `{ signature: false }`, to `ADMIN_EMAIL`.
 5. Test by sending to a throwaway address the user owns, in both languages, and look at it in a
    mail client. Never send a test to a real player.
+6. A mail with an unsubscribe link (announcement kind) adds `...unsubscribeOptions(unsubscribeUrl)` to
+   the mail options; a test in `mailTransport.test.ts` pins that for the three that have one.
 
 ### 8.2 A new public page
 1. `frontend/src/pages/Thing.tsx`, route in `App.tsx`.
@@ -573,6 +584,11 @@ Why: <two or three lines, sources named>
 - A message to the owner through the Pit Wall needs Pit Wall access, so a player without it has no
   way to report something inside the app (they can still mail kimi@pouleposition.nl). The owner
   decides whether the message form should open to every player.
+- **DKIM is not set up** for `pouleposition.nl` (no key found at about 25 usual selectors, 2026-11-20), so
+  mail leaves unsigned from a shared hosting IP and lands in spam for some players. Fix is outside the
+  code: switch DKIM on at Antagonist and publish the TXT record in Cloudflare, or send through a
+  transactional provider (only `SMTP_*` change). Also worth adding `rua=mailto:` to the DMARC record to
+  get failure reports. The owner decides which route.
 - Race weekend preview: times are Dutch time for everyone; a player who wants their own time zone has to
   ask (reply or Pit Wall). The Pit Wall needs access, so the mail says "if you have access". Circuit
   facts are formula1.com's; they were not cross-checked against a second source (laps times length
@@ -623,3 +639,5 @@ Why: <two or three lines, sources named>
 | 2026-11-19 | A Thursday race weekend preview mail: schedule in Dutch time, your missing predictions, the circuit with layout and lap length in km and miles; it sends nothing until the owner switches it on in the Pitlane | The owner wanted a weekend overview like the one shared in the group chat, in our branding, sent every Thursday before the race |
 | 2026-11-19 | The race weekend preview uses the "Lights out" layout (start time as the hero, button right under it, the rest of the weekend as a plain list) with a yellow checkered flag strip under the banner; circuit layouts became square thumbnails | The owner looked at five different layouts and chose the first; asked for racing flag blocks in yellow under the race weekend banner |
 | 2026-11-19 | The checkered flag strip has an odd number of squares (33) so its left end and right end are the same | The owner saw the left end start with a gap while the right end finished on a full square, and wanted both ends even with whole square blocks |
+| 2026-11-20 | The race weekend preview switch is on: the Thursday job sends by itself from 26 Nov | The owner asked for it to run for the Qatar weekend; Las Vegas had already been sent by hand to all 15 players |
+| 2026-11-24 | Every mail gets a plain-text part, and announcement mails get `List-Unsubscribe` one-click headers (the unsubscribe endpoint accepts POST) | Players reported the mails land in spam folders; an HTML-only mail without those headers is one of the things spam filters mark down |

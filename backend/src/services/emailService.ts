@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { createMailTransporter, unsubscribeOptions } from './mailTransport';
 import dotenv from 'dotenv';
 import { NewsletterContent } from '../newsletters/types';
 import { EmailLang, normalizeLang, et } from './emailI18n';
@@ -32,7 +32,7 @@ const recipient = (nickname: string, email: string): string | { name: string; ad
   return name ? { name, address: email } : email;
 };
 
-const transporter = nodemailer.createTransport({
+export const transporter = createMailTransporter({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 587,
   secure: process.env.SMTP_SECURE === 'true', // false = STARTTLS on 587, true = implicit TLS on 465
@@ -858,6 +858,7 @@ export const sendBroadcastEmail = async (
       </div>
       ${emailBanner(et(lang, 'common.visit'), { url: process.env.FRONTEND_URL! })}
     `, lang, { footer: emailFooter(unsubscribeUrl, lang) }),
+    ...unsubscribeOptions(unsubscribeUrl),
   };
 
   try {
@@ -929,7 +930,7 @@ export const sendNewsletterEmail = async (
   const lang = normalizeLang(language);
   const mail = renderNewsletter(newsletter[lang], nickname, lang, unsubscribeUrl);
   try {
-    await transporter.sendMail({ ...mail, to: recipient(nickname, email) });
+    await transporter.sendMail({ ...mail, to: recipient(nickname, email), ...unsubscribeOptions(unsubscribeUrl) });
     console.log('Newsletter sent to:', nickname, `[${lang}]`);
     return true;
   } catch (error) {
@@ -1099,7 +1100,7 @@ export const sendRacePreviewEmail = async (
 ): Promise<boolean> => {
   const mail = renderRacePreview(data, nickname, language, unsubscribeUrl);
   try {
-    await transporter.sendMail({ ...mail, to: recipient(nickname, email) });
+    await transporter.sendMail({ ...mail, to: recipient(nickname, email), ...unsubscribeOptions(unsubscribeUrl) });
     console.log('Race weekend preview sent to:', nickname, `[${normalizeLang(language)}]`);
     return true;
   } catch (error) {
